@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>变压器智能预警大屏</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.3.4.3.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.1.0.7.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/echarts.min.5.4.3.js"></script>
+<style>
+  body{background:#030712;color:#e5e7eb;font-family:'Inter','PingFang SC',sans-serif;overflow:hidden}
+  .glass{background:rgba(17,24,39,.72);backdrop-filter:blur(10px);border:1px solid rgba(59,130,246,.18);box-shadow:inset 0 0 20px rgba(59,130,246,.04)}
+  .panel-title{position:relative;padding-left:12px}
+  .panel-title::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:3px;background:linear-gradient(180deg,#3b82f6,#06b6d4);border-radius:2px}
+  .kpi-card{background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(6,182,212,.04));border:1px solid rgba(59,130,246,.25);position:relative}
+  .corner{position:absolute;width:10px;height:10px;border:1px solid #3b82f6}
+  .corner.tl{top:-1px;left:-1px;border-right:0;border-bottom:0}
+  .corner.tr{top:-1px;right:-1px;border-left:0;border-bottom:0}
+  .corner.bl{bottom:-1px;left:-1px;border-right:0;border-top:0}
+  .corner.br{bottom:-1px;right:-1px;border-left:0;border-top:0}
+  .pulse{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.12)}}
+  .title-glow{text-shadow:0 0 20px rgba(59,130,246,.5),0 0 40px rgba(59,130,246,.3)}
+  .marquee{animation:marquee 30s linear infinite}
+  @keyframes marquee{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
+  .marquee-wrap:hover .marquee{animation-play-state:paused}
+  .tag-red{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.35)}
+  .tag-org{background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.35)}
+  .tag-yel{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.35)}
+  .tag-blu{background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.35)}
+  .tag-grn{background:rgba(16,185,129,.15);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)}
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-thumb{background:rgba(59,130,246,.3);border-radius:2px}
+  .metric-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:4px;background:rgba(31,41,55,.4);border:1px solid rgba(75,85,99,.25)}
+  .metric-row + .metric-row{margin-top:6px}
+  .bar-bg{height:4px;background:rgba(75,85,99,.4);border-radius:2px;overflow:hidden;flex:1;margin:0 8px}
+  .bar-fill{height:100%;border-radius:2px;transition:width .4s}
+</style>
+</head>
+<body class="h-screen flex flex-col">
+
+<!-- Header -->
+<header class="h-14 flex items-center justify-between px-6 border-b border-blue-900/40 relative"
+        style="background:linear-gradient(180deg,rgba(30,58,138,.3),rgba(3,7,18,.8))">
+  <div class="flex items-center gap-3 w-1/4 text-xs text-gray-400">
+    <iconify-icon class="text-cyan-400 text-xl" icon="mdi:shield-check"></iconify-icon>
+    <span>智能体自学习中 · 阈值动态优化</span>
+    <span class="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/30">在线</span>
+  </div>
+  <h1 class="text-xl font-bold tracking-[0.3em] title-glow text-white">变 压 器 智 能 预 警 综 合 大 屏</h1>
+  <div class="flex items-center gap-4 text-xs text-gray-400 w-1/4 justify-end">
+    <span class="text-gray-500">接入 128 台 · SCADA 联动</span>
+    <span id="clock" class="text-cyan-300 font-mono"></span>
+  </div>
+</header>
+
+<!-- KPI Row -->
+<section class="px-3 pt-3 grid grid-cols-6 gap-3">
+  <div class="kpi-card rounded-lg p-3">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] text-gray-400">综合健康度评分</p>
+        <p class="text-2xl font-bold text-green-400">92.6<span class="text-xs ml-1">分</span></p>
+      </div>
+      <iconify-icon class="text-3xl text-green-400" icon="mdi:heart-pulse"></iconify-icon>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-1">128 台在运 · 较昨日 <span class="text-green-400">↑ 0.4</span></p>
+  </div>
+  <div class="kpi-card rounded-lg p-3">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] text-gray-400">紧急预警</p>
+        <p class="text-2xl font-bold text-red-400">2<span class="text-xs ml-1">条</span></p>
+      </div>
+      <iconify-icon class="text-3xl text-red-400 pulse" icon="mdi:alert-octagon"></iconify-icon>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-1">C₂H₂ / 温度超标 → 立即停运</p>
+  </div>
+  <div class="kpi-card rounded-lg p-3">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] text-gray-400">重要预警</p>
+        <p class="text-2xl font-bold text-orange-400">5<span class="text-xs ml-1">条</span></p>
+      </div>
+      <iconify-icon class="text-3xl text-orange-400" icon="mdi:alert"></iconify-icon>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-1">过载 / 局放 / 套管介损</p>
+  </div>
+  <div class="kpi-card rounded-lg p-3">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] text-gray-400">一般预警</p>
+        <p class="text-2xl font-bold text-yellow-400">9<span class="text-xs ml-1">条</span></p>
+      </div>
+      <iconify-icon class="text-3xl text-yellow-400" icon="mdi:information"></iconify-icon>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-1">趋势异常 / 电压越限</p>
+  </div>
+  <div class="kpi-card rounded-lg p-3">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] text-gray-400">提示类</p>
+        <p class="text-2xl font-bold text-blue-400">4<span class="text-xs ml-1">条</span></p>
+      </div>
+      <iconify-icon class="text-3xl text-blue-400" icon="mdi:bell-outline"></iconify-icon>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-1">极端环境 / 波动监测</p>
+  </div>
+  <div class="kpi-card rounded-lg p-3">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[11px] text-gray-400">智能体阈值优化</p>
+        <p class="text-2xl font-bold text-purple-400">37<span class="text-xs ml-1">项</span></p>
+      </div>
+      <iconify-icon class="text-3xl text-purple-400" icon="mdi:robot"></iconify-icon>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-1">近 7 日自学习优化数</p>
+  </div>
+</section>
+
+<!-- Main 12 cols -->
+<main class="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden" style="min-height:0">
+
+  <!-- LEFT: 电气性能 + 机械与结构 -->
+  <div class="col-span-3 flex flex-col gap-3 overflow-hidden">
+    <!-- 电气性能类 -->
+    <div class="glass rounded-lg p-3 flex-1 overflow-hidden">
+      <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
+        <span class="flex items-center gap-2"><iconify-icon icon="mdi:lightning-bolt"></iconify-icon> 电气性能类</span>
+        <a href="load-warning.html" class="text-[10px] text-gray-500 hover:text-cyan-400">详情 →</a>
+      </h3>
+      <div class="space-y-1.5 text-xs">
+        <div class="metric-row">
+          <span class="text-gray-300">绕组温度</span>
+          <div class="bar-bg"><div class="bar-fill bg-yellow-400" style="width:78%"></div></div>
+          <span class="text-yellow-400 font-bold">82℃</span>
+          <span class="text-[10px] text-gray-500 ml-1">/105</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">顶层油温</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:62%"></div></div>
+          <span class="text-green-400 font-bold">59℃</span>
+          <span class="text-[10px] text-gray-500 ml-1">/95</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">负载电流</span>
+          <div class="bar-bg"><div class="bar-fill bg-orange-400" style="width:92%"></div></div>
+          <span class="text-orange-400 font-bold">1.05倍</span>
+          <span class="text-[10px] text-gray-500 ml-1">/1.1</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">三相不平衡度</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:38%"></div></div>
+          <span class="text-green-400 font-bold">3.8%</span>
+          <span class="text-[10px] text-gray-500 ml-1">/10</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">局部放电量</span>
+          <div class="bar-bg"><div class="bar-fill bg-red-400" style="width:88%"></div></div>
+          <span class="text-red-400 font-bold">88pC</span>
+          <span class="text-[10px] text-gray-500 ml-1">/100</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">铁芯接地电流</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:35%"></div></div>
+          <span class="text-green-400 font-bold">35mA</span>
+          <span class="text-[10px] text-gray-500 ml-1">/100</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">运行电压偏差</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:42%"></div></div>
+          <span class="text-green-400 font-bold">+2.1%</span>
+          <span class="text-[10px] text-gray-500 ml-1">/±5</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">分接档位切换</span>
+          <div class="bar-bg"><div class="bar-fill bg-yellow-400" style="width:55%"></div></div>
+          <span class="text-yellow-400 font-bold">12次/日</span>
+          <span class="text-[10px] text-gray-500 ml-1">/20</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 机械与结构状态类 -->
+    <div class="glass rounded-lg p-3 flex-1 overflow-hidden">
+      <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
+        <span class="flex items-center gap-2"><iconify-icon icon="mdi:vibrate"></iconify-icon> 机械与结构状态</span>
+        <a href="mechanical-structure.html" class="text-[10px] text-gray-500 hover:text-cyan-400">详情 →</a>
+      </h3>
+      <div class="space-y-1.5 text-xs">
+        <div class="metric-row">
+          <span class="text-gray-300">振动烈度</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:55%"></div></div>
+          <span class="text-green-400 font-bold">1.54</span>
+          <span class="text-[10px] text-gray-500 ml-1">mm/s</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">运行噪声</span>
+          <div class="bar-bg"><div class="bar-fill bg-yellow-400" style="width:72%"></div></div>
+          <span class="text-yellow-400 font-bold">76.3</span>
+          <span class="text-[10px] text-gray-500 ml-1">dB / 85</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">油位（相对）</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:68%"></div></div>
+          <span class="text-green-400 font-bold">68%</span>
+          <span class="text-[10px] text-gray-500 ml-1">正常</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">油枕压力</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:50%"></div></div>
+          <span class="text-green-400 font-bold">0.08</span>
+          <span class="text-[10px] text-gray-500 ml-1">MPa</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">油温环境温差</span>
+          <div class="bar-bg"><div class="bar-fill bg-yellow-400" style="width:70%"></div></div>
+          <span class="text-yellow-400 font-bold">21℃</span>
+          <span class="text-[10px] text-gray-500 ml-1">/30</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">套管介损 tanδ</span>
+          <div class="bar-bg"><div class="bar-fill bg-orange-400" style="width:78%"></div></div>
+          <span class="text-orange-400 font-bold">0.39%</span>
+          <span class="text-[10px] text-gray-500 ml-1">/0.5</span>
+        </div>
+        <div class="metric-row">
+          <span class="text-gray-300">套管泄漏电流</span>
+          <div class="bar-bg"><div class="bar-fill bg-green-400" style="width:52%"></div></div>
+          <span class="text-green-400 font-bold">5.2</span>
+          <span class="text-[10px] text-gray-500 ml-1">μA / 10</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: DGA + 维度雷达 + 趋势 -->
+  <div class="col-span-6 flex flex-col gap-3 overflow-hidden">
+    <!-- DGA 主面板 -->
+    <div class="glass rounded-lg p-3 flex-[1.4] overflow-hidden">
+      <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
+        <span class="flex items-center gap-2"><iconify-icon icon="mdi:test-tube"></iconify-icon> 油中溶解气体 DGA 分析</span>
+        <span class="flex items-center gap-2 text-[10px]">
+          <span class="text-gray-500">三比值法：<span class="text-orange-400">潜在低温过热 (&lt;300℃)</span></span>
+          <a href="insulation-performance.html" class="text-gray-500 hover:text-cyan-400">详情 →</a>
+        </span>
+      </h3>
+      <div class="grid grid-cols-7 gap-2 mb-2">
+        <!-- 7 气体 -->
+        <div class="bg-gray-800/50 rounded p-2 text-center border border-gray-700/50">
+          <p class="text-[10px] text-gray-400">H₂</p>
+          <p class="text-base font-bold text-green-400">42.5</p>
+          <p class="text-[10px] text-gray-500">/150 ppm</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 text-center border border-gray-700/50">
+          <p class="text-[10px] text-gray-400">CH₄</p>
+          <p class="text-base font-bold text-green-400">58.2</p>
+          <p class="text-[10px] text-gray-500">ppm</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 text-center border border-gray-700/50">
+          <p class="text-[10px] text-gray-400">C₂H₆</p>
+          <p class="text-base font-bold text-green-400">22.8</p>
+          <p class="text-[10px] text-gray-500">ppm</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 text-center border border-yellow-500/40">
+          <p class="text-[10px] text-gray-400">C₂H₄</p>
+          <p class="text-base font-bold text-yellow-400">45.1</p>
+          <p class="text-[10px] text-gray-500">ppm</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 text-center border border-red-500/50">
+          <p class="text-[10px] text-gray-400">C₂H₂ ⚠</p>
+          <p class="text-base font-bold text-red-400">3.24</p>
+          <p class="text-[10px] text-gray-500">/5 ppm</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 text-center border border-gray-700/50">
+          <p class="text-[10px] text-gray-400">CO</p>
+          <p class="text-base font-bold text-green-400">312</p>
+          <p class="text-[10px] text-gray-500">ppm</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 text-center border border-gray-700/50">
+          <p class="text-[10px] text-gray-400">CO₂</p>
+          <p class="text-base font-bold text-green-400">1840</p>
+          <p class="text-[10px] text-gray-500">ppm</p>
+        </div>
+      </div>
+      <div id="dgaChart" class="w-full" style="height:calc(100% - 100px)"></div>
+    </div>
+
+    <!-- 中下：五维健康度 + 24H 预警趋势 -->
+    <div class="flex-1 grid grid-cols-2 gap-3 overflow-hidden">
+      <div class="glass rounded-lg p-3 overflow-hidden">
+        <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2">
+          <iconify-icon icon="mdi:radar"></iconify-icon> 五大维度健康度雷达
+        </h3>
+        <div id="radarChart" class="w-full" style="height:calc(100% - 28px)"></div>
+      </div>
+      <div class="glass rounded-lg p-3 overflow-hidden">
+        <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2">
+          <iconify-icon icon="mdi:chart-bell-curve"></iconify-icon> 24H 预警等级分布趋势
+        </h3>
+        <div id="trendChart" class="w-full" style="height:calc(100% - 28px)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: 冷却辅助 / 环境 / 预警滚动 / 处置建议 -->
+  <div class="col-span-3 flex flex-col gap-3 overflow-hidden">
+    <!-- 冷却与辅助系统类 -->
+    <div class="glass rounded-lg p-3 overflow-hidden">
+      <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
+        <span class="flex items-center gap-2"><iconify-icon icon="mdi:fan"></iconify-icon> 冷却与辅助系统</span>
+        <a href="auxiliary-system.html" class="text-[10px] text-gray-500 hover:text-cyan-400">详情 →</a>
+      </h3>
+      <div class="grid grid-cols-4 gap-2 text-center">
+        <div class="bg-gray-800/50 rounded p-2 border border-green-500/30">
+          <iconify-icon class="text-2xl text-green-400" icon="mdi:fan"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">风机组</p>
+          <p class="text-xs font-bold text-green-400">4/4</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 border border-yellow-500/40">
+          <iconify-icon class="text-2xl text-yellow-400" icon="mdi:pump"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">油泵</p>
+          <p class="text-xs font-bold text-yellow-400">3/4</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 border border-green-500/30">
+          <iconify-icon class="text-2xl text-green-400" icon="mdi:thermometer-lines"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">进出温差</p>
+          <p class="text-xs font-bold text-green-400">8.2℃</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 border border-green-500/30">
+          <iconify-icon class="text-2xl text-green-400" icon="mdi:power-plug"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">控制电源</p>
+          <p class="text-xs font-bold text-green-400">正常</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 环境与工况 -->
+    <div class="glass rounded-lg p-3 overflow-hidden">
+      <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
+        <span class="flex items-center gap-2"><iconify-icon icon="mdi:weather-partly-cloudy"></iconify-icon> 环境与工况</span>
+        <a href="environment-monitoring.html" class="text-[10px] text-gray-500 hover:text-cyan-400">详情 →</a>
+      </h3>
+      <div class="grid grid-cols-4 gap-2 text-center">
+        <div class="bg-gray-800/50 rounded p-2 border border-yellow-500/30">
+          <iconify-icon class="text-2xl text-yellow-400" icon="mdi:thermometer"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">环境温度</p>
+          <p class="text-xs font-bold text-yellow-400">38℃</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 border border-green-500/30">
+          <iconify-icon class="text-2xl text-green-400" icon="mdi:water-percent"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">湿度</p>
+          <p class="text-xs font-bold text-green-400">62%</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 border border-green-500/30">
+          <iconify-icon class="text-2xl text-green-400" icon="mdi:cctv"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">异物入侵</p>
+          <p class="text-xs font-bold text-green-400">无</p>
+        </div>
+        <div class="bg-gray-800/50 rounded p-2 border border-green-500/30">
+          <iconify-icon class="text-2xl text-green-400" icon="mdi:weather-fog"></iconify-icon>
+          <p class="text-[10px] text-gray-400 mt-1">凝露</p>
+          <p class="text-xs font-bold text-green-400">无</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 实时预警滚动 -->
+    <div class="glass rounded-lg p-3 flex-1 overflow-hidden marquee-wrap">
+      <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
+        <span><iconify-icon icon="mdi:bell-ring"></iconify-icon> 实时预警与智能体处置建议</span>
+        <a href="alert-management.html" class="text-[10px] text-gray-500 hover:text-cyan-400">管理 →</a>
+      </h3>
+      <div class="overflow-hidden" style="height:calc(100% - 28px)">
+        <div class="marquee space-y-2" id="alertList"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+function updateClock(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  document.getElementById('clock').textContent=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}  ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+updateClock();setInterval(updateClock,1000);
+
+const AXIS={axisLine:{lineStyle:{color:'#374151'}},axisLabel:{color:'#9ca3af',fontSize:10},splitLine:{lineStyle:{color:'rgba(55,65,81,.5)',type:'dashed'}}};
+const TT={backgroundColor:'rgba(17,24,39,.95)',borderColor:'#3b82f6',textStyle:{color:'#e5e7eb'}};
+
+// DGA 多气体 7 日趋势（按 PDF：72h 持续上升≥20% 触发预警）
+echarts.init(document.getElementById('dgaChart')).setOption({
+  tooltip:{trigger:'axis',...TT},
+  legend:{textStyle:{color:'#9ca3af',fontSize:10},top:0,right:0,itemWidth:10,itemHeight:6},
+  grid:{top:50,bottom:20,left:40,right:70},
+  xAxis:{type:'category',data:['D-6','D-5','D-4','D-3','D-2','D-1','今日'],...AXIS},
+  yAxis:[
+    {type:'value',name:'ppm',nameTextStyle:{color:'#9ca3af',fontSize:10},...AXIS},
+    {type:'value',name:'C₂H₂',nameTextStyle:{color:'#ef4444',fontSize:10},...AXIS,max:5}
+  ],
+  series:[
+    {name:'H₂',type:'line',smooth:true,data:[28,32,35,38,40,41,42.5],color:'#10b981'},
+    {name:'CH₄',type:'line',smooth:true,data:[42,45,48,52,55,57,58.2],color:'#06b6d4'},
+    {name:'C₂H₆',type:'line',smooth:true,data:[18,19,20,21,22,22.5,22.8],color:'#8b5cf6'},
+    {name:'C₂H₄',type:'line',smooth:true,data:[30,32,36,40,42,44,45.1],color:'#f59e0b'},
+    {name:'C₂H₂（右轴）',type:'line',smooth:true,yAxisIndex:1,data:[1.1,1.4,1.8,2.2,2.6,2.9,3.24],color:'#ef4444',lineStyle:{width:2.5},markLine:{symbol:'none',data:[{yAxis:5,lineStyle:{color:'#dc2626',type:'dashed'},label:{formatter:'报警阈值 5ppm',color:'#fca5a5',fontSize:10}}]}}
+  ]
+});
+
+// 五维雷达
+echarts.init(document.getElementById('radarChart')).setOption({
+  tooltip:{...TT},
+  legend:{textStyle:{color:'#9ca3af',fontSize:10},top:0,right:0},
+  radar:{
+    indicator:[
+      {name:'电气性能',max:100},
+      {name:'DGA油气',max:100},
+      {name:'机械结构',max:100},
+      {name:'冷却辅助',max:100},
+      {name:'环境工况',max:100}
+    ],
+    center:['50%','55%'],radius:'62%',
+    axisName:{color:'#cbd5e1',fontSize:10},
+    splitLine:{lineStyle:{color:'rgba(59,130,246,.2)'}},
+    splitArea:{areaStyle:{color:['rgba(59,130,246,.02)','rgba(59,130,246,.06)']}},
+    axisLine:{lineStyle:{color:'rgba(59,130,246,.2)'}}
+  },
+  series:[{type:'radar',data:[
+    {value:[82,74,88,91,85],name:'当前状态',areaStyle:{color:'rgba(59,130,246,.3)'},lineStyle:{color:'#3b82f6'},itemStyle:{color:'#3b82f6'}},
+    {value:[85,85,85,85,85],name:'预警阈值',areaStyle:{color:'rgba(239,68,68,.08)'},lineStyle:{type:'dashed',color:'#ef4444'},itemStyle:{color:'#ef4444'}}
+  ]}]
+});
+
+// 24H 预警等级趋势（紧急/重要/一般/提示 四等级堆叠）
+echarts.init(document.getElementById('trendChart')).setOption({
+  tooltip:{trigger:'axis',...TT},
+  legend:{textStyle:{color:'#9ca3af',fontSize:10},top:0,right:0,itemWidth:10,itemHeight:6},
+  grid:{top:25,bottom:20,left:30,right:10},
+  xAxis:{type:'category',data:['0','2','4','6','8','10','12','14','16','18','20','22'],...AXIS},
+  yAxis:{type:'value',...AXIS},
+  series:[
+    {name:'紧急',type:'bar',stack:'x',data:[0,0,1,0,0,1,0,0,0,0,0,0],itemStyle:{color:'#ef4444'}},
+    {name:'重要',type:'bar',stack:'x',data:[1,0,1,0,1,1,0,1,0,0,1,0],itemStyle:{color:'#f97316'}},
+    {name:'一般',type:'bar',stack:'x',data:[2,1,2,1,3,2,3,2,2,1,2,1],itemStyle:{color:'#f59e0b'}},
+    {name:'提示',type:'bar',stack:'x',data:[1,1,2,2,2,1,2,1,1,2,1,1],itemStyle:{color:'#3b82f6'}}
+  ]
+});
+
+// 实时预警 + 处置建议（严格对齐 PDF 等级与建议）
+const alerts=[
+  {lv:'red',tag:'紧急',time:'10:42:15',msg:'#2主变 C₂H₂=3.24ppm 72h上升 ≥20%',ext:'处置：立即停运，开展油质检测与内部故障排查'},
+  {lv:'org',tag:'重要',time:'10:15:02',msg:'#2主变 局放量 88pC 趋近 100pC 阈值',ext:'处置：停运设备，开展局放定位检测，排查绝缘缺陷'},
+  {lv:'red',tag:'紧急',time:'09:58:30',msg:'#5主变 绕组温度 102℃ 逼近 105℃',ext:'处置：立即检查冷却系统，降低负载，若持续升高则停运'},
+  {lv:'org',tag:'重要',time:'09:15:30',msg:'#1主变 冷却油泵 1 台停机（4 组→3 组）',ext:'处置：立即检修故障油泵，冷却失效则停运变压器'},
+  {lv:'yel',tag:'一般',time:'08:50:44',msg:'#5主变 负载电流 1.05 倍额定（长期）',ext:'处置：调整负载分配，降低过载电流，监测绕组温度'},
+  {lv:'org',tag:'重要',time:'08:20:11',msg:'#7主变 套管介损 tanδ=0.48% 逼近 0.5%',ext:'处置：停运检修套管，排查受潮与绝缘劣化'},
+  {lv:'yel',tag:'一般',time:'07:22:10',msg:'#3主变 油温-环境温差 28℃ 持续增大',ext:'处置：排查冷却系统，清理散热片灰尘，加强通风'},
+  {lv:'blu',tag:'提示',time:'06:45:20',msg:'环境温度 38℃ 接近 40℃ 阈值',ext:'处置：智能体联动下调本体温度预警阈值 5%'},
+  {lv:'yel',tag:'一般',time:'05:30:12',msg:'#4主变 分接开关 12 次/日 高于历史均值',ext:'处置：核查电压波动，稳定运行电压，监测控制回路'},
+  {lv:'blu',tag:'提示',time:'04:10:00',msg:'#9主变 振动频率峰值偏移 +18%',ext:'处置：加强振动监测，排查设备基础松动'}
+];
+const colorMap={red:'tag-red',org:'tag-org',yel:'tag-yel',blu:'tag-blu',grn:'tag-grn'};
+const borderMap={red:'border-red-500',org:'border-orange-500',yel:'border-yellow-500',blu:'border-blue-500',grn:'border-green-500'};
+const html=alerts.map(a=>`
+  <div class="bg-gray-800/40 border-l-4 ${borderMap[a.lv]} rounded p-2">
+    <div class="flex justify-between items-center mb-1">
+      <span class="text-[10px] px-1.5 py-0.5 rounded ${colorMap[a.lv]}">【${a.tag}】</span>
+      <span class="text-[10px] text-gray-500">${a.time}</span>
+    </div>
+    <p class="text-xs text-gray-100">${a.msg}</p>
+    <p class="text-[10px] text-cyan-300/80 mt-0.5"><iconify-icon icon="mdi:robot-outline"></iconify-icon> ${a.ext}</p>
+  </div>`).join('');
+document.getElementById('alertList').innerHTML=html+html;
+
+window.addEventListener('resize',()=>{
+  document.querySelectorAll('[_echarts_instance_]').forEach(d=>{
+    const i=echarts.getInstanceByDom(d);if(i)i.resize();
+  });
+});
+</script>
+</body>
+</html>
