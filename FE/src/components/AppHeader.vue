@@ -23,7 +23,7 @@
           class="text-cyan-400 text-xl"
           icon="mdi:shield-check"
         ></iconify-icon>
-        <span>智能体自学习中 · 阈值动态优化</span>
+        <span>智能体自动预警中 · 每日 09:00 执行</span>
         <span
           class="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/30"
           >在线</span
