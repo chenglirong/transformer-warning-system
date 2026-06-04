@@ -1,0 +1,46 @@
+# ===== 系统 =====
+.DS_Store
+*.swp
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# ===== 虚拟环境 =====
+.venv/
+venv/
+env/
+
+# ===== 环境变量(含密钥)=====
+.env
+.env.local
+
+# ===== SQLite =====
+*.db
+*.db-journal
+
+# ===== 模型文件(大,通过脚本重训)=====
+*.h5
+*.keras
+*.pkl
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
+
+# ===== 前端 =====
+node_modules/
+FE/dist/
+
+# ===== IDE =====
+.vscode/
+.idea/
+
+# ===== 测试 / 覆盖率 =====
+.pytest_cache/
+.coverage
+htmlcov/
