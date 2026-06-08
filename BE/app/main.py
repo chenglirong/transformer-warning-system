@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.api import health, data
+from app.api import health, data, detect
 from app.core.response import UnifiedResponseMiddleware, register_exception_handlers
 
 app = FastAPI(
@@ -34,6 +34,7 @@ register_exception_handlers(app)
 # 路由挂载(后续模块陆续加进来)
 app.include_router(health.router)
 app.include_router(data.router)
+app.include_router(detect.router)
 
 
 @app.get("/")

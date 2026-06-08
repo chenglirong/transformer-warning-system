@@ -30,6 +30,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+import pandas as pd
+
 
 # ============== 故障类别 ==============
 
@@ -181,3 +183,18 @@ def diagnose(
         ratios={"C2H2/C2H4": r1, "CH4/H2": r2, "C2H4/C2H6": r3},
         is_abnormal=(fault not in (NORMAL, INSUFFICIENT_DATA, UNDETERMINED)),
     )
+
+
+def detect_df(df: pd.DataFrame) -> pd.Series:
+    """批量 IEC 检测,返回与 df 等长的 is_abnormal(int 0/1)Series。
+
+    统一检测器入口(与 threshold.detect_df / iforest.detect_df 对齐):
+    逐行套 diagnose。注意 IEC 的 is_abnormal 对 Undetermined/数据不足均判 False
+    (语义:无法判定 ≠ 异常),与 D-020 评估口径一致。
+    """
+    def _row(r: pd.Series) -> int:
+        d = diagnose(r.get("h2"), r.get("ch4"), r.get("c2h4"),
+                     r.get("c2h6"), r.get("c2h2"))
+        return int(d.is_abnormal)
+
+    return df.apply(_row, axis=1).astype(int)
