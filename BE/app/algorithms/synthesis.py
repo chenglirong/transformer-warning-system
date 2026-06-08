@@ -1,4 +1,4 @@
-"""时序数据合成器:从 743 行快照数据构造"虚拟变压器 90 天监测序列"。
+"""时序数据合成器:从 743 行快照数据构造"虚拟变压器 360 天监测序列"(单设备方案,D-015)。
 
 核心思想:
     1. 用 IEC 60599 自动诊断结果作为"状态分布池":同一故障类型的样本视为该状态的浓度分布
@@ -250,14 +250,16 @@ def ou_step(
 # 工况合成
 # ============================================================
 
-def synth_load_current(day_idx: int, base: float, rng: random.Random) -> float:
+def synth_load_current(
+    day_idx: int, cur_date: date, base: float, rng: random.Random
+) -> float:
     """负载电流:工作日/周末模式 + 日内基准 + 噪声。
 
     简化为按日均值。base 是该变压器的基准负载。
     """
-    # 假设 day_idx=0 是周三(START_DATE 2025-01-01 是周三),周末降负载
-    weekday = (day_idx + 2) % 7  # 0=Mon ... 6=Sun
-    weekend_factor = 0.7 if weekday >= 5 else 1.0
+    # 周末降负载。直接用真实日期取星期,避免硬编码 day_idx 偏移随
+    # START_DATE 变更而错位(0=Mon ... 6=Sun)
+    weekend_factor = 0.7 if cur_date.weekday() >= 5 else 1.0
     seasonal = 1.0 + 0.05 * math.sin(2 * math.pi * day_idx / 365.0)
     noise = 1.0 + 0.05 * rng.gauss(0, 1)
     val = base * weekend_factor * seasonal * noise
@@ -294,7 +296,7 @@ class SynthConfig:
 def synthesize(
     labeled_rows: list[dict], cfg: Optional[SynthConfig] = None
 ) -> list[dict]:
-    """合成虚拟变压器 90 天时序数据。
+    """合成虚拟变压器 360 天时序数据(单设备方案,n_days 见 SynthConfig)。
 
     返回行列表,每行键:
         transformer_id, date(ISO 字符串), h2..co2, oil_temp,
@@ -349,7 +351,7 @@ def synthesize(
 
             # 工况合成
             ambient = synth_ambient_temp(day_idx, rng)
-            load = synth_load_current(day_idx, load_base, rng)
+            load = synth_load_current(day_idx, current_date, load_base, rng)
             oil = synth_oil_temp(load, ambient, rng)
 
             row = {

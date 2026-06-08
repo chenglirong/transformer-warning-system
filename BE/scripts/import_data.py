@@ -6,7 +6,7 @@
     python -m scripts.import_data --reset   # 先清空 monitoring 再导入
 
 设计:
-    - 用 SQLAlchemy bulk_insert,4500 行批量提交一次
+    - 用 SQLAlchemy bulk_insert,分批提交(单设备方案约 360 行)
     - 严格按 Monitoring ORM 字段对齐,date 列从字符串转 date 对象
     - 幂等:--reset 可重复运行;不带 --reset 时检测到已有数据会报错防误操作
 """
