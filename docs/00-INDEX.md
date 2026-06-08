@@ -7,7 +7,7 @@
 | 文件 | 内容 | 何时查阅 |
 |------|------|---------|
 | [01-tech-stack.md](./01-tech-stack.md) | 技术选型与理由 | 写论文技术路线章节、答辩准备 |
-| [02-dev-plan.md](./02-dev-plan.md) | 9 周开发规划(第 6-15 周) | 每周开始前对照进度 |
+| [02-dev-plan.md](./02-dev-plan.md) | 第 6-15 周开发规划 | 每周开始前对照进度 |
 | [03-data-strategy.md](./03-data-strategy.md) | 数据集分析 + 时序合成方案 | 写论文数据章节、解释数据来源 |
 | [04-architecture.md](./04-architecture.md) | 系统架构与目录结构 | 新建模块前查阅约定 |
 | [05-decisions-log.md](./05-decisions-log.md) | 关键决策日志(按时间) | 答辩遇到"为什么这么做"问题时翻 |

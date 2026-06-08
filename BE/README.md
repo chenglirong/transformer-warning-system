@@ -18,10 +18,13 @@ pip install -r requirements.txt
 cp .env.example .env
 # 可按需修改 .env
 
-# 4. 初始化数据库
+# 4. 初始化数据库(建表)
 python -m scripts.init_db
 
-# 5. 启动
+# 5. 导入合成数据到 SQLite(否则前端拉不到数据)
+python -m scripts.import_data
+
+# 6. 启动
 uvicorn app.main:app --reload
 ```
 

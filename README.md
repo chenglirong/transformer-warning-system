@@ -1,6 +1,6 @@
-# 变压器智能预警系统
+# 电力设备健康管控智能体设备预警系统研究与实现
 
-基于 LSTM 多输出预测 + LangChain Agent 的电力变压器健康管控智能体预警系统(本科毕业设计)。
+本科毕业设计。以变压器溶解气体分析(DGA)为切入点,基于 LSTM 多输出预测 + LangChain Agent,构建电力设备健康管控的全链路智能体预警系统。
 
 ## 项目结构
 
@@ -43,7 +43,7 @@ npm run dev
 ## 文档导航
 
 - 📋 [开发文档总索引](./docs/00-INDEX.md)
-- 🎯 [9 周开发规划](./docs/02-dev-plan.md)
+- 🎯 [第 6-15 周开发规划](./docs/02-dev-plan.md)
 - 🏗 [系统架构](./docs/04-architecture.md)
 - 📝 [关键决策日志](./docs/05-decisions-log.md)
 - 📊 [论文梳理](./论文梳理.md)
