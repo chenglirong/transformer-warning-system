@@ -40,6 +40,7 @@
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-1">
             <iconify-icon icon="mdi:chart-donut"></iconify-icon>
             4 级预警分布
+            <span class="plan-badge">规划中</span>
           </h3>
           <div class="w-full" style="height: calc(100% - 24px)">
             <EChart :option="levelDonutOption" />
@@ -60,6 +61,7 @@
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-1">
             <iconify-icon icon="mdi:chart-bar-stacked"></iconify-icon>
             24h 预警时段分布
+            <span class="plan-badge">规划中</span>
           </h3>
           <div class="w-full" style="height: calc(100% - 24px)">
             <EChart :option="hourBarOption" />
@@ -78,6 +80,7 @@
                 icon="mdi:chart-timeline-variant-shimmer"
               ></iconify-icon>
               DGA 7 气体LSTM 预测曲线（30 天历史 + 3 天预测）
+              <span class="plan-badge">规划中</span>
             </span>
             <span class="flex items-center gap-3 text-[10px]">
               <span class="flex items-center gap-1">
@@ -161,7 +164,7 @@
                 >详情 →</RouterLink
               >
             </h3>
-            <div class="flex-1 grid grid-cols-4 gap-1" style="min-height: 0">
+            <div class="flex-1 grid grid-cols-3 gap-1" style="min-height: 0">
               <div
                 v-for="(g, i) in conditionGauges"
                 :key="i"
@@ -189,6 +192,7 @@
             <span class="flex items-center gap-2">
               <iconify-icon icon="mdi:robot-outline"></iconify-icon>
               Agent 流水线（5 步）
+              <span class="plan-badge">规划中</span>
             </span>
             <span class="text-[10px] text-green-400 flex items-center gap-1">
               <span class="live-dot"></span> 09:00 完成
@@ -219,6 +223,7 @@
             <span class="flex items-center gap-2">
               <iconify-icon icon="mdi:flash-alert"></iconify-icon>
               DGA 7 气体指标（距阈值）
+              <span class="plan-badge">含预测·规划中</span>
             </span>
             <div class="metric-tabs">
               <button
@@ -293,6 +298,7 @@
             <span class="flex items-center gap-2">
               <iconify-icon icon="mdi:fire"></iconify-icon>
               活跃预警（{{ allAlerts.length }} 条）
+              <span class="plan-badge">规划中</span>
             </span>
             <RouterLink
               to="/alerts"
@@ -336,8 +342,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
+import { getOverview, getLatest, getDetectMethods } from "@/service/api";
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import KpiCard from "@/components/KpiCard.vue";
@@ -345,58 +352,91 @@ import CountUp from "@/components/CountUp.vue";
 import EChart from "@/components/EChart.vue";
 import { AXIS, TT } from "@/utils/chartDefaults";
 
-const kpis = [
-  {
-    label: "🔴 红色（紧急）",
-    value: 1,
-    unit: "条",
-    icon: "mdi:alert-octagon",
-    iconClass: "text-red-400",
-    valueClass: "text-red-400",
-    hint: "已超标 / 24h 内必超标 · 立即响应",
-    pulse: true,
-  },
-  {
-    label: "🟠 橙色（重要）",
-    value: 3,
-    unit: "条",
-    icon: "mdi:alert",
-    iconClass: "text-orange-400",
-    valueClass: "text-orange-400",
-    hint: "1-3 天内可能超标 · 24h 响应",
-    pulse: false,
-  },
-  {
-    label: "🟡 黄色（一般）",
-    value: 4,
-    unit: "条",
-    icon: "mdi:bell",
-    iconClass: "text-yellow-400",
-    valueClass: "text-yellow-400",
-    hint: "趋势异常上升 · 加强监测",
-    pulse: false,
-  },
-  {
-    label: "🔵 蓝色（提示）",
-    value: 2,
-    unit: "条",
-    icon: "mdi:information",
-    iconClass: "text-blue-400",
-    valueClass: "text-blue-400",
-    hint: "轻微波动 · 日常关注",
-    pulse: false,
-  },
-  {
-    label: "Agent 今日执行",
-    value: 1,
-    unit: "次",
-    icon: "mdi:robot",
-    iconClass: "text-purple-400",
-    valueClass: "text-purple-400",
-    hint: "5 步 ReAct · 全部成功",
-    pulse: false,
-  },
-];
+// ============ 真实数据状态(来自后端,异步加载)============
+// overview: /data/overview;latest: /data/latest/1;detectResult: /detect/methods/1
+const overview = ref(null);
+const latest = ref(null);
+const detectResult = ref(null);
+const TRANSFORMER_ID = 1; // 单设备方案(CLAUDE.md 数据事实)
+
+onMounted(async () => {
+  // 三个接口独立 try,任一失败不影响其余块展示
+  try {
+    overview.value = await getOverview();
+  } catch (e) {
+    console.warn("[Dashboard] overview 拉取失败", e);
+  }
+  try {
+    latest.value = await getLatest(TRANSFORMER_ID);
+  } catch (e) {
+    console.warn("[Dashboard] latest 拉取失败", e);
+  }
+  try {
+    detectResult.value = await getDetectMethods(TRANSFORMER_ID);
+  } catch (e) {
+    console.warn("[Dashboard] detect 拉取失败", e);
+  }
+});
+
+// ① KPI 行:接 overview 真值。前 4 格真实,第 5 格(Agent)标规划中。
+// 原「4 级预警条数」依赖第 11-12 周预警模块,改为 overview 能提供的真实指标。
+const kpis = computed(() => {
+  const o = overview.value;
+  const healthPct = o ? +(o.history_health_ratio * 100).toFixed(1) : 0;
+  const latestAbn = o ? o.latest_snapshot.abnormal : 0;
+  return [
+    {
+      label: "监测设备",
+      value: o ? o.total_transformers : 0,
+      unit: "台",
+      icon: "mdi:transmission-tower",
+      iconClass: "text-cyan-400",
+      valueClass: "text-cyan-300",
+      hint: "单台虚拟变压器 · 360 天时序",
+      pulse: false,
+    },
+    {
+      label: "监测记录",
+      value: o ? o.total_records : 0,
+      unit: "条",
+      icon: "mdi:database",
+      iconClass: "text-blue-400",
+      valueClass: "text-blue-300",
+      hint: o ? `${o.date_range.start} ~ ${o.date_range.end}` : "加载中",
+      pulse: false,
+    },
+    {
+      label: "历史健康率",
+      value: healthPct,
+      unit: "%",
+      icon: "mdi:heart-pulse",
+      iconClass: "text-green-400",
+      valueClass: "text-green-300",
+      hint: "健康天数占比(二分类口径)",
+      pulse: false,
+    },
+    {
+      label: "最新状态",
+      value: latestAbn,
+      unit: "异常",
+      icon: latestAbn ? "mdi:alert" : "mdi:check-circle",
+      iconClass: latestAbn ? "text-red-400" : "text-green-400",
+      valueClass: latestAbn ? "text-red-400" : "text-green-300",
+      hint: "最新快照 is_abnormal 二分类",
+      pulse: !!latestAbn,
+    },
+    {
+      label: "Agent 今日执行",
+      value: 0,
+      unit: "次",
+      icon: "mdi:robot",
+      iconClass: "text-purple-400/50",
+      valueClass: "text-purple-400/50",
+      hint: "⏳ 规划中 · 第 13 周",
+      pulse: false,
+    },
+  ];
+});
 
 // === 4 级饼图 ===
 const levelDonutOption = {
@@ -428,8 +468,9 @@ const levelDonutOption = {
   ],
 };
 
-// === 气体雷达 ===
-const gasRadarOption = {
+// === ② 气体雷达:当前值接 latest.gases 真值,阈值线为国标固定值 ===
+const GAS_KEYS = ["h2", "ch4", "c2h6", "c2h4", "c2h2", "co", "co2"]; // 对应雷达 7 维顺序
+const gasRadarOption = computed(() => ({
   tooltip: { ...TT },
   radar: {
     indicator: [
@@ -463,7 +504,9 @@ const gasRadarOption = {
           itemStyle: { color: "#ef4444" },
         },
         {
-          value: [42.5, 58.2, 22.8, 45.1, 3.24, 312, 1840],
+          value: latest.value
+            ? GAS_KEYS.map((k) => latest.value.gases[k])
+            : [0, 0, 0, 0, 0, 0, 0],
           name: "当前",
           areaStyle: { color: "rgba(6,182,212,.25)" },
           lineStyle: { color: "#06b6d4" },
@@ -472,7 +515,7 @@ const gasRadarOption = {
       ],
     },
   ],
-};
+}));
 
 // === 24h 预警时段分布（4级堆叠条）===
 const hourBarOption = {
@@ -528,39 +571,49 @@ const hourBarOption = {
   ],
 };
 
-// === 检测 3 方法 ===
-const detection = [
-  {
-    name: "阈值法",
-    icon: "mdi:tune-vertical",
-    iconClass: "text-red-400",
-    result: "异常",
-    resultClass: "text-red-300",
-    cls: "bad",
-  },
-  {
-    name: "三比值法",
-    icon: "mdi:calculator-variant",
-    iconClass: "text-red-400",
-    result: "021 低温过热",
-    resultClass: "text-red-300",
-    cls: "bad",
-  },
-  {
-    name: "孤立森林",
-    icon: "mdi:pine-tree",
-    iconClass: "text-red-400",
-    result: "异常",
-    resultClass: "text-red-300",
-    cls: "bad",
-  },
-];
+// === ③ 检测:接 /detect/methods/1 真值(规则法:阈值 + 三比值)===
+// 后端单点只跑规则类两法(阈值/IEC),孤立森林是批量无监督方法不适合单点,
+// 见 api/detect.py 注释;孤立森林结果在 DetectionView 全量对比中展示。
+// 守边界:只显示「异常/正常」二分类,绝不显示 IEC 推出的故障类型。
+const abnTag = (isAbn) =>
+  isAbn
+    ? { result: "异常", resultClass: "text-red-300", iconClass: "text-red-400", cls: "bad" }
+    : { result: "正常", resultClass: "text-green-300", iconClass: "text-green-400", cls: "ok" };
 
-const fusionConclusion = {
-  text: "异常（3/3 一致）",
-  textClass: "text-red-300",
-  cls: "bg-red-500/10 border border-red-500/30",
-};
+const detection = computed(() => {
+  const r = detectResult.value;
+  const th = r ? r.methods.threshold.is_abnormal : false;
+  const ie = r ? r.methods.iec.is_abnormal : false;
+  return [
+    { name: "阈值法", icon: "mdi:tune-vertical", ...abnTag(th) },
+    { name: "三比值法", icon: "mdi:calculator-variant", ...abnTag(ie) },
+    {
+      name: "孤立森林",
+      icon: "mdi:pine-tree",
+      result: "批量法",
+      resultClass: "text-gray-500",
+      iconClass: "text-gray-500",
+      cls: "neutral",
+    },
+  ];
+});
+
+const fusionConclusion = computed(() => {
+  const r = detectResult.value;
+  if (!r) return { text: "加载中…", textClass: "text-gray-400", cls: "bg-gray-500/10 border border-gray-500/30" };
+  const { abnormal_count, total, is_abnormal } = r.vote;
+  return is_abnormal
+    ? {
+        text: `异常（${abnormal_count}/${total} 规则触发）`,
+        textClass: "text-red-300",
+        cls: "bg-red-500/10 border border-red-500/30",
+      }
+    : {
+        text: `正常（${abnormal_count}/${total} 规则触发）`,
+        textClass: "text-green-300",
+        cls: "bg-green-500/10 border border-green-500/30",
+      };
+});
 
 // === 工况 4 mini gauge ===
 const buildGauge = (value, max, unit, color) => ({
@@ -592,12 +645,17 @@ const buildGauge = (value, max, unit, color) => ({
   ],
 });
 
-const conditionGauges = [
-  { label: "油温 / 95℃", option: buildGauge(59, 95, "℃", "#10b981") },
-  { label: "温升 / 3 ℃/h", option: buildGauge(1.2, 3, "", "#10b981") },
-  { label: "负载 / 1.1", option: buildGauge(1.05, 1.1, "", "#f97316") },
-  { label: "环温 / 40℃", option: buildGauge(38, 40, "℃", "#eab308") },
-];
+// === ④ 工况仪表:接 latest.conditions 真值(油温/负载电流/环温)===
+// 后端只有这 3 个工况字段;原「温升 ℃/h」无数据来源,去掉。
+const conditionGauges = computed(() => {
+  const c = latest.value ? latest.value.conditions : null;
+  const r1 = (x) => (x == null ? 0 : +x.toFixed(1));
+  return [
+    { label: "油温 / 95℃", option: buildGauge(r1(c?.oil_temp), 95, "℃", "#10b981") },
+    { label: "负载电流 / 250A", option: buildGauge(r1(c?.load_current), 250, "A", "#f97316") },
+    { label: "环温 / 45℃", option: buildGauge(r1(c?.ambient_temp), 45, "℃", "#eab308") },
+  ];
+});
 
 // === LSTM 预测大图 ===
 const historyDays = Array.from({ length: 30 }, (_, i) => `D-${29 - i}`);
@@ -974,6 +1032,21 @@ const marqueeAlerts = computed(() => [...allAlerts, ...allAlerts]);
 .detect-cell.bad {
   border-color: rgba(239, 68, 68, 0.5);
   background: rgba(239, 68, 68, 0.06);
+}
+
+/* 规划中徽章:标注尚未开发的模块(第 9-13 周),与中期检查"诚实展示"原则一致 */
+.plan-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 9px;
+  font-weight: 500;
+  color: #fcd34d;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  padding: 1px 6px;
+  border-radius: 10px;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 /* Agent 流水线 */

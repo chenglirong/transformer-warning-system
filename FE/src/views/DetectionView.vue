@@ -74,7 +74,7 @@
           >
             <span class="flex items-center gap-2">
               <iconify-icon icon="mdi:chart-bar"></iconify-icon>
-              三方法 6 项指标对比（测试集 812 样本）
+              三方法 5 项指标对比（{{ compare.n_samples }} 天合成时序 · 真值异常 {{ compare.n_abnormal_truth }}）
             </span>
             <span class="text-[10px] text-gray-500">柱越高越好（误报率越低越好）</span>
           </h3>
@@ -86,10 +86,11 @@
         <div class="grid grid-cols-2 gap-3 overflow-hidden" style="flex: 1">
           <div class="glass rounded-lg p-3 flex flex-col overflow-hidden">
             <h3
-              class="panel-title text-sm font-bold text-cyan-300 mb-2"
+              class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5"
             >
               <iconify-icon icon="mdi:scatter-plot"></iconify-icon>
               Isolation Forest 降维散点（PCA）
+              <span class="demo-badge">示意</span>
             </h3>
             <div class="flex-1" style="min-height: 0">
               <EChart :option="scatterOption" />
@@ -99,27 +100,27 @@
           <div class="glass rounded-lg p-3 flex flex-col overflow-hidden">
             <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2">
               <iconify-icon icon="mdi:gauge"></iconify-icon>
-              融合投票混淆矩阵
+              Isolation Forest 混淆矩阵（最优方法）
             </h3>
             <div class="flex-1 grid grid-cols-2 gap-2" style="min-height: 0">
               <div class="conf-cell ok">
                 <p class="text-[10px] text-gray-400">TP 真阳性</p>
-                <p class="text-3xl font-bold text-green-300">184</p>
+                <p class="text-3xl font-bold text-green-300">{{ iforestConfusion.tp }}</p>
                 <p class="text-[10px] text-gray-500">正确告警</p>
               </div>
               <div class="conf-cell warn">
                 <p class="text-[10px] text-gray-400">FP 假阳性</p>
-                <p class="text-3xl font-bold text-orange-300">21</p>
+                <p class="text-3xl font-bold text-orange-300">{{ iforestConfusion.fp }}</p>
                 <p class="text-[10px] text-gray-500">误报</p>
               </div>
               <div class="conf-cell bad">
                 <p class="text-[10px] text-gray-400">FN 假阴性</p>
-                <p class="text-3xl font-bold text-red-300">14</p>
+                <p class="text-3xl font-bold text-red-300">{{ iforestConfusion.fn }}</p>
                 <p class="text-[10px] text-gray-500">漏报</p>
               </div>
               <div class="conf-cell neutral">
                 <p class="text-[10px] text-gray-400">TN 真阴性</p>
-                <p class="text-3xl font-bold text-gray-300">593</p>
+                <p class="text-3xl font-bold text-gray-300">{{ iforestConfusion.tn }}</p>
                 <p class="text-[10px] text-gray-500">正常无误判</p>
               </div>
             </div>
@@ -130,9 +131,10 @@
       <!-- RIGHT col-4: consistency timeline + threshold ref + ratio code -->
       <div class="col-span-4 flex flex-col gap-3 overflow-hidden">
         <div class="glass rounded-lg p-3 flex flex-col overflow-hidden" style="flex: 1">
-          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2">
+          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
             <iconify-icon icon="mdi:timeline-check"></iconify-icon>
             近 7 日检测一致性（融合规则：≥2 异常 → 异常）
+            <span class="demo-badge">示意</span>
           </h3>
           <table class="consistency-table flex-1">
             <thead>
@@ -166,9 +168,10 @@
         </div>
 
         <div class="glass rounded-lg p-3 overflow-hidden">
-          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2">
+          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
             <iconify-icon icon="mdi:tune-vertical"></iconify-icon>
             阈值法参考国标 DL/T 722
+            <span class="demo-badge">示意</span>
           </h3>
           <table class="ref-table">
             <thead>
@@ -219,14 +222,8 @@
               <p>&gt;3 → 2</p>
             </div>
           </div>
-          <div
-            class="mt-2 p-1.5 bg-orange-500/10 border border-orange-500/30 rounded flex justify-between items-center"
-          >
-            <span class="text-[11px] text-gray-400">当前编码</span>
-            <span class="text-[11px] text-orange-300 font-bold">
-              021 → 低温过热 (&lt;300℃)
-            </span>
-          </div>
+          <!-- 系统边界:三比值编码规则可作科普展示,但禁止推出并展示具体故障类型 -->
+          <!-- (原"021 → 低温过热"已删除,IEC 故障类型属诊断系统职责,见 docs/04-architecture.md)-->
         </div>
       </div>
     </main>
@@ -236,102 +233,154 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from "vue";
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import EChart from "@/components/EChart.vue";
 import { AXIS, TT } from "@/utils/chartDefaults";
+import { getDetectCompare } from "@/service/api";
 
-const methods = [
-  {
-    name: "阈值法",
-    desc: "国标 DL/T 722 注意值",
-    icon: "mdi:tune-vertical",
-    iconClass: "text-blue-400",
-    titleClass: "text-blue-300",
-    type: "规则类",
-    tag: "tag-blu",
-    cls: "border-blue-500/40",
-    acc: 88.2,
-    recall: 82.5,
-    fpr: 9.1,
-    best: false,
+// ============ 真值兜底常量(防 Demo 断网)============
+// 来源:scripts/compare_detection.py / GET /api/detect/_internal/compare
+// 基准=合成真值 fault_state,n=360,真值异常 91(D-020/D-021)。
+// 单位为比率(0~1),展示时 ×100 转百分比。
+const FALLBACK = {
+  n_samples: 360,
+  n_abnormal_truth: 91,
+  metrics: {
+    threshold: { accuracy: 0.6056, precision: 0.3679, recall: 0.7802, f1: 0.5, fpr: 0.4535,
+      confusion: { tp: 71, tn: 147, fp: 122, fn: 20 } },
+    iec: { accuracy: 0.675, precision: 0.37, recall: 0.4066, f1: 0.3874, fpr: 0.2342,
+      confusion: { tp: 37, tn: 206, fp: 63, fn: 54 } },
+    iforest: { accuracy: 0.8028, precision: 0.6111, recall: 0.6044, f1: 0.6077, fpr: 0.1301,
+      confusion: { tp: 55, tn: 234, fp: 35, fn: 36 } },
   },
-  {
-    name: "IEC 三比值法",
-    desc: "国标诊断 · 编码故障类型",
-    icon: "mdi:calculator-variant",
-    iconClass: "text-orange-400",
-    titleClass: "text-orange-300",
-    type: "规则类",
-    tag: "tag-org",
-    cls: "border-orange-500/40",
-    acc: 91.5,
-    recall: 87.3,
-    fpr: 6.8,
-    best: false,
-  },
-  {
-    name: "Isolation Forest",
-    desc: "sklearn · 无监督机器学习",
-    icon: "mdi:pine-tree",
-    iconClass: "text-green-400",
-    titleClass: "text-green-300",
-    type: "机器学习",
-    tag: "tag-grn",
-    cls: "border-green-500/40 highlight",
-    acc: 94.1,
-    recall: 91.2,
-    fpr: 4.7,
-    best: true,
-  },
-];
+};
 
-const compareOption = {
-  tooltip: { trigger: "axis", ...TT },
-  legend: {
-    textStyle: { color: "#9ca3af", fontSize: 10 },
-    top: 0,
-    right: 0,
-    itemWidth: 10,
-    itemHeight: 6,
-  },
-  grid: { top: 30, bottom: 25, left: 40, right: 10 },
-  xAxis: {
-    type: "category",
-    data: ["准确率", "精确率", "召回率", "F1-Score", "AUC", "误报率"],
-    ...AXIS,
-  },
-  yAxis: {
-    type: "value",
-    ...AXIS,
-    max: 100,
-    axisLabel: { ...AXIS.axisLabel, formatter: "{value}%" },
-  },
-  series: [
+// 实时拉取的对比数据;拉取失败回退到 FALLBACK
+const compare = ref(FALLBACK);
+
+const pct = (x) => +(x * 100).toFixed(1); // 比率 → 百分比(1 位小数)
+
+onMounted(async () => {
+  try {
+    const data = await getDetectCompare();
+    if (data?.metrics) compare.value = data;
+  } catch (e) {
+    // 静默回退到真值兜底常量,保证 Demo 可离线展示
+    console.warn("[DetectionView] 对比接口拉取失败,使用真值兜底常量", e);
+  }
+});
+
+// ① 三方法卡片:指标来自 compare.value.metrics(真值,非杜撰)
+// 卡片只展示「准确率 / 召回率 / 误报率」三项,完整 6 项见下方柱状图
+const methods = computed(() => {
+  const m = compare.value.metrics;
+  return [
     {
       name: "阈值法",
-      type: "bar",
-      data: [88.2, 85.3, 82.5, 83.9, 86.4, 9.1],
-      itemStyle: { color: "#3b82f6", borderRadius: [3, 3, 0, 0] },
-      barWidth: 14,
+      desc: "国标 DL/T 722 注意值",
+      icon: "mdi:tune-vertical",
+      iconClass: "text-blue-400",
+      titleClass: "text-blue-300",
+      type: "规则类",
+      tag: "tag-blu",
+      cls: "border-blue-500/40",
+      acc: pct(m.threshold.accuracy),
+      recall: pct(m.threshold.recall),
+      fpr: pct(m.threshold.fpr),
+      best: false,
     },
     {
       name: "IEC 三比值法",
-      type: "bar",
-      data: [91.5, 89.7, 87.3, 88.5, 90.2, 6.8],
-      itemStyle: { color: "#f97316", borderRadius: [3, 3, 0, 0] },
-      barWidth: 14,
+      desc: "国标比值法 · 内部分组用",
+      icon: "mdi:calculator-variant",
+      iconClass: "text-orange-400",
+      titleClass: "text-orange-300",
+      type: "规则类",
+      tag: "tag-org",
+      cls: "border-orange-500/40",
+      acc: pct(m.iec.accuracy),
+      recall: pct(m.iec.recall),
+      fpr: pct(m.iec.fpr),
+      best: false,
     },
     {
       name: "Isolation Forest",
-      type: "bar",
-      data: [94.1, 92.8, 91.2, 92.0, 94.6, 4.7],
-      itemStyle: { color: "#10b981", borderRadius: [3, 3, 0, 0] },
-      barWidth: 14,
+      desc: "sklearn · 无监督机器学习",
+      icon: "mdi:pine-tree",
+      iconClass: "text-green-400",
+      titleClass: "text-green-300",
+      type: "机器学习",
+      tag: "tag-grn",
+      cls: "border-green-500/40 highlight",
+      acc: pct(m.iforest.accuracy),
+      recall: pct(m.iforest.recall),
+      fpr: pct(m.iforest.fpr),
+      best: true, // F1 最高、误报率最低(D-021)
     },
-  ],
-};
+  ];
+});
 
+// ② 6 项指标柱状图 → 真值,5 项(砍掉后端未计算的 AUC)
+// 一个方法的指标按 [准确率,精确率,召回率,F1,误报率] 排列,均 ×100
+const metricRow = (mm) =>
+  [mm.accuracy, mm.precision, mm.recall, mm.f1, mm.fpr].map((v) => pct(v));
+
+const compareOption = computed(() => {
+  const m = compare.value.metrics;
+  return {
+    tooltip: { trigger: "axis", ...TT },
+    legend: {
+      textStyle: { color: "#9ca3af", fontSize: 10 },
+      top: 0,
+      right: 0,
+      itemWidth: 10,
+      itemHeight: 6,
+    },
+    grid: { top: 30, bottom: 25, left: 40, right: 10 },
+    xAxis: {
+      type: "category",
+      data: ["准确率", "精确率", "召回率", "F1-Score", "误报率"],
+      ...AXIS,
+    },
+    yAxis: {
+      type: "value",
+      ...AXIS,
+      max: 100,
+      axisLabel: { ...AXIS.axisLabel, formatter: "{value}%" },
+    },
+    series: [
+      {
+        name: "阈值法",
+        type: "bar",
+        data: metricRow(m.threshold),
+        itemStyle: { color: "#3b82f6", borderRadius: [3, 3, 0, 0] },
+        barWidth: 14,
+      },
+      {
+        name: "IEC 三比值法",
+        type: "bar",
+        data: metricRow(m.iec),
+        itemStyle: { color: "#f97316", borderRadius: [3, 3, 0, 0] },
+        barWidth: 14,
+      },
+      {
+        name: "Isolation Forest",
+        type: "bar",
+        data: metricRow(m.iforest),
+        itemStyle: { color: "#10b981", borderRadius: [3, 3, 0, 0] },
+        barWidth: 14,
+      },
+    ],
+  };
+});
+
+// ③ 混淆矩阵:展示最优方法 Isolation Forest 的真实四格(D-021)
+const iforestConfusion = computed(() => compare.value.metrics.iforest.confusion);
+
+// ⚠️ 以下为右侧栏示意数据(Y2):散点/近7日一致性/阈值参考表
+// 本周仅接左侧指标对比真值,右侧明细待第 8 周联调时接业务接口。
 const scatterData = [];
 for (let i = 0; i < 220; i++) {
   scatterData.push([
@@ -435,6 +484,17 @@ const thresholds = [
   display: flex;
   align-items: center;
   gap: 3px;
+}
+
+/* 示意数据标签:右侧明细本周未接真实接口(Y2),待第 8 周联调 */
+.demo-badge {
+  font-size: 9px;
+  font-weight: 500;
+  color: #fcd34d;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  padding: 1px 6px;
+  border-radius: 10px;
 }
 
 .metric-mini {
