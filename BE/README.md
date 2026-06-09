@@ -18,17 +18,24 @@ pip install -r requirements.txt
 cp .env.example .env
 # 可按需修改 .env
 
-# 4. 初始化数据库(建表)
-python -m scripts.init_db
+# 4. 建表 + 准备数据(顺序不能乱,否则库为空、前端全 0)
+python -m scripts.init_db          # 建表
+python -m scripts.synthesize_data  # 合成 360 天单设备时序 → data/
+python -m scripts.import_data      # 合成数据入库 SQLite
+python -m scripts.build_features   # 特征工程 → featured CSV
 
-# 5. 导入合成数据到 SQLite(否则前端拉不到数据)
-python -m scripts.import_data
-
-# 6. 启动
+# 5. 启动
 uvicorn app.main:app --reload
 ```
 
 打开 http://localhost:8000/docs 查看 Swagger。
+
+## 测试
+
+```bash
+source .venv/bin/activate
+python -m pytest tests/ -v          # 算法层 + API 边界契约,25 用例
+```
 
 ## 目录
 

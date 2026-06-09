@@ -24,11 +24,26 @@ cd BE
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-python -m scripts.init_db
+
+# 建表 + 准备数据(顺序不能乱,否则库为空)
+python -m scripts.init_db          # 建表
+python -m scripts.synthesize_data  # 合成 360 天单设备时序 → data/
+python -m scripts.import_data      # 合成数据入库 SQLite
+python -m scripts.build_features   # 特征工程 → featured CSV
+
 uvicorn app.main:app --reload
 ```
 
 → http://localhost:8000/docs
+
+> ⚠️ 跳过 `synthesize_data` / `import_data` 会得到空库,Dashboard 显示全 0。
+
+### 测试
+
+```bash
+cd BE && source .venv/bin/activate
+python -m pytest tests/ -v          # 算法层 + API 边界契约,25 用例
+```
 
 ### 前端
 
