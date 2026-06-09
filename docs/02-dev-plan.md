@@ -57,6 +57,7 @@
 | 准确率/召回率/误报率对比表 → 论文素材 | 表格 + 混淆矩阵图(`figures/detection_confusion.png`) | ✅ |
 | 检测 API(后端) | `/api/detect/methods/{id}` + `/_internal/compare`;共享 `detect/metrics.py` | ✅ |
 | DetectionView 对接(前端) | FE 调用 `/api/detect/*` 渲染三方法对比 | 🔶 左侧指标对比接真值✅(D-022);右侧单点明细打「示意」标签,待第 8 周联调 |
+| 算法层单元测试 | `tests/test_detect.py`(pytest,17 用例覆盖三检测器 + metrics 契约与边界) | ✅ |
 
 **🎯 基准说明**(D-020 修订):原始 `Fault` 列 97.6% 未标注(D-008),不可用。**最终以合成时序的真实状态标签 `fault_state` 为 ground truth**,三方法(阈值/IEC/IF)平等评估。IEC 自动打标仅用于合成器状态库分组,不再充当对比基准(避免"自己跟自己比")。
 
