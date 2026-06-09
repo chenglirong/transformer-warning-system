@@ -171,7 +171,6 @@
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
             <iconify-icon icon="mdi:tune-vertical"></iconify-icon>
             阈值法参考国标 DL/T 722
-            <span class="demo-badge">示意</span>
           </h3>
           <table class="ref-table">
             <thead>
@@ -238,7 +237,7 @@ import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import EChart from "@/components/EChart.vue";
 import { AXIS, TT } from "@/utils/chartDefaults";
-import { getDetectCompare } from "@/service/api";
+import { getDetectCompare, getLatest } from "@/service/api";
 
 // ============ 真值兜底常量(防 Demo 断网)============
 // 来源:scripts/compare_detection.py / GET /api/detect/_internal/compare
@@ -260,6 +259,10 @@ const FALLBACK = {
 // 实时拉取的对比数据;拉取失败回退到 FALLBACK
 const compare = ref(FALLBACK);
 
+// 单台最新一条监测(阈值参考表用真实气体值)
+const TRANSFORMER_ID = 1; // 单设备方案
+const latest = ref(null);
+
 const pct = (x) => +(x * 100).toFixed(1); // 比率 → 百分比(1 位小数)
 
 onMounted(async () => {
@@ -269,6 +272,11 @@ onMounted(async () => {
   } catch (e) {
     // 静默回退到真值兜底常量,保证 Demo 可离线展示
     console.warn("[DetectionView] 对比接口拉取失败,使用真值兜底常量", e);
+  }
+  try {
+    latest.value = await getLatest(TRANSFORMER_ID);
+  } catch (e) {
+    console.warn("[DetectionView] latest 拉取失败,阈值表显示占位", e);
   }
 });
 
@@ -452,12 +460,44 @@ const dailyDetections = [
   { day: "今日", threshold: "bad", ratio: "bad", forest: "bad", final: "异常", finalTag: "tag-red" },
 ];
 
-const thresholds = [
-  { gas: "H₂",   threshold: "150 ppm", current: "42.5",  currClass: "text-green-400",  result: "正常", tag: "tag-grn" },
-  { gas: "C₂H₂", threshold: "5 ppm",   current: "3.24",  currClass: "text-red-400",    result: "趋近", tag: "tag-red" },
-  { gas: "C₂H₄", threshold: "100 ppm", current: "45.1",  currClass: "text-yellow-400", result: "关注", tag: "tag-yel" },
-  { gas: "总烃", threshold: "150 ppm", current: "129.3", currClass: "text-yellow-400", result: "关注", tag: "tag-yel" },
-];
+// 阈值参考表:接 latest.gases 真实气体值,阈值口径与后端 ATTENTION_VALUES 一致
+// (threshold.py:h2=150 / c2h2=5 / 总烃=150 / co=300;单个烃类不单设,按总烃合并判)
+// 判定分档:超注意值→异常;≥80%→趋近;≥50%→关注;否则正常
+const ATTENTION = { h2: 150, c2h2: 5, total_hydrocarbon: 150, co: 300 };
+
+const judge = (v, limit) => {
+  const ratio = v / limit;
+  if (ratio > 1) return { result: "异常", currClass: "text-red-400", tag: "tag-red" };
+  if (ratio >= 0.8) return { result: "趋近", currClass: "text-orange-400", tag: "tag-org" };
+  if (ratio >= 0.5) return { result: "关注", currClass: "text-yellow-400", tag: "tag-yel" };
+  return { result: "正常", currClass: "text-green-400", tag: "tag-grn" };
+};
+
+const thresholds = computed(() => {
+  const g = latest.value?.gases;
+  if (!g) {
+    // 未加载:显示占位(横线),不杜撰数值
+    return [
+      { gas: "H₂", threshold: "150 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "C₂H₂", threshold: "5 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "总烃", threshold: "150 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "CO", threshold: "300 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+    ];
+  }
+  const totalHc = g.ch4 + g.c2h4 + g.c2h6 + g.c2h2; // 总烃合成项(同后端口径)
+  const rows = [
+    { gas: "H₂", key: "h2", val: g.h2, limit: ATTENTION.h2 },
+    { gas: "C₂H₂", key: "c2h2", val: g.c2h2, limit: ATTENTION.c2h2 },
+    { gas: "总烃", key: "total_hydrocarbon", val: totalHc, limit: ATTENTION.total_hydrocarbon },
+    { gas: "CO", key: "co", val: g.co, limit: ATTENTION.co },
+  ];
+  return rows.map((r) => ({
+    gas: r.gas,
+    threshold: `${r.limit} ppm`,
+    current: r.val.toFixed(2),
+    ...judge(r.val, r.limit),
+  }));
+});
 </script>
 
 <style scoped>
