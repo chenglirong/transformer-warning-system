@@ -15,7 +15,7 @@
 | 模块 4 预测 | ⬜ | `predict/` 空 |
 | 模块 5 决策 | ⬜ | `warning/` 空(但 `Warning` 表已建好) |
 | 模块 6 Agent | ⬜ | `agent/` 空(但 `AgentRun` 表已建好) |
-| 模块 7 大屏 | 🔶 | 5 视图 UI 已建,KPI 待接真实数据 |
+| 模块 7 大屏 | 🔶 | Dashboard/Detection 已接真值(D-022/023/025);Prediction/Analysis/Alerts 加「规划中」横幅,待对应模块开发(D-026);Analysis 删 IEC 编码越界展示 |
 
 ## 全局视图
 

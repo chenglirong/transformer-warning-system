@@ -4,6 +4,8 @@
       title="三 层 指 标 体 系（数 据 看 板）"
       icon="mdi:layers-triple"
       subtitle="DGA 七气体 · 衍生指标（特征工程） · 工况辅助"
+      :planning="true"
+      planning-text="部分指标(气体/工况/特征)有真实数据底子,展示与预警规则联动部分为规划中示意"
     />
 
     <main class="flex-1 flex flex-col gap-2 p-3 overflow-hidden" style="min-height: 0">
@@ -83,7 +85,7 @@
           <div class="col-span-4 flex flex-col gap-2 overflow-hidden">
             <div class="derived-card flex-1 flex flex-col">
               <p class="text-[11px] text-gray-400 mb-1.5">
-                IEC 三比值法 · 编码 / 判定
+                气体特征比值(衍生指标)
               </p>
               <div class="grid grid-cols-3 gap-1.5 text-center">
                 <div
@@ -93,7 +95,6 @@
                 >
                   <p class="text-[9px] text-gray-500">{{ r.name }}</p>
                   <p class="text-base font-bold text-yellow-400">{{ r.value }}</p>
-                  <p class="text-[10px] text-gray-400">编码 {{ r.code }}</p>
                 </div>
               </div>
               <div
@@ -324,10 +325,12 @@ const gases = [
   },
 ];
 
+// 气体特征比值(中性衍生指标)。注:不展示 IEC 三比值「编码」——
+// 编码是 IEC 故障推理的内部步骤,属诊断系统职责,守系统边界(docs/04)
 const ratios = [
-  { name: "C₂H₂/C₂H₄", value: "0.072", code: 0 },
-  { name: "CH₄/H₂", value: "1.37", code: 2 },
-  { name: "C₂H₄/C₂H₆", value: "1.98", code: 1 },
+  { name: "C₂H₂/C₂H₄", value: "0.072" },
+  { name: "CH₄/H₂", value: "1.37" },
+  { name: "C₂H₄/C₂H₆", value: "1.98" },
 ];
 
 const rateOption = {

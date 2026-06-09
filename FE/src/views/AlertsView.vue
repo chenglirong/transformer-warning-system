@@ -4,6 +4,8 @@
       title="预 警 工 单 与  A g e n t  推 理"
       icon="mdi:clipboard-list"
       subtitle="4 级分级 · 规则原文 · ReAct 推理追溯"
+      :planning="true"
+      planning-text="预警决策(第 11-12 周)与 LangChain Agent(第 13 周)计划开发,本页为交互设计稿,工单与推理为示意"
     />
 
     <!-- 顶部 KPI -->

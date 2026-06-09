@@ -4,6 +4,8 @@
       title="L S T M 预 测 · A R I M A 对 比 实 验"
       icon="mdi:chart-timeline-variant-shimmer"
       subtitle="多输出回归 · 7 气体同步预测 · 1-3 天滚动"
+      :planning="true"
+      planning-text="LSTM 预测模块计划第 9-10 周开发,本页为交互设计稿,曲线为示意非真实预测"
     />
 
     <!-- 顶部对比 KPI -->

@@ -50,6 +50,20 @@
       <span class="text-cyan-300 font-mono">{{ clock }}</span>
     </div>
   </header>
+
+  <!-- 规划中横幅:标注该页依赖尚未开发的模块(LSTM/预警/Agent),展示为交互设计稿 -->
+  <div
+    v-if="planning"
+    class="flex items-center justify-center gap-2 py-1.5 text-[12px] font-medium"
+    style="
+      background: rgba(234, 179, 8, 0.12);
+      border-bottom: 1px solid rgba(234, 179, 8, 0.35);
+      color: #fcd34d;
+    "
+  >
+    <iconify-icon icon="mdi:hammer-wrench" class="text-sm"></iconify-icon>
+    <span>{{ planningText }}</span>
+  </div>
 </template>
 
 <script setup>
@@ -63,6 +77,12 @@ const props = defineProps({
   subtitle: { type: String, default: "" },
   showBack: { type: Boolean, default: true },
   large: { type: Boolean, default: false },
+  // 规划中标注:该页依赖未开发模块时置 true,顶部显示黄色横幅
+  planning: { type: Boolean, default: false },
+  planningText: {
+    type: String,
+    default: "本页为规划中功能的交互设计稿,所示数据为示意,非真实计算结果",
+  },
 });
 
 const clock = useClock();
