@@ -47,6 +47,7 @@
 - **修法(方案 A,根治)**:删除 `.env` 中 `DATABASE_URL` 行,回落到 config.py 健壮默认值。验证:从项目根起,生效值=绝对路径 `sqlite:////…/BE/data/app.db`,接口 200 返 360 条真值
 - **清理**:删除两个 0 字节空库 `BE/app.db`、`data/app.db`(真身 `BE/data/app.db` 802KB 完好)
 - **教训**:SQLite 相对路径配置脆弱、随启动目录漂移;凡路径配置优先用 `__file__` 派生绝对路径。`config.py` 本已正确,坑在 `.env` 覆盖
+- **补记(2026-06-09,提交 822e43e)**:当时只改了本地 `BE/.env`,**漏改模板 `BE/.env.example`**(它仍留相对路径且进 git)。`cp .env.example .env` 会让坑通过模板复发。已同步删除 `.env.example` 的相对 `DATABASE_URL`,改为回落绝对默认值;并补 README 数据准备链(原仅 `init_db`/`import_data`,缺 `synthesize_data`/`build_features` 会得空库)
 
 ### D-023:DashboardView 接真值(P1:4 块接真 + 6 块标「规划中」)
 
