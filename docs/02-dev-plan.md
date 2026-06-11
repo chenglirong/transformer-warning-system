@@ -12,10 +12,10 @@
 | 模块 2 特征 | ✅ | `features.py`(48 特征);`featured_timeseries.csv` |
 | 前端联调 | ✅ | vite proxy + `api/data.py`(已守系统边界,只回 is_abnormal) |
 | 模块 3 检测 | ✅ | 三方法齐全(`iec`/`threshold`/`iforest`,统一 `detect_df`)+ `compare_detection.py` + 混淆矩阵图 + 后端 `/api/detect/*`(D-020/D-021);**前端 DetectionView 对接欠账** |
-| 模块 4 预测 | ⬜ | `predict/` 空 |
+| 模块 4 预测 | ✅ | `predict/`(dataset/lstm/arima/rolling)+ `train_lstm.py`/`compare_predict.py` + `tests/test_predict.py`(14 用例)+ `/api/predict/compare` + PredictionView 据实接真。实测 ARIMA 全面优于 LSTM(D-027~031)|
 | 模块 5 决策 | ⬜ | `warning/` 空(但 `Warning` 表已建好) |
 | 模块 6 Agent | ⬜ | `agent/` 空(但 `AgentRun` 表已建好) |
-| 模块 7 大屏 | 🔶 | Dashboard/Detection 已接真值(D-022/023/025);Prediction/Analysis/Alerts 加「规划中」横幅,待对应模块开发(D-026);Analysis 删 IEC 编码越界展示 |
+| 模块 7 大屏 | 🔶 | Dashboard/Detection 接真(D-022/023/025);Prediction 据实改形接真(D-031:ARIMA 胜);**Alerts 重设计为预警工单工作台(D-035:全量228条+分页+筛选/排序/搜索;详情拆预警信息+`AgentTrace.vue`组件 Agent推理时间线[ReAct三要素+示意数据标];回测指标移出待迁Analysis)**;**仅剩 Analysis 挂「规划中」**(待模块6 + 算法评测tab);Analysis 删 IEC 编码越界展示 |
 
 ## 全局视图
 
@@ -79,15 +79,19 @@
 
 ## 阶段四:LSTM 预测(第 9-10 周,6/23-7/6)⭐核心
 
-| 任务 | 输出 |
-|------|------|
-| 第 9 周初:升级 Python 3.11 + 装 TensorFlow(D-003) | 环境就绪 |
-| 滑窗造样本(过去 30 天 → 第 31 天,单步) | `algorithms/predict/dataset.py` |
-| ARIMA 基线(7 气体 for 循环) | `algorithms/predict/arima.py` |
-| LSTM 多输出回归 `Sequential([LSTM(64), Dense(7)])` | `algorithms/predict/lstm.py` + `model.h5` |
-| 滚动预测(迭代 3 次 → 1-3 天) | `algorithms/predict/rolling.py` |
-| 对比实验(MAE/RMSE/MAPE) | `scripts/compare_predict.py` + 7 子图(`figures/`) |
-| PredictionView 对接 | `/api/predict/lstm` |
+> **⏩ 提前启动**(2026-06-10,第 7 周):异常检测收尾后提前介入本核心模块,为最高风险项留缓冲。架构定调「离线训练 + 在线推理」,框架/环境路线锁定见 **D-027**。
+
+| 任务 | 输出 | 状态 |
+|------|------|------|
+| 第 9 周初:升级 Python 3.11 + 装 TensorFlow(D-003) | 环境就绪(3.11.12 + TF 2.16.2 + Keras 3.14.1;Intel mac 用标准 tensorflow)| ✅ 提前完成 D-027 |
+| 滑窗造样本(过去 30 天 → 第 31 天,单步) | `algorithms/predict/dataset.py` | ✅ 阶段 B1(D-028) |
+| ARIMA 基线(7 气体 for 循环) | `algorithms/predict/arima.py` | ✅ 阶段 B2(D-029) |
+| LSTM 多输出回归 `Sequential([LSTM(64), Dense(7)])` | `algorithms/predict/lstm.py` + `lstm.h5`(加载须 `compile=False`,见 D-027 踩坑)| ✅ 阶段 B1(D-028,推理模块)+ `train_lstm.py` 已训练落盘 |
+| 滚动预测(迭代 3 次 → 1-3 天) | `algorithms/predict/rolling.py` | ✅ 阶段 B2(D-029) |
+| 训练脚本(离线,落盘 `.h5`+scaler) | `scripts/train_lstm.py` | ✅ 阶段 B1(D-028,已跑通) |
+| 对比实验(MAE/RMSE/MAPE) | `scripts/compare_predict.py` + 7 子图(`figures/`) | ✅ 阶段 B2(D-029,ARIMA 全面胜)|
+| 算法层单元测试 | `tests/test_predict.py`(pytest,14 用例覆盖 dataset/arima/rolling 契约与边界;rolling 用 stub model 不依赖 .h5)| ✅ 阶段 B 收尾 |
+| PredictionView 对接 + 摘「规划中」横幅(D-026)| `/api/predict/compare` + predict_eval.json 落盘 | ✅ 阶段 C/D(D-031 翻转 ARIMA 胜;D-036 补回滚动预测块:tab 切 LSTM 回灌/ARIMA 多步 + 气体可切换,接真)|
 
 **⚠️ 风险预案**(论文已写):
 - 第 9 周末必须能"跑通"(loss 下降即可)
@@ -98,16 +102,19 @@
 
 ## 阶段五:预警决策(第 11-12 周,7/7-7/20)⭐核心
 
-| 任务 | 输出 |
-|------|------|
-| 规则引擎核心(YAML/JSON 配置化) | `algorithms/warning/rules.yaml` |
-| 三类规则:硬规则、软规则、组合规则 | `algorithms/warning/engine.py` |
-| 四级分级(红橙黄蓝) | 同上 |
-| 误报控制:连续 N 次触发 + 24h 去重 | `algorithms/warning/dedup.py` |
-| 历史回测(360 天合成时序) | `scripts/backtest.py` |
-| AlertsView 对接 | `/api/warning/*` |
+> **⏩ 提前启动**(2026-06-11,第 7 周):模块 4 提前完工后顺势启动。本轮做**算法核心**(用户选),回测/API/前端留下一轮。**软规则的预测源 = ARIMA**(承 D-029 实测更稳健,见 D-032)。
 
-**🎯 回测基准**:原始快照无时间维,无法回测时序预警。改用 **360 天合成时序**,以 IEC `is_abnormal` 标签算 TP/FP/FN → 论文素材。
+| 任务 | 输出 | 状态 |
+|------|------|------|
+| 规则引擎核心(YAML 配置化) | `algorithms/warning/rules.yaml` | ✅ B1(D-032) |
+| 三类规则:硬规则、软规则、组合规则 | `algorithms/warning/engine.py` | ✅ B1(D-032,软规则用 ARIMA)|
+| 四级分级(红橙黄蓝) | 同上(LEVEL_ORDER 取最高) | ✅ B1(D-032) |
+| 误报控制:连续 N 次触发 + 24h 去重 | `algorithms/warning/dedup.py` | ✅ B1(D-032) |
+| 算法层单元测试 | `tests/test_warning.py`(17 用例) | ✅ B1(D-032) |
+| 历史回测(360 天合成时序) | `scripts/backtest.py` + `warning_backtest.json` + 图 | ✅ B2(D-033,误报率 93%→70%,剩余为数据弱可分性)|
+| AlertsView 对接 | `/api/warning/backtest` + 接真 + 摘横幅 | ✅ C(D-034,工单接真+清越界+Agent标规划中)|
+
+**🎯 回测基准**(D-033 修订):原始快照无时间维,无法回测时序预警。改用 **360 天合成时序**,以**合成真值 `fault_state`** 算 TP/FP/FN(与检测模块 D-020 同一基准,不再用 IEC 标签——IEC 是内部打标工具,且 D-020 已否决其作基准)→ 论文素材。当日对齐口径;软规则预测源 ARIMA(D-032)。
 
 ---
 
@@ -121,7 +128,7 @@
 | ReAct Prompt 模板(写死 5 步) | ~30 |
 | AgentExecutor + 定时调度 | ~40 |
 | 降级处理(Agent 失败 → 纯 Pipeline) | ~20 |
-| Agent 执行轨迹接入 AnalysisView | `/api/agent/run` |
+| Agent 执行轨迹接入 **AlertsView 工单详情**(点单追溯,D-035 纠正:原写 AnalysisView 无依据且与其指标看板定位冲突;论文模块7「Agent可视化」是独立模块,与工单一对一绑定最合理)| `/api/agent/run`(组件 `AgentTrace.vue` 已就位,现挂示意数据)|
 
 **⚠️ 提前**:第 12 周末就跑通 LangChain hello world,确认 API key/环境 OK。
 

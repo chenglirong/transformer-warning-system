@@ -2,6 +2,207 @@
 
 > 按时间倒序记录开发过程中的重大决策。新决策追加到顶部。
 
+## 2026-06-11 AlertsView 补回 AI 预警通知块(示意数据)
+
+### D-037:Alerts 工单详情补回「AI 预警通知」块,示意数据 + 规划中标
+
+- **背景**:D-034 删 Alerts 通知块删过头(同 D-036 性质)。通知确属模块6(LLM生成),但论文模块7 明列「AI 预警通知展示 ⭐」,应同 AgentTrace 用示意+规划中标补回,不整块抹掉
+- **实现**:工单详情右列底部加「AI 预警通知(LLM 生成)」块(flex 0.7),`noticeText` computed 按选中工单生成通知文本(等级/触发规则/预测趋势/响应级别/日期),带「模块6·第13周·示意数据」紫色标
+- **守边界**:只含等级/规则/响应级别/趋势,**无故障类型/置信度/运维处置建议**;趋势措辞用 ARIMA(D-032)
+- **核验**:`npm run build` 通过(AlertsView 13.41KB)
+- **同步**:本条 D-037
+
+---
+
+## 2026-06-11 PredictionView 补回滚动预测块(LSTM/ARIMA tab 对比)
+
+### D-036:滚动预测推理改 tab 切两模型 + 气体可切换,据实接真
+
+- **背景**:用户发现 D-031 删 PredictionView 滚动预测块删过头了——当时该删的只是那组**杜撰数字**(D+1=3.42→4.05ppm)和 LSTM 创新点误导,但**滚动预测功能本身是真实能力**(rolling.py 已实现),不该整块删
+- **用户定方案**:改 **tab 切换,LSTM 和 ARIMA 两个模型的滚动都展示** —— 与全页对比研究叙事一致,LSTM 数值离谱反成对比素材(印证局限),不回避
+- **后端**:`compare_predict.py` 加滚动预测落盘——取最后 30 天历史,LSTM 用 `rolling_forecast` 迭代回灌、ARIMA 用 `forecast_arima(steps=3)` 原生多步,各出未来 1-3 天;连同最近 7 天真值落盘进 `predict_eval.json` 的 `rolling` 字段(history/lstm/arima)
+- **前端**:PredictionView 右列加滚动预测块(flex 1.2)——**tab 切 LSTM 回灌 / ARIMA 多步**,**气体可切换**(下拉,复用 gasOptions),展示「最近 7 天真值 + 未来 3 天预测」曲线,预测段 markArea 高亮;默认 ARIMA(主力)。loss 块缩 flex 0.9 腾位
+- **守边界**:据真接 `predict_eval.json`,非杜撰;两模型机制注脚说明(LSTM 回灌 vs ARIMA 原生多步)
+- **核验**:compare_predict 重跑落盘 rolling;`npm run build` 通过(PredictionView 13.03KB)
+- **同步**:本条 D-036;dev-plan 阶段四 PredictionView 行
+
+---
+
+## 2026-06-11 AlertsView 产品级重设计:工单工作台 + Agent 推理时间线(布局先行)
+
+### D-035:Alerts 重设计为预警工单工作台 + AgentTrace 组件;纠正 Agent 归属;回测指标待迁 Analysis
+
+- **背景**:用户从产品角度质疑 D-034 后的 Alerts:① 只展示最近 20 条(且恰全是同一规则 T-02,看不到 80 条红色)② 把回测评测指标和预警工单混在一起(受众不同)③ Agent 区块设计丑
+- **Agent 归属纠正(连环查证)**:dev-plan 第 131 行原写「Agent 执行轨迹接入 AnalysisView」——查证发现**无论文依据**(论文模块7「Agent执行可视化」是独立 ⭐ 模块),且与 AnalysisView「三层指标看板」定位冲突。我前两轮被这行带着走没核实。**与用户确认最终定位:Agent 轨迹与工单一对一绑定**(点工单看这条预警背后 Agent 怎么推出来的),留 **AlertsView 工单详情**最合理,不拆独立页、不塞 Analysis
+- **Agent 模块未开发 → 布局先行(用户拍板)**:本轮只做布局,用**模拟数据**把 Agent ReAct 展示设计专业,后续开发完接 `/api/agent/run`。模拟数据**带显眼「模块6·第13周·示意数据」标识**(承 P1 诚实原则 D-023)
+- **后端铺垫(task 18/19)**:`backtest.py` 落盘从 `recent_alerts[-20:]` 改全量 `alerts`(228条,每条 date/level/rule_ids/rule_types/response/true_abnormal);warning API 透传(端到端验证 228条/80红)
+- **新建 `FE/src/components/AgentTrace.vue`**:Agent ReAct 轨迹组件。顶部状态条(步数/总耗时/成功或降级 chip)+ 时间线(状态色点+连接线)+ 每步可展开 Thought/Action/Observation 三要素 + 失败降级高亮 + 「模块6·第13周·示意数据」紫色标。Timeline.vue 保持通用不动。模块6接真只改此组件数据源
+- **`AlertsView.vue` 重写为工单工作台**:全量228条 + 前端分页(每页20)+ 规则类型筛选 + 时间/紧急度排序 + 日期/规则号搜索;详情拆「预警信息」(等级/规则编号/类型/响应级别)+ `<AgentTrace>`;**移除回测指标块**(数据仍在 warning API,下轮迁 Analysis)。模拟轨迹按工单等级映射(红/黄不同推理),forecast 用 ARIMA(D-032 非 LSTM)
+- **守边界**:Agent 模拟数据带示意标(D-023);源码边界自查排除注释后无故障类型/置信度/运维处置词(D-008);轨迹用 ARIMA;不显「误报」(运维当下不知真值,回测命中分析归 Analysis 评测)
+- **核验(独立,非桥接回执)**:`npm run build` 通过(AlertsView 12.76KB);node 复刻 — 全量228/12页、红色80(截断版看不到)、搜索 2025-03 命中26、硬规则筛选60;边界自查 PASS;onMounted 无重复 import
+- **下轮**:AnalysisView 加「算法评测」tab 容纳迁出的回测 confusion/metrics/混淆矩阵(task 21)
+- **同步**:本条 D-035;`02-dev-plan.md` 模块7大屏行 + 第131行 Agent 归属纠正;论文模块7 Agent 可视化形态(嵌工单详情点单追溯)记一笔
+
+---
+
+## 2026-06-11 模块 5 阶段 C:warning API + AlertsView 据实改形(D-030 第二例)
+
+### D-034:AlertsView 工单接真 + 清越界/杜撰 + Agent 区块标规划中;摘横幅
+
+- **背景**:模块 5 收口前端。AlertsView 原是 D-026 标「规划中」的设计稿,691 行,混了模块5(预警工单)+模块6(Agent 轨迹),且多处**越界 + 杜撰**:IEC 故障类型「低温过热/编码021」、运维建议「立即停运」、置信度 92%、LSTM 预测、编造的规则编号 R002/R005(与 rules.yaml 真实 H/S/T/C 不符)、整套 Agent ReAct 轨迹(模块6未开发)
+- **方案(用户选 ③:接真预警 + Agent 标规划中)**,但加边界红线:Agent 区块即使标规划中,**越界/误导内容也必须清除**(IEC故障类型/置信度/LSTM 标规划中也不能留)
+- **后端**:`app/api/warning.py`(`/api/warning/backtest` 读 warning_backtest.json,文件不存在 404);main.py 注册;`getWarningBacktest` 入 service/api
+- **前端改形(AlertsView 全量重写,691→精简)**:
+  - KPI:接 `level_distribution` 四级真值(红80/橙13/黄135/蓝0)+ 总数,可筛选
+  - 工单列表:接 `recent_alerts`,据实映射(WO编号/日期/等级/**真实规则编号 H-S-T-C**/响应级别)。标题只说「触发哪些规则 + 规则类型」,**无故障类型/无运维建议**
+  - **误报如实标注**:工单按 `true_abnormal` 标「命中真值/误报」——诚实暴露 70% 误报(D-033),不掩饰
+  - 回测指标块:接真召回/精确/误报/F1/混淆,注脚说明误报偏高是数据可分性所致
+  - Agent 区块:清掉越界内容,保留 5 步**结构示意**(get_today_data/detect_anomaly/forecast_trend(ARIMA 非 LSTM)/check_warning/compose_notice)+ 显眼「模块6·第13周开发」紫色标;删通义千问 qwen-turbo 既成事实表述
+  - 删通知文本块(LLM Final Answer 是模块6,且原文含越界);摘 `:planning` 横幅
+  - 兜底 FALLBACK 真值常量(断网 recent_alerts 留空不杜撰)
+- **核验(独立,非桥接回执)**:后端 curl 两次一致(tp52/fp176/20告警/HTTP200);node 复刻工单映射 + **边界自查 PASS**(工单文本无 过热/放电/故障/置信度/运维/停运 等词);`npm run build` 通过(9.7KB,删假数据后变小);tag class(grn/org/yel)全在 global.css(避开 D-025 拼写坑)
+- **顺带修自己的坏代码**:初版误写一个孤立 `computed`(死代码,无订阅不执行)+ `import watch` 放 script 中部 → 清理为单个 watch + import 提顶
+- **同步**:本条 D-034;`02-dev-plan.md` 阶段五 AlertsView 行 + 模块7大屏行(仅剩 Analysis 挂规划中);论文模块 5/7 叙事不变(据实展示属实施)
+
+---
+
+## 2026-06-11 模块 5 阶段 B2:预警历史回测 + 误报校准(基准统一 fault_state)
+
+### D-033:预警回测以 fault_state 为基准;CO 阈值校准 + dedup 持续性把误报 93%→70%;剩余为数据弱可分性
+
+- **背景**:模块 5 B2 做历史回测(论文阶段五验证产物)。两个口径决策(用户拍板):
+  - **回测基准 = fault_state(非 IEC)**:论文阶段五原写「以 IEC is_abnormal 标签算 TP/FP/FN」,但 D-020 已把检测对比基准从 IEC 改成 fault_state(IEC 是内部打标工具、且「自己跟自己比」)。预警回测必须与检测同一基准,否则两模块两套真值。**统一为 fault_state**
+  - **命中口径 = 当日对齐**:第 t 天预警触发 vs 第 t 天 fault_state≠Normal。简单可解释;提前量对齐留未来工作
+- **首跑暴露严重误报**:误报率 93.2%、FP=233、红警 208/330 天。**根因(独立核验)**:硬规则 `co>300`(国标注意值)在合成数据正常态 38% 天数即触发——CO 合成基线偏高,与国标值不匹配。非 engine bug,是规则阈值 vs 数据分布不匹配
+- **修法 A+B(用户选)**:
+  - **B 校准 CO 阈值**:`rules.yaml` 新增 `warning_thresholds` 段,CO 300→900(正常态 95 分位)。engine 加 `_effective_thresholds`(国标叠加覆盖),`_exceeds` 改用有效阈值。**只作用于预警引擎,不动 detect/threshold.ATTENTION_VALUES 国标口径**(国标允许按设备历史基线调注意值)
+  - **A 接 dedup 持续性**:backtest 逐日维护每规则命中历史,`passes_persistence` 连续 2 次才算有效预警(滤尖峰),等级分布/告警记录也据此过滤
+- **改善结果(已独立核验 JSON)**:误报率 **93.2%→70.4%**、TN 17→74(正常识别翻 4 倍)、红警 208→80。混淆 TP52/TN74/FP176/FN28,F1=0.34
+- **⚠️ 诚实记录:剩余 70% 误报是数据弱可分性,非规则缺陷**:CO 正常/异常分布几乎重叠(均值 349 vs 392);模块 3 检测三方法准确率本就 60-80%、IEC 召回仅 40%。预警基于规则+阈值,判别天花板受限于气体浓度对异常的可分性。**停在 A+B,不再硬调阈值**(继续调=为凑指标过拟合合成数据,违 P1 诚实原则)。与 D-029(ARIMA 优)、模块 3(IEC 局限)一脉相承:据实呈现合成数据约束下的方法表现
+- **产物**:`scripts/backtest.py` + `data/warning_backtest.json`(混淆+指标+四级分布+最近20告警,前端 AlertsView 数据源)+ `notebooks/figures/warning_backtest.png`(混淆矩阵+等级分布)
+- **核验**:test_warning 17 用例零回归(engine 改 _exceeds 签名后,测试走 evaluate 公开接口仍全过)
+- **同步**:本条 D-033;`02-dev-plan.md` 阶段五 backtest 行 + 回测基准改 fault_state;`论文梳理.md` 阶段五回测基准 + 误报诚实发现(待补)
+
+---
+
+## 2026-06-11 模块 5 阶段 B1:预警规则引擎算法核心(软规则用 ARIMA)
+
+### D-032:预警规则引擎 + 四级分级 + 误报控制;软规则预测源定为 ARIMA
+
+- **背景**:模块 4 提前完工后顺势提前启动模块 5(原计划第 11-12 周)。用户定:软规则用 ARIMA、本轮只做算法核心
+- **关键决策——软规则(基于预测)的预测源 = ARIMA**:论文模块 5 的软规则是「基于预测结果」,但 D-029 实测 LSTM 精度差、ARIMA 全面更优。拿已知不准的 LSTM 做预警依据自相矛盾 → **软规则用 `arima.forecast_arima` 的未来 1-3 天预测**。与 D-029 叙事自洽,答辩话术:「预警软规则采用对比实验中更稳健的 ARIMA 做预测,是基于模块 4 实证结论的工程决策」
+- **新增产物(纯算法层,DataFrame/dict 进出,不碰 DB/HTTP)**:
+  - `warning/rules.yaml`:可配置规则库。硬规则(国标阈值,口径复用 threshold.ATTENTION_VALUES)+ 软规则(ARIMA 预测超标)+ 趋势规则(涨幅比例)+ 组合规则(产气快+油温高);四级分级元信息 + dedup 参数
+  - `warning/engine.py`:`evaluate(current_gases, oil_temp, forecast_df)` → 触发规则列表 + 综合等级(LEVEL_ORDER 取最高)。**硬规则/软规则都复用 `threshold.detect_one`** 判超标(统一总烃口径,不重复实现)。软规则按最早超标日定级:第 1 天(24h)→red,第 2-3 天→orange
+  - `warning/dedup.py`:`passes_persistence`(连续 N 次才报,滤尖峰)+ `is_duplicate`(24h 冷却去重)+ `should_push`(综合)。纯函数,历史记录由调用方传入
+  - `tests/test_warning.py`:17 用例(Engine 10 + Dedup 7),覆盖硬/软/趋势/组合触发 + 四级取最高 + 去重边界
+- **🚧 系统边界**:规则只输出 等级/哪些气体/规则编号/趋势,message 措辞**严禁故障类型**(已检查 rules.yaml 所有 message,只说「超标/上升趋势/综合关注」,无诊断词)
+- **核验(独立,非桥接回执)**:`test_warning.py` 17 passed;全套 56 passed(原 39 + 17)零回归。**注:本轮桥接曾注入伪造测试结果(测试名 `test_not_triggered` vs 实际 `test_never_triggered`、多出假汇总行),重写+重跑+核验真实测试名识破**
+- **依赖**:PyYAML==6.0.3 补进 requirements(此前靠传递依赖侥幸可用,新机器会装不全)
+- **同步**:本条 D-032;`02-dev-plan.md` 阶段五表格(B1 ✅ / B2 回测+API 待下轮);论文模块 5 叙事不变(软规则用 ARIMA 属实施细节,已在 D-029 修订 8 铺垫「ARIMA 更稳健」)
+
+---
+
+## 2026-06-11 模块 4 阶段 C/D:predict API + PredictionView 据实改形(D-030 落地首例)
+
+### D-031:PredictionView 翻转成「ARIMA 胜」+ 接真 + 摘横幅;落盘 JSON 喂 API
+
+- **背景**:模块 4 算法完成后做 C/D(后端接口 + 前端接真)。PredictionView 原是 D-026 标「规划中」的设计稿,但内容与实测(D-029)**全面冲突**:页面写「LSTM MAE 2.14 < ARIMA 3.45,↓38%,创新点⭐」,实测却是 7 气体全部 ARIMA 胜(LSTM 1287 vs ARIMA 301)。直接接真会自相矛盾,硬留设计稿违背 P1 诚实原则 → 触发 D-030「前端可据实改形,但先问」,已列方案征得用户选**方案①据实翻转**
+- **数据链(用户选「训练时落盘 JSON」)**:`train_lstm.py` 落 `models/train_history.json`(loss 曲线)→ `compare_predict.py` 汇总指标 + 验证段三序列 + loss,落盘 `data/predict_eval.json` → 后端 `/api/predict/compare` 只读文件返回(守 D-027「在线推理轻量」,ARIMA 每目标日重拟合需数十秒,不能进请求路径)
+- **后端**:新增 `app/api/predict.py`(`APIRouter(prefix=/api/predict)`,GET `/compare` 读 JSON,文件不存在则 404 提示先跑脚本、不杜撰);main.py 注册;前端 `service/api/index.js` 加 `getPredictCompare`
+- **前端改形(PredictionView 全量重写)**:
+  - KPI 翻转:ARIMA 为主色、LSTM 划掉;「ARIMA 胜」徽章;7 气体胜负 7/7;研究结论块
+  - 左上柱状图:7 气体 MAE 对比改**对数轴**(量纲跨度极大:co2~1869 vs ch4~0.77);ARIMA 主色、LSTM 灰
+  - 左下:验证段真值 vs LSTM vs ARIMA 三线(接 series,42 目标日)
+  - 右侧:loss 曲线接**真实落盘** loss_history;架构图保留(LSTM 结构没错)但注脚改「精度未兑现优势」;新增「为什么 ARIMA 更优」原因块(样本量/归一化/序列特性)
+  - **删杜撰块**:原「滚动推理 3.42→4.05ppm」「训练成本 7→1 创新点⭐」误导内容
+  - **摘掉 `:planning` 横幅**(D-026 收口,本页不再是规划稿)
+  - 兜底:`getPredictCompare` 失败回退真值 FALLBACK 常量(防 Demo 断网,断网时曲线留空不杜撰)
+- **核验(独立,非桥接回执)**:后端 curl 8011 返真值经统一信封;node 复刻前端 computed 确认 KPI(arimaWins 7/7、arimaMae 301<lstmMae 1287)+ 柱状图 7 点 + 三序列各 42 点 + loss 50 epoch;前端 `npm run build` 通过
+- **⚠️ 环境问题(告知用户,未擅动)**:本项目后端锁端口 8000(start.sh + vite proxy),验证时发现 8000 被**另一个项目**(object-storage-console 的 vite)占用 → 跑本项目前需先关那个 vite,否则后端 bind 失败、proxy 打错服务
+- **产物入 git 取舍**:`data/predict_eval.json`(评估快照,19KB)入 git 供 Demo;`BE/models/train_history.json`(train 副产物,loss 已汇入 eval.json)加 .gitignore。**踩坑**:.gitignore 不支持行尾注释,`path  # 注释` 整行被当 pattern 致不匹配,注释须独立成行(已修正)
+- **同步**:本条 D-031;`02-dev-plan.md` 模块7 大屏行 + 阶段四 PredictionView 行;`论文梳理.md` 修订 8 补「前端已据实呈现」
+
+---
+
+## 2026-06-11 协作原则:前端视图非刚性,可裁剪/改形但须先问
+
+### D-030:前端展示按真实能力裁剪/改形,论文大屏不锁死(硬约束不变)
+
+- **背景**:用户明确——前端页面不是刚性必须的。某模块实现不了或实现得不正确时(如 D-029 实测 LSTM 预测精度差),对应前端视图可去掉或更改形态,不必为凑齐论文模块 7 画的大屏版式硬塞误导性可视化
+- **决策**:
+  - **可裁剪/改形的范围**:前端视图「展示什么内容、以什么形态展示」。例:PredictionView 原画「逼真 LSTM 预测曲线」,实测 ARIMA 才是主力 → 可改成「LSTM vs ARIMA 对比」或弱化 LSTM,而非硬画一条漂亮 LSTM 曲线
+  - **程序约束(用户加的)**:每次裁剪/改形**都要先列证据 + 给方案 + 等用户拍板**,不自行决定删页/改页(承协作约定「质疑方向时先列证据再给方案」)
+  - **不可破的硬约束**:① 系统刚性边界(对外不输出诊断/故障类型/健康度评分,IEC 三比值法仅内部用)② P1 诚实原则(不杜撰逼真假数据,D-023)。裁剪只针对「展示形态」,不松动这两条
+- **与既有原则的关系**:这是 P1 诚实原则(D-023)的延伸——D-023 是「不杜撰假数据」,D-030 再进一步「连展示什么本身都可按真实能力裁剪,不被前端版式绑架」
+- **影响**:论文模块 7 大屏从「锁死规格」降为「设计意向」,实现时按真实能力定稿。具体某页被改时,届时再同步 论文梳理(本次尚无页面实际被改,论文暂不动)
+- **同步**:本条 D-030;CLAUDE.md 协作约定区新增同名条目;论文梳理暂不动(待具体页面改动时记)
+
+---
+
+## 2026-06-11 模块 4 阶段 B2:ARIMA 基线 + 滚动预测 + 对比实验(ARIMA 全面胜)
+
+### D-029:LSTM vs ARIMA 实测 ARIMA 全面更优,兜底叙事转正为主叙事;补 matplotlib + 出图
+
+- **背景**:承 D-028(B1 跑通),完成 B2 = `arima.py` + `rolling.py` + `compare_predict.py`,出论文对比素材
+- **新增产物**:
+  - `algorithms/predict/arima.py`:`forecast_arima(history_df, steps, order=(2,1,2))`,7 气体各跑一个 statsmodels ARIMA(for 循环,单变量)。**兜底**:含大量 0 的气体(c2h2 ~36%)ARIMA 可能不收敛/抛错 → `_forecast_one` try/except 退化为「持平最后观测值」(naive),口径透明;负值 clip 到 0(气体非负)
+  - `algorithms/predict/rolling.py`:`rolling_forecast(model, scaler, history_df, steps=3)`,复用 `lstm.predict_step` 迭代回灌得未来 1-3 天。注释明确误差累积、只滚 3 天、供趋势参考不作精确承诺
+  - `scripts/compare_predict.py`:验证段(后 20%,42 目标日)单步 walk-forward 对比。LSTM 用前 30 天滑窗、ARIMA 用截至 t-1 全量真值各预测 1 步,同目标日同真值算 MAE/RMSE/MAPE(MAPE 仅真值非 0 处算,避免除零)+ 7 子图
+- **实测结果(已独立核验 stdout,非桥接回执)——7 气体全部 ARIMA 胜**:总体均值 MAE **LSTM=935.83 vs ARIMA=301.23**。逐气体(MAE):h2 22.6/18.8、ch4 20.4/0.77、c2h4 83.6/5.5、c2h6 55.1/22.1、c2h2 14.8/1.3、co 370.6/190.8、co2 5983.7/1869.3,ARIMA 项项更低
+- **原因(据实)**:① MinMax 全域归一把 normal 变化压窄、LSTM 误差反归一化放大(承 D-028);② 单设备 360 天滑窗后训练样本仅 ~258,对 LSTM 偏少;③ ARIMA 每步全量重拟合 + 一阶差分,对「均值回复 + 强噪声」序列更稳
+- **叙事影响(D-027 兜底转正)**:论文创新点 2「LSTM 提升精度」与实测冲突 → 改为对比研究叙事「小样本高波动 DGA 上 ARIMA 较 LSTM 更稳健」。这是有价值的实证结论,与创新点 1 多方法对比方法论一致。**作者已拍板方案 A(2026-06-11)**:创新点 2 标题改「基于 LSTM 与 ARIMA 的 DGA 气体趋势预测对比研究」,正文已重写(据实承认 ARIMA 优 + 原因 + 选型实证价值),论文梳理 修订 8 同步标「已拍板」
+- **环境补丁**:3.11 venv 缺 matplotlib(D-027 批量装漏了,旧 png 是 3.9 下生成)→ `pip install matplotlib==3.9.2`(requirements 本就有此行)。另:`compare_predict._plot` 加 try/except ModuleNotFoundError 优雅降级(对齐 compare_detection 既有模式);图内文字改 ASCII(matplotlib 默认字体无 CJK 字形,会渲染成方框,compare_detection 本就只用 ASCII 标签)
+- **核验**:`predict_compare.png`(314KB)落盘、0 glyph 警告;`rolling_forecast` smoke 形状 (3,7)、无 NaN、全 ≥0
+- **同步**:本条 D-029;`02-dev-plan.md` 阶段四 arima/rolling/compare 行打 ✅;`论文梳理.md` 修订 8 + 总览表 + 核心结论(创新点 2 待作者重写)
+
+### D-additional:预测算法层单元测试(B 收尾)
+
+- `tests/test_predict.py`:pytest 14 用例,覆盖 dataset(窗口形状/缺列/样本不足/归一化/scaler 复用)、train_val_split(时序不打乱)、arima(形状/缺列/非负 clip/全 0 naive 兜底)、rolling(形状/index/无 NaN 非负/history 不足)。**rolling 用 stub model + 真 scaler**,不依赖训练好的 `.h5`,测试不绑落盘产物
+- 全套零回归:test_api 8 + test_detect 17 + test_predict 14 = **39 passed**
+
+---
+
+## 2026-06-11 模块 4 阶段 B1:LSTM 算法层 + 训练脚本跑通
+
+### D-028:LSTM 滑窗造样本 + 离线训练落盘,loss 下降跑通(B1);预测精度暴露数据/建模软肋,留 B2 + 兜底叙事
+
+- **背景**:承 D-027(环境就绪),执行阶段 B。用户选「先验证跑通」,本轮收窄为 **B1 = `dataset.py` + `lstm.py` + `train_lstm.py`**;`arima.py`/`rolling.py`/`compare_predict.py` 留 B2 下一轮,降低单轮风险
+- **新增产物**:
+  - `algorithms/predict/dataset.py`:`make_windows(df, lookback=30) -> (X, y, scaler)`(过去 30 天 7 气体 → 第 31 天 7 气体,单步多输出);`train_val_split_by_time(df, val_ratio=0.2)` **按时间切不 shuffle**。特征只用 7 原始气体(不喂 featured 滑窗派生,避免与 LSTM 自学时序重复)
+  - `algorithms/predict/lstm.py`:`load_lstm(path)` 固定 `compile=False`(D-027 踩坑,不带必崩);`predict_step(model, scaler, window_df)` 单步推理,反归一化回原始量纲。**不含训练**(守 D-027 离线训练/在线推理边界)
+  - `scripts/train_lstm.py`:`Sequential([LSTM(64), Dense(7)])`(论文写死结构),时序切分不 shuffle、**scaler 只 fit 训练集**(防泄漏),落盘 `BE/models/lstm.h5`(251KB)+ `scaler.pkl`(819B,joblib),`.gitignore` 已排除
+- **实跑结果(已独立核验 stdout + 文件字节,非桥接回执)**:train_loss 0.0196→0.0037、val_loss 0.0505→0.0234,**loss 明显下降 = B1「跑通」目标达成**(第 9 周阶段性 bar)。smoke:`load_lstm(compile=False)` + `predict_step` 输出 7 气体、无 NaN、形状对
+- **⚠️ 诚实记录:预测精度只是「数量级对、不精确」,不是 bug**:
+  - 现象:in-distribution 窗口预测 co2 1850 vs 真实 2710、c2h6 32 vs 20(量级对);偶有小负值(ch4 -2.09)
+  - 根因:合成序列**日间波动极大**(normal 月内 co2 在 1593↔2773 跳、co 在 113↔893),且 7 气体跨度巨大(co2 因异常段最高 ~60000、c2h4 ~2000)。MinMax 全域归一把 normal 变化压成极窄子带 → 缩放空间小误差(val_loss 0.023)反归一化后在原始 ppm 看着大;回归器输出略负反归一化即穿底 → 负值
+  - 定性:**pipeline 正确**(loss 真降、加载/scaler/形状皆对),问题在数据波动性 + 建模精度,非代码缺陷
+- **对论文的意义**:这正是 ARIMA 基线(B2)+ D-027 兜底叙事「ARIMA 在该数据集上更稳健」要讨论的点。B2 compare_predict 出 MAE/RMSE/MAPE 后,据实选叙事(LSTM 胜则讲深度学习,败则讲 ARIMA 稳健 + LSTM 局限)。**精度调优(EarlyStopping / 标准化换 log1p / 加 epoch)留 B2 视对比结果定**,不在 B1 提前优化
+- **HDF5 warning**:Keras 提示 `.h5` 是 legacy、建议 `.keras`。**仍用 `.h5`**——论文把 `.h5` 写死为交付产物(D-027),warning 无害
+- **同步**:本条 D-028;`02-dev-plan.md` 阶段四 dataset/lstm/train 行打 ✅(标 B1)、arima/rolling/compare 标 B2;论文暂不改(待 B2 对比结果定叙事)
+
+---
+
+## 2026-06-10 提前启动模块 4:环境升级 Python 3.11 + TF(阶段 A)
+
+### D-027:模块 4 定调「离线训练 + 在线推理」+ 框架/环境路线锁定
+
+- **背景**:第 7 周异常检测收尾,提前启动第 9 周核心模块 4(LSTM 趋势预测),为最高风险项(LSTM 跑不通的兜底叙事)留缓冲。动手前锁定三个一直挂起/未显式的架构决策
+- **决策 1 框架 = Keras(TensorFlow),不换 PyTorch**:论文模块 4 把框架写死到 API 级细节(`Sequential([LSTM(64), Dense(7)])`、`.h5` 产物)。PyTorch 会逼改论文每处代码示例 + 产物格式(`.pt`),代价远超「工程省事」收益。这与 D-001(SQLite 替 MySQL,ORM 兼容可糊弄)性质不同,框架替换藏不住。**否决 PyTorch**
+- **决策 2 架构 = 离线训练 + 在线推理**:训练是重计算 + 落盘 → 放 `scripts/train_lstm.py`(脚本层);推理是轻量 load `.h5` + 滚动 3 步 → 放 `algorithms/predict/`(纯算法层)。把论文「`.h5` 作交付产物」的隐含架构显式化,守住 CLAUDE.md「算法层不依赖 DB/HTTP」铁律,且 API 不会现训现预测超时
+- **决策 3 环境 = Homebrew python@3.11,非 pyenv**:D-003 原预案写 pyenv,但本机已有 brew、无 pyenv;毕设是「装一次固定用到答辩」,不需要 pyenv 多版本切换能力。`brew install python@3.11` 一步到位(3.11.12)。**本机是 Intel Mac**(`/usr/local` 路径、wheel 全 x86_64),故用标准 `tensorflow` 而非 requirements 注释里写的 `tensorflow-macos`(那是 Apple Silicon 才需要)
+- **阶段 A 执行结果(已验证)**:
+  - 装 TF 2.16.2 + Keras 3.14.1 + h5py 3.16.0,numpy 1.26.4 无冲突
+  - LSTM hello-world(论文同构 `Sequential([LSTM(64), Dense(7)])`)fit 5 轮 loss 0.218→0.087 下降 ✅
+  - 旧后端 3.11 下零回归:app import OK、17 检测单测全过、`uvicorn` 起服务 `curl /api/detect/methods/1` 与 `/api/data/overview` 均 HTTP 200 返真值(360 条/健康率 0.7472,与 D-023 一致)
+- **⚠️ 踩坑记录(Keras 3 + `.h5`)**:`load_model('x.h5')` 默认会反序列化 compile 配置,Keras 3.14 报 `Could not deserialize 'keras.metrics.mse'`。**解法:`load_model(path, compile=False)`**(推理本不需要 optimizer/loss,合理且保住 `.h5` 叙事)。阶段 B 写 `train_lstm`/推理时务必带 `compile=False`,否则在线推理加载必崩
+- **⚠️ venv 重命名坑(本轮踩到并修正)**:先建 `.venv311` 验证、再 `mv .venv311 .venv` 切换 → `activate` 里 `VIRTUAL_ENV` 仍硬编码旧名,`source activate` 失败。venv 不可移植。**正确做法 = 在目标名 `.venv` 原地重建**(已照做,走 pip 缓存很快)。旧 3.9 venv 验证通过后已删
+- **挂起项结算**:勾掉「训练好的 `.h5` 是否纳入 git」→ **否**(`.gitignore` 已排除 `*.h5/*.keras/*.pkl`,通过脚本重训)
+- **本次范围**:仅阶段 A(环境)。阶段 B(算法/脚本)、C(API)、D(前端接真 + 摘 D-026「规划中」横幅)另起执行
+- **同步**:本条 D-027;`论文梳理.md` 实施期修订 7 + 总览表;`02-dev-plan.md` 阶段四标注
+
+---
+
 ## 2026-06-09 DetectionView 右侧阈值表接真(S1)+ 算法层单测 + 未接真视图标注
 
 ### D-026:三个未接真视图加「规划中」横幅 + AnalysisView 删 IEC 编码越界展示

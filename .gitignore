@@ -28,6 +28,8 @@ env/
 *.h5
 *.keras
 *.pkl
+# train_lstm 副产物,loss 已汇入 data/predict_eval.json
+BE/models/train_history.json
 
 # ===== Jupyter =====
 .ipynb_checkpoints/
