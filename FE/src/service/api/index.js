@@ -30,3 +30,24 @@ export const getDetectCompare = () => http.get('/detect/_internal/compare')
  */
 export const getDetectMethods = (transformerId) =>
   http.get(`/detect/methods/${transformerId}`)
+
+// ============ 趋势预测接口 ============
+
+/**
+ * LSTM vs ARIMA 验证段对比(指标 + 7 气体曲线 + loss 历史)。
+ * 读后端 predict_eval.json 快照(训练时落盘,毫秒级)。
+ * 实测结论:ARIMA 较 LSTM 更稳健(D-029),如实呈现。
+ * 返回 { baseline, n_target_days, gases, overall, per_gas, series, loss_history }。
+ */
+export const getPredictCompare = () => http.get('/predict/compare')
+
+// ============ 预警决策接口 ============
+
+/**
+ * 预警引擎历史回测(混淆矩阵 + 指标 + 四级分布 + 全量告警)。
+ * 读后端 warning_backtest.json 快照(scripts/backtest.py 落盘)。
+ * 守边界:只回 等级/规则编号/规则类型/响应级别/日期,不回故障类型/运维建议/置信度。
+ * 返回 { baseline, n_days, confusion, metrics, level_distribution, n_alerts,
+ *        alerts:[{date, level, rule_ids, rule_types, response, true_abnormal}] }。
+ */
+export const getWarningBacktest = () => http.get('/warning/backtest')

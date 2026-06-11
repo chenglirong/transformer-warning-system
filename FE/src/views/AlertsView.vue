@@ -1,236 +1,149 @@
 <template>
   <div class="h-screen flex flex-col">
     <AppHeader
-      title="预 警 工 单 与  A g e n t  推 理"
+      title="预 警 工 单 工 作 台"
       icon="mdi:clipboard-list"
-      subtitle="4 级分级 · 规则原文 · ReAct 推理追溯"
-      :planning="true"
-      planning-text="预警决策(第 11-12 周)与 LangChain Agent(第 13 周)计划开发,本页为交互设计稿,工单与推理为示意"
+      subtitle="4 级分级 · 规则引擎触发 · 点单追溯 Agent 推理"
     />
 
-    <!-- 顶部 KPI -->
+    <!-- 顶部:预警态势概览(四级可筛选)-->
     <section class="px-3 pt-3 grid grid-cols-5 gap-3">
-      <div
-        class="kpi-mini"
-        :class="filter === 'all' ? 'active' : ''"
-        @click="filter = 'all'"
-      >
-        <p class="text-[11px] text-gray-400">全部工单</p>
-        <p class="text-2xl font-bold text-cyan-300">
-          10<span class="text-xs ml-1">条</span>
-        </p>
+      <div class="kpi-mini" :class="filter === 'all' ? 'active' : ''" @click="setFilter('all')">
+        <p class="text-[11px] text-gray-400">触发总数</p>
+        <p class="text-2xl font-bold text-cyan-300">{{ totalAlerts }}<span class="text-xs ml-1">天</span></p>
       </div>
-      <div
-        class="kpi-mini border-red"
-        :class="filter === '红' ? 'active' : ''"
-        @click="filter = '红'"
-      >
-        <p class="text-[11px] text-gray-400">🔴 红色</p>
-        <p class="text-2xl font-bold text-red-400">1</p>
+      <div class="kpi-mini border-red" :class="filter === 'red' ? 'active' : ''" @click="setFilter('red')">
+        <p class="text-[11px] text-gray-400">🔴 红色 · 立即响应</p>
+        <p class="text-2xl font-bold text-red-400">{{ dist.red }}</p>
       </div>
-      <div
-        class="kpi-mini border-org"
-        :class="filter === '橙' ? 'active' : ''"
-        @click="filter = '橙'"
-      >
-        <p class="text-[11px] text-gray-400">🟠 橙色</p>
-        <p class="text-2xl font-bold text-orange-400">3</p>
+      <div class="kpi-mini border-org" :class="filter === 'orange' ? 'active' : ''" @click="setFilter('orange')">
+        <p class="text-[11px] text-gray-400">🟠 橙色 · 24h</p>
+        <p class="text-2xl font-bold text-orange-400">{{ dist.orange }}</p>
       </div>
-      <div
-        class="kpi-mini border-yel"
-        :class="filter === '黄' ? 'active' : ''"
-        @click="filter = '黄'"
-      >
-        <p class="text-[11px] text-gray-400">🟡 黄色</p>
-        <p class="text-2xl font-bold text-yellow-400">4</p>
+      <div class="kpi-mini border-yel" :class="filter === 'yellow' ? 'active' : ''" @click="setFilter('yellow')">
+        <p class="text-[11px] text-gray-400">🟡 黄色 · 加强监测</p>
+        <p class="text-2xl font-bold text-yellow-400">{{ dist.yellow }}</p>
       </div>
-      <div
-        class="kpi-mini border-blu"
-        :class="filter === '蓝' ? 'active' : ''"
-        @click="filter = '蓝'"
-      >
-        <p class="text-[11px] text-gray-400">🔵 蓝色</p>
-        <p class="text-2xl font-bold text-blue-400">2</p>
+      <div class="kpi-mini border-blu" :class="filter === 'blue' ? 'active' : ''" @click="setFilter('blue')">
+        <p class="text-[11px] text-gray-400">🔵 蓝色 · 日常关注</p>
+        <p class="text-2xl font-bold text-blue-400">{{ dist.blue }}</p>
       </div>
     </section>
 
-    <main
-      class="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden"
-      style="min-height: 0"
-    >
-      <!-- LEFT col-5: 工单列表 -->
-      <div
-        class="col-span-5 glass rounded-lg p-3 flex flex-col overflow-hidden"
-      >
-        <h3
-          class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-        >
+    <main class="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden" style="min-height: 0">
+      <!-- LEFT col-5:工单列表(全量 + 分页 + 筛选 + 排序 + 搜索)-->
+      <div class="col-span-5 glass rounded-lg p-3 flex flex-col overflow-hidden">
+        <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
           <span class="flex items-center gap-2">
             <iconify-icon icon="mdi:format-list-bulleted"></iconify-icon>
-            工单列表（{{ filteredTickets.length }} / {{ tickets.length }}）
+            告警工单（{{ filtered.length }} 条）
           </span>
-          <span class="text-[10px] text-gray-500">点击查看 Agent 推理详情</span>
         </h3>
-        <div
-          class="flex-1 overflow-y-auto space-y-2 pr-1"
-          style="min-height: 0"
-        >
+
+        <!-- 工具条:搜索 + 规则类型 + 排序 -->
+        <div class="flex items-center gap-2 mb-2">
+          <input
+            v-model="search"
+            class="toolbar-input flex-1"
+            placeholder="搜索日期 / 规则编号(如 2025-03 / S-01)"
+          />
+          <select v-model="ruleTypeFilter" class="toolbar-input">
+            <option value="all">全部规则</option>
+            <option value="hard">硬规则</option>
+            <option value="soft">软规则</option>
+            <option value="combo">组合规则</option>
+          </select>
+          <button class="toolbar-btn" @click="toggleSort">
+            <iconify-icon :icon="sortBy === 'time' ? 'mdi:clock-outline' : 'mdi:fire'"></iconify-icon>
+            {{ sortBy === 'time' ? '按时间' : '按紧急度' }}
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto space-y-2 pr-1" style="min-height: 0">
           <div
-            v-for="t in filteredTickets"
+            v-for="t in paged"
             :key="t.id"
             class="ticket-card"
-            :class="[t.borderClass, selected.id === t.id ? 'selected' : '']"
+            :class="[t.borderClass, selected && selected.id === t.id ? 'selected' : '']"
             @click="selected = t"
           >
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
-                <span
-                  class="text-[10px] px-1.5 py-0.5 rounded font-bold"
-                  :class="t.tag"
-                >
-                  {{ t.level }}
-                </span>
-                <span class="text-[10px] text-cyan-300 font-mono">{{
-                  t.id
-                }}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="t.tag">{{ t.level }}</span>
+                <span class="text-[10px] text-cyan-300 font-mono">{{ t.id }}</span>
               </div>
-              <span class="text-[10px] text-gray-500">{{ t.time }}</span>
+              <span class="text-[10px] text-gray-500">{{ t.date }}</span>
             </div>
             <p class="text-[12px] text-gray-100 leading-snug">{{ t.title }}</p>
             <div class="flex items-center justify-between mt-1.5">
-              <span class="text-[10px] text-gray-500">{{ t.ruleType }}</span>
-              <span
-                class="text-[10px] px-1.5 py-0.5 rounded"
-                :class="t.statusTag"
-              >
-                {{ t.status }}
-              </span>
+              <span class="text-[10px] text-gray-500">{{ t.ruleTypeLabel }}</span>
+              <span class="text-[10px] text-gray-500 font-mono">{{ t.ruleIds }}</span>
             </div>
           </div>
+          <p v-if="!filtered.length" class="text-[12px] text-gray-500 text-center mt-4">无匹配工单</p>
+        </div>
+
+        <!-- 分页器 -->
+        <div v-if="totalPages > 1" class="flex items-center justify-between mt-2 text-[11px] text-gray-400">
+          <button class="page-btn" :disabled="page === 1" @click="page--">上一页</button>
+          <span>{{ page }} / {{ totalPages }}（每页 {{ pageSize }} 条）</span>
+          <button class="page-btn" :disabled="page === totalPages" @click="page++">下一页</button>
         </div>
       </div>
 
-      <!-- RIGHT col-7: 选中工单详情 + Agent 推理 -->
+      <!-- RIGHT col-7:详情 + Agent 追溯 -->
       <div class="col-span-7 flex flex-col gap-3 overflow-hidden">
-        <!-- 工单详情 + 规则 -->
-        <div
-          class="glass rounded-lg p-3 overflow-hidden"
-          style="flex: 0 0 auto"
-        >
+        <!-- 上半:预警信息 -->
+        <div v-if="selected" class="glass rounded-lg p-3" style="flex: 0 0 auto">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-3">
-              <span
-                class="text-[10px] px-2 py-0.5 rounded font-bold"
-                :class="selected.tag"
-              >
-                {{ selected.level }}
-              </span>
-              <span class="text-base font-bold text-gray-100">{{
-                selected.title
-              }}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded font-bold" :class="selected.tag">{{ selected.level }}</span>
+              <span class="text-base font-bold text-gray-100">{{ selected.title }}</span>
             </div>
             <div class="flex items-center gap-2 text-[10px] text-gray-500">
-              <span class="font-mono">{{ selected.id }}</span>
-              <span>·</span>
-              <span>{{ selected.time }}</span>
+              <span class="font-mono">{{ selected.id }}</span><span>·</span><span>{{ selected.date }}</span>
             </div>
           </div>
           <div class="grid grid-cols-3 gap-2">
             <div class="info-cell">
-              <p class="text-[10px] text-gray-400">触发规则</p>
-              <p class="text-xs text-gray-200 mt-0.5">{{ selected.ruleId }}</p>
-              <p class="text-[10px] text-gray-500">{{ selected.ruleType }}</p>
+              <p class="text-[10px] text-gray-400">触发规则编号</p>
+              <p class="text-xs font-mono text-cyan-300 mt-0.5">{{ selected.ruleIds }}</p>
             </div>
             <div class="info-cell">
-              <p class="text-[10px] text-gray-400">规则表达式</p>
-              <p class="text-[11px] font-mono text-cyan-300 mt-0.5">
-                {{ selected.ruleExpr }}
-              </p>
+              <p class="text-[10px] text-gray-400">规则类型</p>
+              <p class="text-[11px] text-gray-200 mt-0.5">{{ selected.ruleTypeLabel }}</p>
             </div>
             <div class="info-cell">
-              <p class="text-[10px] text-gray-400">处置建议</p>
-              <p class="text-[11px] text-gray-200 mt-0.5">
-                {{ selected.advice }}
-              </p>
+              <p class="text-[10px] text-gray-400">响应级别</p>
+              <p class="text-[11px] text-gray-200 mt-0.5">{{ selected.response }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Agent ReAct 推理追踪 -->
-        <div
-          class="glass rounded-lg p-3 overflow-hidden flex flex-col"
-          style="flex: 1.2"
-        >
-          <h3
-            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-          >
-            <span class="flex items-center gap-2">
-              <iconify-icon icon="mdi:robot-outline"></iconify-icon>
-              Agent ReAct 推理追踪（5 步）
-            </span>
-            <span class="text-[10px] text-purple-300 flex items-center gap-1">
-              <iconify-icon icon="mdi:brain"></iconify-icon> 通义千问 qwen-turbo
-            </span>
+        <!-- 中:Agent 推理追溯(模拟数据,带规划中标识)-->
+        <div class="glass rounded-lg p-3 overflow-hidden flex flex-col" style="flex: 1">
+          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-2">
+            <iconify-icon icon="mdi:robot-outline"></iconify-icon>
+            Agent 推理追溯（该预警如何被推导）
           </h3>
-          <div
-            class="flex-1 overflow-y-auto space-y-2 pr-1"
-            style="min-height: 0"
-          >
-            <div
-              v-for="(s, i) in selected.agent"
-              :key="i"
-              class="react-step"
-              :class="s.status"
-            >
-              <div class="flex items-center gap-2 mb-1">
-                <span class="step-num">{{ i + 1 }}</span>
-                <span class="text-xs font-bold text-gray-100">{{
-                  s.title
-                }}</span>
-                <span class="text-[10px] text-gray-500 ml-auto">{{
-                  s.time
-                }}</span>
-                <iconify-icon
-                  class="text-base"
-                  :class="s.iconClass"
-                  :icon="s.icon"
-                ></iconify-icon>
-              </div>
-              <div class="ml-8 space-y-1">
-                <div class="trace-row">
-                  <span class="trace-tag tag-thought">Thought</span>
-                  <span class="trace-text">{{ s.thought }}</span>
-                </div>
-                <div class="trace-row">
-                  <span class="trace-tag tag-action">Action</span>
-                  <span class="trace-text font-mono">{{ s.action }}</span>
-                </div>
-                <div class="trace-row">
-                  <span class="trace-tag tag-observation">Observation</span>
-                  <span class="trace-text font-mono">{{ s.observation }}</span>
-                </div>
-              </div>
-            </div>
+          <div class="flex-1 overflow-hidden" style="min-height: 0">
+            <AgentTrace v-if="selected" :steps="agentSteps" :run-status="agentRunStatus" />
           </div>
         </div>
 
-        <!-- Final Answer 通知 -->
-        <div
-          class="glass rounded-lg p-3 overflow-hidden"
-          style="flex: 0 0 auto"
-        >
-          <h3
-            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-          >
+        <!-- 下:AI 预警通知(LLM 生成,归模块6,示意数据)-->
+        <div v-if="selected" class="glass rounded-lg p-3 overflow-hidden flex flex-col" style="flex: 0.7">
+          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
             <span class="flex items-center gap-2">
-              <iconify-icon icon="mdi:bullhorn"></iconify-icon>
-              LLM Final Answer · 预警通知
+              <iconify-icon icon="mdi:bullhorn-outline"></iconify-icon>
+              AI 预警通知（LLM 生成）
             </span>
-            <span class="text-[10px] text-green-400 flex items-center gap-1">
-              <span class="live-dot"></span> 已生成 · 已入库
+            <span class="planning-pill">
+              <iconify-icon icon="mdi:progress-clock"></iconify-icon>
+              模块 6 · 第 13 周 · 示意数据
             </span>
           </h3>
-          <pre class="notification-block">{{ selected.notification }}</pre>
+          <pre class="notice-block flex-1">{{ noticeText }}</pre>
         </div>
       </div>
     </main>
@@ -240,301 +153,177 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
+import AgentTrace from "@/components/AgentTrace.vue";
+import { getWarningBacktest } from "@/service/api";
 
-const filter = ref("all");
+// ============ 真值兜底(防 Demo 断网)============
+// 来源:GET /api/warning/backtest(scripts/backtest.py 落盘的全量告警)。
+const FALLBACK = {
+  level_distribution: { red: 80, orange: 13, yellow: 135, blue: 0 },
+  n_alerts: 0,
+  alerts: [],
+};
+const data = ref(FALLBACK);
 
-const buildAgent = (extras = {}) => [
-  {
-    title: "get_today_data 获取最新数据",
-    time: "09:00:01",
-    status: "success",
-    icon: "mdi:check-circle",
-    iconClass: "text-green-400",
-    thought: "需要获取最新 DGA + 工况数据用于后续分析。",
-    action: "get_today_data()",
-    observation:
-      extras.obs1 ||
-      "{H₂:42.5, CH₄:58.2, C₂H₂:3.24, C₂H₄:45.1, 油温:59, 负载:1.05}",
-  },
-  {
-    title: "detect_anomaly 异常检测",
-    time: "09:00:03",
-    status: "success",
-    icon: "mdi:check-circle",
-    iconClass: "text-green-400",
-    thought: "调用 3 方法（阈值/三比值/孤立森林）检测当前是否存在异常信号。",
-    action: "detect_anomaly(data=...)",
-    observation:
-      extras.obs2 ||
-      "{threshold: 异常, iec_ratio: 异常(021低温过热), forest: 异常}",
-  },
-  {
-    title: "lstm_predict 预测 1-3 天",
-    time: "09:00:06",
-    status: "success",
-    icon: "mdi:check-circle",
-    iconClass: "text-green-400",
-    thought: "已检测异常，需要预测未来 1-3 天趋势判断恶化情况。",
-    action: "lstm_predict(window=30, horizon=3)",
-    observation:
-      extras.obs3 || "C₂H₂: D+1=3.42, D+2=3.68, D+3=4.05 (接近阈值5)",
-  },
-  {
-    title: "check_warning 规则判级",
-    time: "09:00:09",
-    status: "success",
-    icon: "mdi:check-circle",
-    iconClass: "text-green-400",
-    thought: "检测+预测均显示异常，调用规则引擎确定预警等级。",
-    action: "check_warning(detection=..., prediction=...)",
-    observation:
-      extras.obs4 ||
-      "{level: '红色', rule_id: ['R002','R005'], reason: '1-3天必超标'}",
-  },
-  {
-    title: "LLM 生成预警通知文本",
-    time: "09:00:14",
-    status: "success",
-    icon: "mdi:check-circle",
-    iconClass: "text-cyan-400",
-    thought: "所有工具调用完成，按 Prompt 模板格式生成 Final Answer 并入库。",
-    action: "Final Answer · 通知模板生成",
-    observation: extras.obs5 || "通知文本已生成 → 写入 warning 表 → 推送前端",
-  },
-];
+onMounted(async () => {
+  try {
+    const r = await getWarningBacktest();
+    if (r?.alerts) data.value = r;
+  } catch (e) {
+    console.warn("[AlertsView] 回测接口拉取失败,使用兜底常量", e);
+  }
+});
 
-const tickets = [
-  {
-    id: "WO-107",
-    level: "🔴 红色",
-    tag: "tag-red",
-    borderClass: "border-red-500/50",
-    time: "10:42",
-    title: "C₂H₂ 预测 D+3 达 4.05 ppm，逼近阈值 5 ppm",
-    ruleId: "R002 + R005",
-    ruleType: "软规则 + 规则诊断",
-    ruleExpr: "lstm_predict(C₂H₂, 3) > 阈值 × 0.8",
-    advice: "立即停运，开展油质检测，排查内部故障",
-    status: "待处置",
-    statusTag: "tag-red",
-    agent: buildAgent(),
-    notification: `🚨 【红色预警】#2 主变
+const dist = computed(() => data.value.level_distribution);
+const totalAlerts = computed(() => Object.values(dist.value).reduce((a, b) => a + b, 0));
 
-📊 当前状态：
-   C₂H₂ = 3.24 ppm（阈值 5 ppm）
-   三比值法判定：低温过热 (<300℃)
-   3 方法检测一致：异常 (3/3)
+// 等级元信息
+const LEVEL_META = {
+  red: { label: "🔴 红色", tag: "tag-red", border: "border-red-500/50", rank: 4, response: "立即响应" },
+  orange: { label: "🟠 橙色", tag: "tag-org", border: "border-orange-500/50", rank: 3, response: "24 小时内处理" },
+  yellow: { label: "🟡 黄色", tag: "tag-yel", border: "border-yellow-500/50", rank: 2, response: "加强监测" },
+  blue: { label: "🔵 蓝色", tag: "tag-blu", border: "border-blue-500/50", rank: 1, response: "日常关注" },
+};
+const RULE_TYPE_LABEL = { hard: "硬规则(已超标)", soft: "软规则(预测/趋势)", combo: "组合规则" };
+function ruleTypeLabelOf(types) {
+  return (types || []).map((t) => RULE_TYPE_LABEL[t] || t).join(" + ");
+}
 
-🔮 预测趋势（LSTM 滚动预测）：
-   D+1: 3.42 ppm
-   D+2: 3.68 ppm
-   D+3: 4.05 ppm（已逼近阈值，置信度 92%）
-
-⚖️ 触发规则：
-   R002 软规则（LSTM 预测超阈）
-   R005 三比值法（编码 021）
-
-🤖 LLM 复核：建议立即停运排查，置信度 92%`,
-  },
-  {
-    id: "WO-106",
-    level: "🟠 橙色",
-    tag: "tag-org",
-    borderClass: "border-orange-500/50",
-    time: "10:15",
-    title: "C₂H₄ 72h 上升 23%，1-3 天内可能超标",
-    ruleId: "R003",
-    ruleType: "软规则（趋势）",
-    ruleExpr: "rate(C₂H₄, 72h) > 20%",
-    advice: "加强监测，每日取样 1 次，结合油温综合分析",
-    status: "处置中",
-    statusTag: "tag-org",
-    agent: buildAgent({
-      obs2: "{threshold: 正常, iec_ratio: 关注, forest: 异常}",
-      obs3: "C₂H₄: D+1=46.2, D+2=47.8, D+3=49.5",
-      obs4: "{level: '橙色', rule_id: ['R003'], reason: '产气速率超阈'}",
-    }),
-    notification: `🟠 【橙色预警】#2 主变
-
-📊 当前状态：
-   C₂H₄ = 45.1 ppm（72h 上升 23%）
-   产气速率：23% / 72h（阈值 20%）
-
-🔮 预测趋势（LSTM）：
-   D+1: 46.2 ppm
-   D+2: 47.8 ppm
-   D+3: 49.5 ppm
-
-⚖️ 触发规则：R003 软规则（产气速率）
-
-🤖 LLM 复核：趋势异常，建议加强监测`,
-  },
-  {
-    id: "WO-105",
-    level: "🟠 橙色",
-    tag: "tag-org",
-    borderClass: "border-orange-500/50",
-    time: "09:58",
-    title: "顶层油温 84℃ + 负载 1.05 倍，组合规则触发",
-    ruleId: "R004",
-    ruleType: "组合规则",
-    ruleExpr: "油温 > 80 AND 负载 > 1.0",
-    advice: "调整负载分配，降低过载电流，监测绕组温度",
-    status: "处置中",
-    statusTag: "tag-org",
-    agent: buildAgent({
-      obs1: "{油温:84, 负载:1.05, 环温:38, C₂H₂:0.68}",
-      obs2: "{threshold: 正常, iec_ratio: 正常, forest: 正常 — DGA 无异常}",
-      obs3: "DGA 7 气体均预测稳定",
-      obs4: "{level: '橙色', rule_id: ['R004'], reason: '油温×负载组合规则'}",
-    }),
-    notification: `🟠 【橙色预警】#5 主变
-
-📊 当前状态：
-   顶层油温 = 84℃（阈值 95℃）
-   负载电流 = 1.05 倍额定（阈值 1.1 倍）
-
-🔮 预测趋势：DGA 暂稳定，但油温 × 负载组合需关注
-
-⚖️ 触发规则：R004 组合规则
-
-🤖 LLM 复核：调整负载分配可有效缓解`,
-  },
-  {
-    id: "WO-104",
-    level: "🟠 橙色",
-    tag: "tag-org",
-    borderClass: "border-orange-500/50",
-    time: "09:30",
-    title: "三比值法判定 → 低温过热 (<300℃)",
-    ruleId: "R005",
-    ruleType: "规则诊断",
-    ruleExpr: "三比值编码 ∈ {001, 021, 022}",
-    advice: "增加取样频次，结合油温综合分析",
-    status: "处置中",
-    statusTag: "tag-org",
-    agent: buildAgent({
-      obs2: "三比值编码 021 → 低温过热 (<300℃)",
-      obs4: "{level: '橙色', rule_id: ['R005']}",
-    }),
-    notification: `🟠 【橙色预警】#3 主变
-
-📊 当前状态：
-   三比值法编码：021
-   故障类型：低温过热 (<300℃)
-
-⚖️ 触发规则：R005 规则诊断
-
-🤖 LLM 复核：建议增加取样频次`,
-  },
-  {
-    id: "WO-103",
-    level: "🟡 黄色",
-    tag: "tag-yel",
-    borderClass: "border-yellow-500/50",
-    time: "08:50",
-    title: "H₂ 产气速率 8.2 ppm/72h，趋势异常",
-    ruleId: "R003",
-    ruleType: "软规则（趋势）",
-    ruleExpr: "rate(H₂, 72h) > 5",
-    advice: "加强监测，每日记录数据",
-    status: "跟踪",
-    statusTag: "tag-org",
-    agent: buildAgent(),
-    notification: `🟡 【黄色预警】H₂ 产气速率异常`,
-  },
-  {
-    id: "WO-102",
-    level: "🟡 黄色",
-    tag: "tag-yel",
-    borderClass: "border-yellow-500/50",
-    time: "07:22",
-    title: "负载电流 1.05 倍额定（长期）",
-    ruleId: "R006",
-    ruleType: "硬规则（工况）",
-    ruleExpr: "负载 > 1.0 倍 持续 24h",
-    advice: "调整负载分配",
-    status: "跟踪",
-    statusTag: "tag-org",
-    agent: buildAgent(),
-    notification: `🟡 【黄色预警】负载持续偏高`,
-  },
-  {
-    id: "WO-101",
-    level: "🟡 黄色",
-    tag: "tag-yel",
-    borderClass: "border-yellow-500/50",
-    time: "06:45",
-    title: "C₂H₆ 7 日上升 27%",
-    ruleId: "R003",
-    ruleType: "软规则（趋势）",
-    ruleExpr: "rate(C₂H₆, 7d) > 25%",
-    advice: "加强监测",
-    status: "已闭环",
-    statusTag: "tag-grn",
-    agent: buildAgent(),
-    notification: `🟡 【黄色预警】C₂H₆ 7 日上升`,
-  },
-  {
-    id: "WO-100",
-    level: "🟡 黄色",
-    tag: "tag-yel",
-    borderClass: "border-yellow-500/50",
-    time: "05:30",
-    title: "总烃 7 日 ↑ 18%",
-    ruleId: "R003",
-    ruleType: "软规则（趋势）",
-    ruleExpr: "rate(总烃, 7d) > 15%",
-    advice: "加强监测",
-    status: "已闭环",
-    statusTag: "tag-grn",
-    agent: buildAgent(),
-    notification: `🟡 【黄色预警】总烃 7 日上升`,
-  },
-  {
-    id: "WO-099",
-    level: "🔵 蓝色",
-    tag: "tag-blu",
-    borderClass: "border-blue-500/50",
-    time: "04:10",
-    title: "环境温度 38℃ 接近 40℃ 阈值",
-    ruleId: "R007",
-    ruleType: "硬规则（工况）",
-    ruleExpr: "环温 > 35 AND 环温 < 40",
-    advice: "日常关注",
-    status: "跟踪",
-    statusTag: "tag-gry",
-    agent: buildAgent(),
-    notification: `🔵 【蓝色提示】环境温度接近阈值`,
-  },
-  {
-    id: "WO-098",
-    level: "🔵 蓝色",
-    tag: "tag-blu",
-    borderClass: "border-blue-500/50",
-    time: "02:30",
-    title: "CO 轻微波动 +5%",
-    ruleId: "R003",
-    ruleType: "软规则（趋势）",
-    ruleExpr: "rate(CO, 24h) > 3%",
-    advice: "日常关注",
-    status: "跟踪",
-    statusTag: "tag-gry",
-    agent: buildAgent(),
-    notification: `🔵 【蓝色提示】CO 轻微波动`,
-  },
-];
-
-const filteredTickets = computed(() =>
-  filter.value === "all"
-    ? tickets
-    : tickets.filter((t) => t.level.includes(filter.value)),
+// 全量工单映射(无故障类型/无运维建议/无置信度;不显误报——运维当下不知真值)
+const allTickets = computed(() =>
+  (data.value.alerts || []).map((a, i) => {
+    const meta = LEVEL_META[a.level] || LEVEL_META.blue;
+    return {
+      id: "WO-" + String(i + 1).padStart(3, "0"),
+      date: a.date,
+      levelKey: a.level,
+      level: meta.label,
+      tag: meta.tag,
+      borderClass: meta.border,
+      rank: meta.rank,
+      response: meta.response,
+      ruleIds: a.rule_ids.join(", "),
+      ruleTypes: a.rule_types || [],
+      ruleTypeLabel: ruleTypeLabelOf(a.rule_types),
+      title: `触发 ${a.rule_ids.join("、")}`,
+    };
+  })
 );
 
-const selected = ref(tickets[0]);
+// 筛选 + 搜索 + 排序
+const filter = ref("all");
+const ruleTypeFilter = ref("all");
+const search = ref("");
+const sortBy = ref("time");
+const page = ref(1);
+const pageSize = 20;
+
+function setFilter(f) {
+  filter.value = f;
+  page.value = 1;
+}
+function toggleSort() {
+  sortBy.value = sortBy.value === "time" ? "urgency" : "time";
+  page.value = 1;
+}
+watch([ruleTypeFilter, search], () => (page.value = 1));
+
+const filtered = computed(() => {
+  let list = allTickets.value;
+  if (filter.value !== "all") list = list.filter((t) => t.levelKey === filter.value);
+  if (ruleTypeFilter.value !== "all")
+    list = list.filter((t) => t.ruleTypes.includes(ruleTypeFilter.value));
+  const q = search.value.trim().toLowerCase();
+  if (q) list = list.filter((t) => t.date.includes(q) || t.ruleIds.toLowerCase().includes(q));
+  list = [...list];
+  if (sortBy.value === "time") list.sort((a, b) => b.date.localeCompare(a.date));
+  else list.sort((a, b) => b.rank - a.rank || b.date.localeCompare(a.date));
+  return list;
+});
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize)));
+const paged = computed(() => filtered.value.slice((page.value - 1) * pageSize, page.value * pageSize));
+
+const selected = ref(null);
+watch(filtered, (list) => {
+  if ((!selected.value || !list.includes(selected.value)) && list.length) selected.value = list[0];
+  else if (!list.length) selected.value = null;
+});
+
+// ============ Agent 模拟轨迹(示意数据,模块6开发后接 /api/agent/run)============
+// 按工单等级生成对应 ReAct 轨迹。守边界:forecast 用 ARIMA(D-032,非 LSTM),
+// 无故障类型/置信度/运维处置建议。模块6完成后此常量替换为后端真实 trace。
+function mockTrace(t) {
+  if (!t) return [];
+  const lvl = t.levelKey;
+  const base = [
+    {
+      tool: "get_today_data", status: "success", duration: "0.2s",
+      summary: "获取最新 DGA 与工况数据",
+      thought: "需要当日 7 气体 + 工况作为后续分析输入。",
+      action: "get_today_data(transformer_id=1)",
+      observation: "{H₂, CH₄, C₂H₂, C₂H₄, C₂H₆, CO, CO₂, 油温, 负载电流}",
+    },
+    {
+      tool: "detect_anomaly", status: "success", duration: "0.3s",
+      summary: "三方法异常检测(只输出二分类)",
+      thought: "调用阈值法 / 三比值法 / 孤立森林判断当前是否异常。",
+      action: "detect_anomaly(data=today)",
+      observation: lvl === "red"
+        ? "is_abnormal=true(规则法触发)"
+        : "is_abnormal=false(当前未超标)",
+    },
+    {
+      tool: "forecast_trend", status: "success", duration: "1.1s",
+      summary: "ARIMA 预测未来 1-3 天趋势",
+      thought: "用更稳健的 ARIMA(对比实验结论)预测 7 气体未来 3 天走势。",
+      action: "forecast_trend(model='arima', horizon=3)",
+      observation: lvl === "yellow"
+        ? "关键气体呈上升趋势,3 天内未达注意值"
+        : (lvl === "red" ? "预测 1-3 天内将达注意值" : "预测平稳"),
+    },
+    {
+      tool: "check_warning", status: "success", duration: "0.1s",
+      summary: "规则引擎判定预警等级",
+      thought: "综合当前值与预测,按规则库判定等级并取最高。",
+      action: "check_warning(detection=..., forecast=...)",
+      observation: `触发 ${t.ruleIds} → 等级=${t.level}`,
+    },
+    {
+      tool: "compose_notice", status: "success", duration: "0.7s",
+      summary: "生成预警通知文本并入库",
+      thought: "按通知模板组织等级 / 触发规则 / 响应级别,写入 warning 表。",
+      action: "compose_notice(level, rules)",
+      observation: `${t.level} · ${t.response} · 触发 ${t.ruleIds}`,
+    },
+  ];
+  return base;
+}
+const agentSteps = computed(() => mockTrace(selected.value));
+const agentRunStatus = ref("success");
+
+// AI 预警通知文本(示意数据,模块6 LLM 生成后接真)。
+// 守边界:只含等级/触发规则/响应级别/趋势,无故障类型/置信度/运维处置建议;趋势措辞用 ARIMA。
+const noticeText = computed(() => {
+  const t = selected.value;
+  if (!t) return "";
+  const trend = t.levelKey === "yellow"
+    ? "ARIMA 预测关键气体呈上升趋势,3 天内未达注意值"
+    : (t.levelKey === "red" ? "ARIMA 预测 1-3 天内将达注意值" : "ARIMA 预测趋势平稳");
+  return [
+    `【${t.level.replace(/^.\s*/, "")}预警】#1 主变压器`,
+    ``,
+    `· 触发规则:${t.ruleIds}(${t.ruleTypeLabel})`,
+    `· 预测趋势:${trend}`,
+    `· 响应级别:${t.response}`,
+    `· 触发日期:${t.date}`,
+    ``,
+    `(本通知由 LLM 按模板生成,模块6开发后接入真实文本)`,
+  ].join("\n");
+});
 </script>
 
 <style scoped>
@@ -546,31 +335,37 @@ const selected = ref(tickets[0]);
   cursor: pointer;
   transition: all 0.2s;
 }
-.kpi-mini:hover {
-  border-color: rgba(6, 182, 212, 0.4);
-  background: rgba(6, 182, 212, 0.05);
+.kpi-mini:hover { border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.05); }
+.kpi-mini.active { border-color: rgba(6, 182, 212, 0.6); background: rgba(6, 182, 212, 0.08); box-shadow: inset 0 0 16px rgba(6, 182, 212, 0.1); }
+.kpi-mini.border-red.active { border-color: rgba(239, 68, 68, 0.6); background: rgba(239, 68, 68, 0.08); }
+.kpi-mini.border-org.active { border-color: rgba(249, 115, 22, 0.6); background: rgba(249, 115, 22, 0.08); }
+.kpi-mini.border-yel.active { border-color: rgba(234, 179, 8, 0.6); background: rgba(234, 179, 8, 0.08); }
+.kpi-mini.border-blu.active { border-color: rgba(59, 130, 246, 0.6); background: rgba(59, 130, 246, 0.08); }
+
+.toolbar-input {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.4);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #e5e7eb;
+  outline: none;
 }
-.kpi-mini.active {
-  border-color: rgba(6, 182, 212, 0.6);
-  background: rgba(6, 182, 212, 0.08);
-  box-shadow: inset 0 0 16px rgba(6, 182, 212, 0.1);
+.toolbar-input:focus { border-color: rgba(6, 182, 212, 0.5); }
+.toolbar-btn {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.4);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #9ca3af;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
 }
-.kpi-mini.border-red.active {
-  border-color: rgba(239, 68, 68, 0.6);
-  background: rgba(239, 68, 68, 0.08);
-}
-.kpi-mini.border-org.active {
-  border-color: rgba(249, 115, 22, 0.6);
-  background: rgba(249, 115, 22, 0.08);
-}
-.kpi-mini.border-yel.active {
-  border-color: rgba(234, 179, 8, 0.6);
-  background: rgba(234, 179, 8, 0.08);
-}
-.kpi-mini.border-blu.active {
-  border-color: rgba(59, 130, 246, 0.6);
-  background: rgba(59, 130, 246, 0.08);
-}
+.toolbar-btn:hover { border-color: rgba(6, 182, 212, 0.5); color: #67e8f9; }
 
 .ticket-card {
   background: rgba(31, 41, 55, 0.5);
@@ -581,14 +376,8 @@ const selected = ref(tickets[0]);
   cursor: pointer;
   transition: all 0.2s;
 }
-.ticket-card:hover {
-  background: rgba(59, 130, 246, 0.08);
-}
-.ticket-card.selected {
-  background: rgba(6, 182, 212, 0.1);
-  border-color: rgba(6, 182, 212, 0.5);
-  box-shadow: inset 0 0 14px rgba(6, 182, 212, 0.08);
-}
+.ticket-card:hover { background: rgba(59, 130, 246, 0.08); }
+.ticket-card.selected { background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.5); box-shadow: inset 0 0 14px rgba(6, 182, 212, 0.08); }
 
 .info-cell {
   background: rgba(31, 41, 55, 0.5);
@@ -597,67 +386,30 @@ const selected = ref(tickets[0]);
   padding: 6px 8px;
 }
 
-.react-step {
-  background: rgba(31, 41, 55, 0.5);
-  border-left: 3px solid rgba(16, 185, 129, 0.5);
+.page-btn {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.4);
   border-radius: 4px;
-  padding: 8px 10px;
+  padding: 3px 10px;
+  color: #9ca3af;
+  cursor: pointer;
 }
-.react-step.success {
-  border-left-color: #10b981;
-}
-.step-num {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(16, 185, 129, 0.2);
-  color: #6ee7b7;
-  font-weight: 700;
-  font-size: 11px;
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-btn:not(:disabled):hover { border-color: rgba(6, 182, 212, 0.5); color: #67e8f9; }
+
+.planning-pill {
+  font-size: 10px;
+  color: #d8b4fe;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  padding: 2px 8px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  flex-shrink: 0;
+  gap: 3px;
+  white-space: nowrap;
 }
-.trace-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 2px 0;
-}
-.trace-tag {
-  flex-shrink: 0;
-  font-size: 9px;
-  padding: 1px 6px;
-  border-radius: 3px;
-  border: 1px solid;
-  font-weight: 600;
-  min-width: 76px;
-  text-align: center;
-}
-.tag-thought {
-  background: rgba(6, 182, 212, 0.15);
-  color: #67e8f9;
-  border-color: rgba(6, 182, 212, 0.4);
-}
-.tag-action {
-  background: rgba(168, 85, 247, 0.15);
-  color: #d8b4fe;
-  border-color: rgba(168, 85, 247, 0.4);
-}
-.tag-observation {
-  background: rgba(249, 115, 22, 0.15);
-  color: #fdba74;
-  border-color: rgba(249, 115, 22, 0.4);
-}
-.trace-text {
-  font-size: 11px;
-  color: #d1d5db;
-  line-height: 1.5;
-}
-
-.notification-block {
+.notice-block {
   background: #0f172a;
   border: 1px solid rgba(6, 182, 212, 0.3);
   border-radius: 4px;
@@ -667,25 +419,7 @@ const selected = ref(tickets[0]);
   font-family: "JetBrains Mono", "Consolas", monospace;
   font-size: 11px;
   line-height: 1.6;
-  max-height: 180px;
   overflow-y: auto;
-}
-
-.live-dot {
-  width: 6px;
-  height: 6px;
-  background: #10b981;
-  border-radius: 50%;
-  display: inline-block;
-  animation: blink 1.5s infinite;
-}
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
+  margin: 0;
 }
 </style>
