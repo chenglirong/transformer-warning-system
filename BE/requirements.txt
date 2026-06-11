@@ -18,14 +18,17 @@ openpyxl==3.1.5            # 读 xlsx
 scikit-learn==1.5.2
 statsmodels==0.14.4        # ARIMA
 
+# === 预警规则引擎(模块 5)===
+PyYAML==6.0.3           # rules.yaml 解析(engine.py)
+
 # === 可视化(notebook 用)===
 matplotlib==3.9.2
 seaborn==0.13.2
 jupyter==1.1.1
 
-# === LSTM(第 9 周再装,先注释)===
-# tensorflow==2.16.2       # macOS Apple Silicon 用 tensorflow-macos
-# keras==3.5.0
+# === LSTM(模块 4,Python 3.11 后装,见 D-027)===
+tensorflow==2.16.2         # 本机 Intel Mac 用标准 tensorflow(Apple Silicon 才需 tensorflow-macos);自带 Keras 3.14.1
+# 注:Keras 3 加载 .h5 须 load_model(path, compile=False),否则反序列化 metrics 报错(D-027 踩坑)
 
 # === LangChain Agent(第 12-13 周再装,先注释)===
 # langchain==0.3.7
