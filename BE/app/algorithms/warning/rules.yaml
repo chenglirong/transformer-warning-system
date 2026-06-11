@@ -1,0 +1,104 @@
+# 变压器预警规则库(论文模块 5)
+#
+# 可配置化规则引擎的规则定义。engine.py 加载本文件,对「当前气体 + 工况 +
+# ARIMA 未来 1-3 天预测」逐条匹配,输出触发的规则 + 综合预警等级。
+#
+# 三类规则(论文模块 5):
+#   hard  硬规则——基于国标阈值(当前已超标),阈值口径与 detect/threshold.py
+#         的 ATTENTION_VALUES 一致(H2=150 / C2H2=5 / 总烃=150 / CO=300 / CO2=10000)
+#   soft  软规则——基于 ARIMA 预测(未来 1-3 天内预测值超标;ARIMA 选型见 D-029)
+#   combo 组合规则——多指标关联(产气速率快 + 油温高)
+#
+# 四级分级(红橙黄蓝),engine 取所有触发规则的最高级为综合等级:
+#   red    紧急——已超标 或 24h(预测第 1 天)内必超
+#   orange 重要——1-3 天内预测超标
+#   yellow 一般——趋势异常上升(未到超标,但涨势明显)
+#   blue   提示——轻微波动
+#
+# 🚧 系统边界(D-008):规则只输出「等级 / 哪些气体 / 规则编号 / 趋势」,
+#    message 措辞严禁出现具体故障类型(如「高温过热」),那是诊断系统职责。
+
+# 等级元信息(前端配色 / 响应要求,供展示用)
+levels:
+  red:    { label: "紧急", response: "立即响应" }
+  orange: { label: "重要", response: "24 小时内处理" }
+  yellow: { label: "一般", response: "加强监测" }
+  blue:   { label: "提示", response: "日常关注" }
+
+# 误报控制参数(dedup.py 用)
+dedup:
+  consecutive_n: 2        # 异常需连续 N 次触发才报警(滤噪声尖峰)
+  cooldown_hours: 24      # 同一(transformer, rule_id)24h 内不重复推送
+
+# 预警专用阈值(默认继承国标 ATTENTION_VALUES,此处仅列出需校准覆盖的项)
+# CO:国标注意值 300 对本设备合成数据偏低(正常态 38% 天数即超),按正常态
+# 95 分位(~900)校准。国标允许按设备历史基线调整注意值;此覆盖只作用于预警
+# 引擎,不改检测模块的国标口径(detect/threshold.ATTENTION_VALUES 不动)。
+warning_thresholds:
+  co: 900.0
+
+# 硬规则:当前实测已超国标注意值 → 红色(已超标,立即响应)
+hard_rules:
+  - id: H-01
+    item: c2h2            # 判定项,对应 threshold.ATTENTION_VALUES 的键
+    level: red
+    message: "C₂H₂ 当前值已超国标注意值"
+  - id: H-02
+    item: h2
+    level: red
+    message: "H₂ 当前值已超国标注意值"
+  - id: H-03
+    item: total_hydrocarbon
+    level: red
+    message: "总烃当前值已超国标注意值"
+  - id: H-04
+    item: co
+    level: red
+    message: "CO 当前值已超国标注意值"
+  - id: H-05
+    item: co2
+    level: red
+    message: "CO₂ 当前值已超国标注意值"
+
+# 软规则:ARIMA 预测未来 1-3 天内超标 → 按最早超标日定级
+#   预测第 1 天(24h 内)超标 → red;第 2-3 天超标 → orange
+soft_rules:
+  - id: S-01
+    item: c2h2
+    horizon_days: 3       # 看未来 3 天
+    message: "C₂H₂ 预测未来 {day} 天内将超国标注意值"
+  - id: S-02
+    item: h2
+    horizon_days: 3
+    message: "H₂ 预测未来 {day} 天内将超国标注意值"
+  - id: S-03
+    item: total_hydrocarbon
+    horizon_days: 3
+    message: "总烃预测未来 {day} 天内将超国标注意值"
+  - id: S-04
+    item: co
+    horizon_days: 3
+    message: "CO 预测未来 {day} 天内将超国标注意值"
+
+# 趋势规则:未到超标,但近期涨势明显 → 黄色(加强监测)
+# 以「相对当前值的涨幅比例」衡量,避免对不同气体写死绝对涨速
+trend_rules:
+  - id: T-01
+    item: c2h2
+    rise_ratio: 0.5       # 预测 3 天涨幅 ≥ 当前值 50% → 趋势异常
+    level: yellow
+    message: "C₂H₂ 呈明显上升趋势"
+  - id: T-02
+    item: total_hydrocarbon
+    rise_ratio: 0.5
+    level: yellow
+    message: "总烃呈明显上升趋势"
+
+# 组合规则:多指标关联 → 综合预警
+combo_rules:
+  - id: C-01
+    level: orange
+    message: "产气速率偏快且油温偏高,需综合关注"
+    conditions:
+      gas_rise_ratio: 0.3   # 任一关键气体预测 3 天涨幅 ≥ 30%
+      oil_temp_min: 80.0    # 且当前油温 ≥ 80℃

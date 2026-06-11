@@ -1,0 +1,2936 @@
+{
+  "baseline": "synthetic fault_state(D-020/D-033 当日对齐)",
+  "n_days": 330,
+  "confusion": {
+    "tp": 52,
+    "tn": 74,
+    "fp": 176,
+    "fn": 28
+  },
+  "metrics": {
+    "accuracy": 0.3818,
+    "precision": 0.2281,
+    "recall": 0.65,
+    "f1": 0.3377,
+    "fpr": 0.704
+  },
+  "level_distribution": {
+    "red": 80,
+    "orange": 13,
+    "yellow": 135,
+    "blue": 0
+  },
+  "n_alerts": 228,
+  "alerts": [
+    {
+      "date": "2024-05-02",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-03",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-06",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-07",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-08",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-09",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-10",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-11",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-12",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-13",
+      "level": "red",
+      "rule_ids": [
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-17",
+      "level": "orange",
+      "rule_ids": [
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-20",
+      "level": "red",
+      "rule_ids": [
+        "H-04"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-21",
+      "level": "red",
+      "rule_ids": [
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-25",
+      "level": "red",
+      "rule_ids": [
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-26",
+      "level": "red",
+      "rule_ids": [
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-27",
+      "level": "orange",
+      "rule_ids": [
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-28",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-29",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-04",
+        "S-04"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-30",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-07",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-06-09",
+      "level": "red",
+      "rule_ids": [
+        "H-04"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-06-10",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-06-11",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-12",
+      "level": "red",
+      "rule_ids": [
+        "S-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-13",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-14",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-15",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-16",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-17",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-18",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-19",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-20",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-06-21",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-06-22",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-06-25",
+      "level": "red",
+      "rule_ids": [
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-07-01",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-07-06",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-07-09",
+      "level": "red",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-07-21",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-22",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-23",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-26",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-04",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-06",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-28",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-31",
+      "level": "red",
+      "rule_ids": [
+        "H-03"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-03",
+      "level": "red",
+      "rule_ids": [
+        "H-03"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-04",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-05",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-06",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-07",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-08",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-09",
+      "level": "red",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-10",
+      "level": "orange",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-18",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-19",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-20",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-21",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-22",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-23",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-24",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-25",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-26",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-27",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-28",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-29",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-30",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-01",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-02",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-03",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-04",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-06",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-07",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-08",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-09",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-10",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-11",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-12",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-13",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-14",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-15",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-16",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-17",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-18",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-19",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-20",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-10-21",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-22",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-23",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-24",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-25",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-26",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-27",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-28",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-29",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-30",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-10-31",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-01",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-02",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-03",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-04",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-06",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-07",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-08",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-09",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-10",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-11",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-12",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-13",
+      "level": "red",
+      "rule_ids": [
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-16",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-17",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-18",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "H-05",
+        "S-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-19",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "H-05",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-20",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-21",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-22",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-23",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-24",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-25",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-26",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-27",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-11-28",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-29",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-11-30",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-01",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "H-03",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-02",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-03",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-04",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-05",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-06",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-07",
+      "level": "red",
+      "rule_ids": [
+        "H-01",
+        "S-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-08",
+      "level": "red",
+      "rule_ids": [
+        "S-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-09",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-10",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-11",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-12",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-13",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-14",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-15",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-16",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-17",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-18",
+      "level": "red",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-19",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-20",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-21",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-22",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-23",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-24",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-25",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-26",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-27",
+      "level": "orange",
+      "rule_ids": [
+        "S-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-28",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-29",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-30",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-12-31",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-01",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-02",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-06",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-07",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-08",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-09",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-10",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-13",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-14",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-15",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-01-16",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-01-17",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-01-18",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-19",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-20",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-31",
+      "level": "red",
+      "rule_ids": [
+        "H-05",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-01",
+      "level": "red",
+      "rule_ids": [
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-02",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-07",
+      "level": "red",
+      "rule_ids": [
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-08",
+      "level": "red",
+      "rule_ids": [
+        "H-05",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-09",
+      "level": "red",
+      "rule_ids": [
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-10",
+      "level": "red",
+      "rule_ids": [
+        "H-05"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-11",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-12",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "S-04",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-13",
+      "level": "red",
+      "rule_ids": [
+        "H-04",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-14",
+      "level": "red",
+      "rule_ids": [
+        "H-05",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-15",
+      "level": "red",
+      "rule_ids": [
+        "H-05",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-16",
+      "level": "red",
+      "rule_ids": [
+        "H-05",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-17",
+      "level": "red",
+      "rule_ids": [
+        "H-05",
+        "T-02"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-18",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-19",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-20",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-21",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-22",
+      "level": "red",
+      "rule_ids": [
+        "H-03"
+      ],
+      "rule_types": [
+        "hard"
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-23",
+      "level": "red",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-02-24",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-02-25",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-02-26",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-02-27",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-02-28",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-01",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-02",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-03",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-04",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-05",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-06",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-07",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-08",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-09",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-10",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-11",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-12",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-13",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-14",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-15",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-16",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-17",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-18",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-19",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-20",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-21",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-22",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-23",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-24",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-25",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-03-26",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    }
+  ]
+}
