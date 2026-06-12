@@ -73,6 +73,61 @@ def detect_methods(transformer_id: int, db: Session = Depends(get_db)):
     }
 
 
+# ---------- 单台:最近 N 天三方法逐日一致性 + 投票 ----------
+
+@router.get("/recent/{transformer_id}")
+def detect_recent(transformer_id: int, days: int = 7, db: Session = Depends(get_db)):
+    """最近 N 天三方法(阈值/IEC/iForest)逐日检测 + 融合投票(≥2 异常→异常)。
+
+    供 DetectionView「近 N 日检测一致性」据实展示多方法投票融合。
+    iForest 是无监督批量法:在**全量历史**上 fit_predict 后取最近 N 天切片
+    (与 /_internal/compare 同口径,属离线回测可视化,非在线增量)。
+
+    🚧 边界:每天只回三方法 is_abnormal 二分类 + 投票,不回 IEC 故障类型。
+    """
+    import pandas as pd
+
+    rows = db.execute(
+        select(Monitoring)
+        .where(Monitoring.transformer_id == transformer_id)
+        .order_by(Monitoring.date)
+    ).scalars().all()
+    if not rows:
+        raise HTTPException(404, f"transformer {transformer_id} not found")
+
+    df = pd.DataFrame([
+        {
+            "date": r.date, "h2": r.h2, "ch4": r.ch4, "c2h4": r.c2h4,
+            "c2h6": r.c2h6, "c2h2": r.c2h2, "co": r.co, "co2": r.co2,
+        }
+        for r in rows
+    ])
+    # 三方法各自对全量逐日判定(iForest 全量 fit,与对比实验同口径)
+    th = threshold.detect_df(df).reset_index(drop=True)
+    ie = iec.detect_df(df).reset_index(drop=True)
+    isf = iforest.detect_df(df).reset_index(drop=True)
+
+    n = min(days, len(df))
+    sl = range(len(df) - n, len(df))
+    daily: List[dict] = []
+    for i in sl:
+        votes = int(th[i]) + int(ie[i]) + int(isf[i])
+        daily.append({
+            "date": df["date"][i].isoformat(),
+            "threshold": bool(th[i]),
+            "iec": bool(ie[i]),
+            "iforest": bool(isf[i]),
+            "vote_abnormal": votes,         # 0~3 票判异常
+            "is_abnormal": votes >= 2,      # 融合规则:≥2 异常→异常
+        })
+    return {
+        "transformer_id": transformer_id,
+        "days": len(daily),
+        "vote_rule": "majority: >=2 of 3 methods abnormal",
+        "daily": daily,
+    }
+
+
 # ---------- 内部:三方法对比实验指标 ----------
 
 @router.get("/_internal/compare", include_in_schema=True, tags=["internal"],

@@ -19,8 +19,13 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db.models import Monitoring
+from app.config import BE_DIR
 
 router = APIRouter(prefix="/api/data", tags=["data"])
+
+# 第2层衍生指标(特征工程)源:scripts/build_features.py 落盘的根 data/
+# 衍生特征不进 Monitoring 表(表只存原始气体+工况),按需从特征快照读
+FEATURED_CSV = BE_DIR.parent / "data" / "featured_timeseries.csv"
 
 
 # ---------- 变压器列表 ----------
@@ -72,17 +77,25 @@ def list_transformers(db: Session = Depends(get_db)):
 def get_timeseries(
     transformer_id: int,
     days: int = Query(30, ge=1, le=180, description="返回最近 N 天"),
+    end: Optional[str] = Query(None, description="窗口截止日 YYYY-MM-DD,缺省取最新日"),
     db: Session = Depends(get_db),
 ):
-    """返回单台变压器最近 N 天的时序。
+    """返回单台变压器截止某日的最近 N 天时序。
 
-    用于 PredictionView / DetectionView 的历史曲线展示。
+    用于 PredictionView / DetectionView 的历史曲线展示,以及 AnalysisView
+    按所选日期回看该日前 N 天窗口(end 指定截止日,保证当前值与曲线同窗口)。
     """
-    # 找该变压器的最大日期作为锚点(数据集止于 2025-03-31)
-    last_date = db.execute(
-        select(func.max(Monitoring.date))
-        .where(Monitoring.transformer_id == transformer_id)
-    ).scalar()
+    # 锚点日:end 指定则用之,否则取该变压器最大日期(数据集止于 2025-03-26)
+    if end:
+        try:
+            last_date = date.fromisoformat(end)
+        except ValueError:
+            raise HTTPException(422, f"日期格式应为 YYYY-MM-DD,收到:{end}")
+    else:
+        last_date = db.execute(
+            select(func.max(Monitoring.date))
+            .where(Monitoring.transformer_id == transformer_id)
+        ).scalar()
     if not last_date:
         raise HTTPException(404, f"transformer {transformer_id} not found")
 
@@ -92,6 +105,7 @@ def get_timeseries(
         .where(
             Monitoring.transformer_id == transformer_id,
             Monitoring.date >= start,
+            Monitoring.date <= last_date,
         )
         .order_by(Monitoring.date)
     ).scalars().all()
@@ -221,18 +235,12 @@ def get_state_distribution_internal(db: Session = Depends(get_db)):
 
 # ---------- 单条最新监测 ----------
 
-@router.get("/latest/{transformer_id}")
-def get_latest(transformer_id: int, db: Session = Depends(get_db)):
-    """返回单台变压器最新一条监测记录。Dashboard/各视图当前值用。"""
-    row = db.execute(
-        select(Monitoring)
-        .where(Monitoring.transformer_id == transformer_id)
-        .order_by(Monitoring.date.desc())
-        .limit(1)
-    ).scalar_one_or_none()
-    if not row:
-        raise HTTPException(404, f"transformer {transformer_id} not found")
-    # 边界:只暴露二分类 is_abnormal,不暴露具体 IEC 故障类型
+def _serialize_row(row: Monitoring) -> dict:
+    """把一条监测记录序列化为三层数据快照(气体 + 工况 + 第2层衍生特征)。
+
+    边界:只暴露二分类 is_abnormal,不暴露具体 IEC 故障类型;
+    第2层衍生特征(总烃/三比值/产气速率)取与本条同日,三比值仅数值。
+    """
     return {
         "transformer_id": row.transformer_id,
         "date": row.date.isoformat(),
@@ -245,5 +253,110 @@ def get_latest(transformer_id: int, db: Session = Depends(get_db)):
             "load_current": row.load_current,
             "ambient_temp": row.ambient_temp,
         },
+        "features": _load_features(row.transformer_id, row.date),
         "is_abnormal": row.fault_state != "Normal",
+    }
+
+
+@router.get("/latest/{transformer_id}")
+def get_latest(transformer_id: int, db: Session = Depends(get_db)):
+    """返回单台变压器最新一条监测记录。Dashboard/各视图当前值用。"""
+    row = db.execute(
+        select(Monitoring)
+        .where(Monitoring.transformer_id == transformer_id)
+        .order_by(Monitoring.date.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    if not row:
+        raise HTTPException(404, f"transformer {transformer_id} not found")
+    return _serialize_row(row)
+
+
+@router.get("/snapshot/{transformer_id}")
+def get_snapshot(
+    transformer_id: int,
+    on: Optional[str] = Query(None, description="指定日期 YYYY-MM-DD,缺省取最新日"),
+    db: Session = Depends(get_db),
+):
+    """返回指定日期的三层数据快照(AnalysisView 日期切换用)。
+
+    缺省 on 时退化为最新一日(等同 /latest)。指定日期无记录则 404。
+    """
+    stmt = select(Monitoring).where(Monitoring.transformer_id == transformer_id)
+    if on:
+        try:
+            target = date.fromisoformat(on)
+        except ValueError:
+            raise HTTPException(422, f"日期格式应为 YYYY-MM-DD,收到:{on}")
+        stmt = stmt.where(Monitoring.date == target).limit(1)
+    else:
+        stmt = stmt.order_by(Monitoring.date.desc()).limit(1)
+    row = db.execute(stmt).scalar_one_or_none()
+    if not row:
+        raise HTTPException(404, f"transformer {transformer_id} 在 {on or '最新日'} 无记录")
+    return _serialize_row(row)
+
+
+@router.get("/dates/{transformer_id}")
+def get_dates(transformer_id: int, db: Session = Depends(get_db)):
+    """返回单台变压器全部监测日期 + 二分类异常标记(日期选择器红点用)。
+
+    边界:每天只回 date + is_abnormal(二分类),**绝不回 fault_state 故障类型**
+    (那是 IEC 诊断结论,属诊断系统职责)。
+    """
+    rows = db.execute(
+        select(Monitoring.date, Monitoring.fault_state)
+        .where(Monitoring.transformer_id == transformer_id)
+        .order_by(Monitoring.date)
+    ).all()
+    if not rows:
+        raise HTTPException(404, f"transformer {transformer_id} not found")
+    return {
+        "transformer_id": transformer_id,
+        "start_date": rows[0][0].isoformat(),
+        "end_date": rows[-1][0].isoformat(),
+        "days": [
+            {"date": d.isoformat(), "is_abnormal": fs != "Normal"}
+            for d, fs in rows
+        ],
+    }
+
+
+def _load_features(transformer_id: int, on_date: date) -> Optional[dict]:
+    """从特征快照读 (transformer_id, on_date) 那天的衍生指标。
+
+    衍生特征不在 Monitoring 表(表只存原始气体+工况),由 build_features.py
+    落盘到根 data/featured_timeseries.csv。文件缺失或当天无行则返回 None
+    (前端据此回退,不杜撰),守 P1 诚实原则(D-023)。
+    """
+    if not FEATURED_CSV.exists():
+        return None
+    import pandas as pd
+
+    df = pd.read_csv(FEATURED_CSV)
+    hit = df[(df["transformer_id"] == transformer_id) & (df["date"] == on_date.isoformat())]
+    if hit.empty:
+        return None
+    r = hit.iloc[-1]
+
+    def num(col):
+        v = r.get(col)
+        return None if v is None or pd.isna(v) else round(float(v), 4)
+
+    return {
+        "total_hydrocarbon": num("total_hydrocarbon"),
+        "total_hydrocarbon_rate": num("total_hydrocarbon_rate"),
+        # 三比值(中性衍生数值,非 IEC 诊断编码)
+        "ratios": {
+            "ch4_h2": num("ratio_ch4_h2"),
+            "c2h2_c2h4": num("ratio_c2h2_c2h4"),
+            "c2h4_c2h6": num("ratio_c2h4_c2h6"),
+        },
+        # 七气体 72h 产气速率(%),前端 ≥20% 标预警
+        "gas_rate_pct": {
+            "h2": num("h2_rate_pct"), "ch4": num("ch4_rate_pct"),
+            "c2h4": num("c2h4_rate_pct"), "c2h6": num("c2h6_rate_pct"),
+            "c2h2": num("c2h2_rate_pct"), "co": num("co_rate_pct"),
+            "co2": num("co2_rate_pct"),
+        },
     }
