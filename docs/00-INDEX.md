@@ -12,6 +12,8 @@
 | [04-architecture.md](./04-architecture.md) | 系统架构与目录结构 | 新建模块前查阅约定 |
 | [05-decisions-log.md](./05-decisions-log.md) | 关键决策日志(按时间) | 答辩遇到"为什么这么做"问题时翻 |
 | [06-python-cheatsheet.md](./06-python-cheatsheet.md) | Python 速查表(前端视角,配 JS 对照) | 看不懂某段 Python 时随时查 |
+| [07-failure-analysis.md](./07-failure-analysis.md) | 几个「不及预期」实验结果的据实分析 + 论文范文(数字真实) | **写论文**实验分析章节 |
+| [08-defense-qa.md](./08-defense-qa.md) | 答辩问答金句速记(口头回答,指向 07 详情) | **练答辩**前背 |
 
 ## 维护原则
 

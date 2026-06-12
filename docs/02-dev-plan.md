@@ -1,21 +1,22 @@
 # 第 6-15 周开发规划
 
+> **职责**:周计划 + 模块进度盘点。「继续开发」先读这里定位当前该做什么。
 > 起点:2026/06/02(第 6 周周一) | 终点:第 15 周答辩
 > 节奏:每天可投入开发
 > 最近更新:已对齐 EDA 后的数据决策(D-008/D-015),修正早期"744 行/Fault 列"等过期假设
 
-## 现状盘点(截至 2026-06-05,第 6 周)
+## 现状盘点(截至 2026-06-12,第 7 周)
 
 | 模块 | 状态 | 已有产物 |
 |------|------|---------|
 | 模块 1 数据 | ✅ | `synthesis.py` → 360 行单设备时序;`labeled_iec.csv`(IEC 打标);工况周末模式 bug 已修(D-019) |
 | 模块 2 特征 | ✅ | `features.py`(48 特征);`featured_timeseries.csv` |
 | 前端联调 | ✅ | vite proxy + `api/data.py`(已守系统边界,只回 is_abnormal) |
-| 模块 3 检测 | ✅ | 三方法齐全(`iec`/`threshold`/`iforest`,统一 `detect_df`)+ `compare_detection.py` + 混淆矩阵图 + 后端 `/api/detect/*`(D-020/D-021);**前端 DetectionView 对接欠账** |
-| 模块 4 预测 | ✅ | `predict/`(dataset/lstm/arima/rolling)+ `train_lstm.py`/`compare_predict.py` + `tests/test_predict.py`(14 用例)+ `/api/predict/compare` + PredictionView 据实接真。实测 ARIMA 全面优于 LSTM(D-027~031)|
-| 模块 5 决策 | ⬜ | `warning/` 空(但 `Warning` 表已建好) |
-| 模块 6 Agent | ⬜ | `agent/` 空(但 `AgentRun` 表已建好) |
-| 模块 7 大屏 | 🔶 | Dashboard/Detection 接真(D-022/023/025);Prediction 据实改形接真(D-031:ARIMA 胜);**Alerts 重设计为预警工单工作台(D-035:全量228条+分页+筛选/排序/搜索;详情拆预警信息+`AgentTrace.vue`组件 Agent推理时间线[ReAct三要素+示意数据标];回测指标移出待迁Analysis)**;**仅剩 Analysis 挂「规划中」**(待模块6 + 算法评测tab);Analysis 删 IEC 编码越界展示 |
+| 模块 3 检测 | ✅ | 三方法齐全 + `compare_detection.py` + 混淆矩阵图 + 后端 `/api/detect/*`(D-020/021);DetectionView 全接真(D-039:三方法投票表/删PCA/补CO₂/判定取后端/三比值方法论说明)|
+| 模块 4 预测 | ✅ | `predict/` + `train_lstm.py`/`compare_predict.py` + `test_predict.py`(14 用例)+ `/api/predict/compare` + PredictionView 接真。实测 ARIMA 全面优于 LSTM(D-027~031)|
+| 模块 5 决策 | ✅ | `warning/`(rules.yaml/engine/dedup)+ `test_warning.py`(17 用例)+ `backtest.py` + `/api/warning/backtest` + AlertsView 工单工作台(D-032~035)。误报 93%→70%,剩余为数据弱可分(D-033/040)|
+| 模块 6 Agent | ⬜ | `agent/` 空(`AgentRun` 表已建好);langchain 未装、API key 已配。**下一步开发** |
+| 模块 7 大屏 | ✅ | Dashboard/Detection 接真(D-022/023/025);Prediction 据实改形接真(D-031:ARIMA 胜);Alerts 预警工单工作台(D-035:全量228条+分页+筛选/排序/搜索;详情拆预警信息+`AgentTrace.vue`[ReAct三要素,模块6接真]+AI通知示意块D-037);**Analysis 据实重做「三层数据体系」(D-038:回归原始意图非评测页;删 IEC 故障码越界块;第1层七气体+第2层特征工程(总烃/产气速率/三比值,补展示缺口)+第3层工况全接真;后端F1扩 `/data/latest` 加 features;摘规划中横幅)**;**模块7 全页接真闭环,无规划中横幅**(仅 Agent 轨迹/AI通知挂示意标待模块6) |
 
 ## 全局视图
 
@@ -56,7 +57,7 @@
 | 三方法对比实验(以合成真值 fault_state 为基准,D-020) | `scripts/compare_detection.py` | ✅ |
 | 准确率/召回率/误报率对比表 → 论文素材 | 表格 + 混淆矩阵图(`figures/detection_confusion.png`) | ✅ |
 | 检测 API(后端) | `/api/detect/methods/{id}` + `/_internal/compare`;共享 `detect/metrics.py` | ✅ |
-| DetectionView 对接(前端) | FE 调用 `/api/detect/*` 渲染三方法对比 | 🔶 左侧指标对比✅(D-022)+ 右侧阈值表接 latest 真值✅(D-025);近 7 日表/PCA 散点仍「示意」(依赖未建后端,留后续) |
+| DetectionView 对接(前端) | FE 调用 `/api/detect/*` 渲染三方法对比 | ✅ 全页接真(D-039):左侧指标对比(D-022)+ 混淆矩阵;右侧近7日三方法逐日投票表接 `/detect/recent`、阈值表 5 项补齐 CO₂ 接 latest 真值、判定取后端 exceeded(方案C 渐进档)、三比值编码块加方法论+边界说明;删 PCA 散点(D-030 据实不硬做)+ 删 demo-badge 杜撰数据 |
 | 算法层单元测试 | `tests/test_detect.py`(pytest,17 用例覆盖三检测器 + metrics 契约与边界) | ✅ |
 
 **🎯 基准说明**(D-020 修订):原始 `Fault` 列 97.6% 未标注(D-008),不可用。**最终以合成时序的真实状态标签 `fault_state` 为 ground truth**,三方法(阈值/IEC/IF)平等评估。IEC 自动打标仅用于合成器状态库分组,不再充当对比基准(避免"自己跟自己比")。

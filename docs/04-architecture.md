@@ -1,5 +1,7 @@
 # 系统架构与目录约定
 
+> **职责**:分层架构、目录约定、系统边界(刚性约束)、接口清单。查「能不能这么写代码/边界在哪」时看这里。实验分析见 07,答辩话术见 08。
+
 ## 四层架构
 
 ```
@@ -140,10 +142,9 @@ IEC 三比值法虽然能输出具体故障类型(如 Thermal Fault >700℃),但
 
 > Q:为什么不做诊断和评估?
 >
-> A:三个原因:
-> 1. **学术诚实**:诊断需要专家标注的真实故障数据,公开数据集无法支撑
-> 2. **避免越界**:本课题已聚焦预警全链路,诊断/评估属于另一研究方向
-> 3. **工程务实**:在毕设时间内做扎实一件事,胜过样样不深
+> A:三个原因:① 学术诚实——诊断需专家标注的真实故障数据,公开集无法支撑;② 避免越界——本课题聚焦预警全链路,诊断/评估属另一方向;③ 工程务实——毕设时间内做扎实一件事胜过样样不深。
+>
+> (实测数据支撑的详细话术见 [08-答辩问答](./08-defense-qa.md);实验分析见 [07-翻车分析](./07-failure-analysis.md))
 
 ---
 
@@ -156,20 +157,32 @@ IEC 三比值法虽然能输出具体故障类型(如 Thermal Fault >700℃),但
 | **db/** | ORM 模型、Session 管理 | ❌ 业务逻辑 |
 | **agent/** | LLM 编排、ReAct 流程 | ❌ 重复实现 algorithms 已有逻辑 |
 
-## 接口约定(初稿)
+## 接口约定(实际端点,2026-06-12 校准)
 
 ```
 GET  /api/health
+# 数据
 GET  /api/data/transformers          # 变压器列表
-GET  /api/data/timeseries/{tid}      # 单台时序
-POST /api/detect                     # 异常检测,body 指定方法
-POST /api/predict/lstm               # LSTM 预测未来 1-3 天
-POST /api/predict/arima              # ARIMA 基线对比
-POST /api/warning/check              # 触发预警规则
-GET  /api/warning/list               # 预警列表
+GET  /api/data/timeseries/{tid}      # 单台时序(可加 ?days=&end=)
+GET  /api/data/latest/{tid}          # 最新一日(含 features 衍生指标)
+GET  /api/data/snapshot/{tid}        # 指定日快照 ?on=YYYY-MM-DD
+GET  /api/data/dates/{tid}           # 全部日期+二分类(日期选择器)
+GET  /api/data/overview              # 全局概览
+GET  /api/data/_internal/state_distribution   # [内部]状态分布
+# 检测
+GET  /api/detect/methods/{tid}       # 最新日三方法判定+投票
+GET  /api/detect/recent/{tid}        # 近 N 日三方法逐日+投票 ?days=7
+GET  /api/detect/_internal/compare   # [内部]三方法全量对比指标
+# 预测
+GET  /api/predict/compare            # ARIMA vs LSTM 评估+曲线+滚动预测
+# 预警
+GET  /api/warning/backtest           # 回测混淆/指标/四级分布/全量告警
+# Agent(模块 6 待开发)
 POST /api/agent/run                  # 手动触发 Agent 全流程
 GET  /api/agent/runs                 # Agent 执行历史
 ```
+
+> 边界:业务接口只回 is_abnormal,内部评估走 `/_internal/*`。Agent 端点待模块 6。
 
 ## 跨域
 

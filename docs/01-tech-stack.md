@@ -1,5 +1,6 @@
 # 技术选型与理由
 
+> **职责**:技术栈选型 + 理由 + 与论文差异。查「为什么用这个技术/答辩怎么解释选型」时看这里。
 > 最终选型,与论文梳理可能略有差异之处已说明。
 
 ## 选型总表
@@ -9,7 +10,7 @@
 | 前端 | Vue3 + Vite + Tailwind + ECharts + iconify | 一致 | 已搭建 |
 | 后端 | **FastAPI**(Python) | 一致 | 自带 Swagger 文档(答辩加分)、异步支持(Agent 调 LLM 不阻塞)、Pydantic 类型校验 |
 | 数据库 | **SQLite** ⚠️ | 论文写的 MySQL | 零安装(Python 自带)、数据量(几万行)绰绰有余、一个 `.db` 文件易部署、答辩演示零风险 |
-| ML 框架 | TensorFlow + Keras | 一致 | 论文已定,第 9 周再装 |
+| ML 框架 | TensorFlow 2.16.2 + Keras 3.14.1 | 一致 | 已装(D-027);实测 ARIMA 优于 LSTM(D-029)|
 | 时序基线 | ARIMA(statsmodels) | 一致 | - |
 | 异常检测 | 阈值法 + IEC 三比值 + Isolation Forest(sklearn) | 一致 | - |
 | Agent 框架 | LangChain | 一致 | - |
@@ -28,9 +29,9 @@
 
 ## Python 环境
 
-- **当前**:Python 3.9.6(macOS 系统自带)
-- **建议升级时机**:第 9 周开始做 LSTM 前,升级到 3.10 或 3.11(TensorFlow 在 Apple Silicon 上的支持更稳)
-- **升级方式**:用 pyenv 或 conda,避免动系统 Python
+- **当前**:Python 3.11.12(已于模块 4 前从系统自带 3.9.6 升级,Homebrew `python@3.11`,D-027)
+- **ML 框架**:TensorFlow 2.16.2 + Keras 3.14.1(已装;Intel mac 用标准 `tensorflow`)
+- 模块 1-3 用 3.9 期间的兼容写法见 06-python-cheatsheet
 
 ## 暂不引入的技术
 
