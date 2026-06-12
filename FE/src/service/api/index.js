@@ -11,9 +11,16 @@ export const getTransformers = () => http.get('/data/transformers')
 /** 单台最新一条监测记录 */
 export const getLatest = (transformerId) => http.get(`/data/latest/${transformerId}`)
 
-/** 单台最近 N 天时序(默认 30 天) */
-export const getTimeseries = (transformerId, days = 30) =>
-  http.get(`/data/timeseries/${transformerId}`, { days })
+/** 单台截止某日的最近 N 天时序(默认 30 天;end 缺省取最新日) */
+export const getTimeseries = (transformerId, days = 30, end) =>
+  http.get(`/data/timeseries/${transformerId}`, end ? { days, end } : { days })
+
+/** 指定日期的三层数据快照(AnalysisView 日期切换用);on 缺省取最新日 */
+export const getSnapshot = (transformerId, on) =>
+  http.get(`/data/snapshot/${transformerId}`, on ? { on } : {})
+
+/** 全部监测日期 + 二分类异常标记(日期选择器红点用,不含故障类型) */
+export const getDates = (transformerId) => http.get(`/data/dates/${transformerId}`)
 
 // ============ 异常检测接口 ============
 
@@ -30,6 +37,14 @@ export const getDetectCompare = () => http.get('/detect/_internal/compare')
  */
 export const getDetectMethods = (transformerId) =>
   http.get(`/detect/methods/${transformerId}`)
+
+/**
+ * 最近 N 天三方法(阈值/IEC/iForest)逐日检测 + 融合投票(≥2 异常→异常)。
+ * 守边界:每天只回三方法 is_abnormal 二分类 + 投票,不回故障类型。
+ * 返回 { transformer_id, days, vote_rule, daily:[{date,threshold,iec,iforest,vote_abnormal,is_abnormal}] }。
+ */
+export const getDetectRecent = (transformerId, days = 7) =>
+  http.get(`/detect/recent/${transformerId}`, { days })
 
 // ============ 趋势预测接口 ============
 

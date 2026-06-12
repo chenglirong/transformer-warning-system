@@ -1,12 +1,36 @@
 <template>
   <div class="h-screen flex flex-col">
     <AppHeader
-      title="三 层 指 标 体 系（数 据 看 板）"
+      title="三 层 数 据 体 系（监 测 对 象）"
       icon="mdi:layers-triple"
-      subtitle="DGA 七气体 · 衍生指标（特征工程） · 工况辅助"
-      :planning="true"
-      planning-text="部分指标(气体/工况/特征)有真实数据底子,展示与预警规则联动部分为规划中示意"
-    />
+    >
+      <template #actions>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-gray-400">查看日期</span>
+          <el-date-picker
+            v-model="pickedDate"
+            type="date"
+            size="small"
+            value-format="YYYY-MM-DD"
+            :clearable="false"
+            :disabled-date="disabledDate"
+            :cell-class-name="cellClass"
+            placeholder="选择日期"
+            class="analysis-date-picker"
+            popper-class="analysis-picker-popper"
+          />
+          <span
+            v-if="snapshot"
+            class="text-[11px] px-2 py-0.5 rounded border"
+            :class="snapshot.is_abnormal
+              ? 'text-red-300 border-red-500/40 bg-red-500/10'
+              : 'text-green-300 border-green-500/40 bg-green-500/10'"
+          >
+            {{ snapshot.is_abnormal ? '异常日' : '正常日' }}
+          </span>
+        </div>
+      </template>
+    </AppHeader>
 
     <main class="flex-1 flex flex-col gap-2 p-3 overflow-hidden" style="min-height: 0">
       <!-- Tier 1: DGA 7 气体（直接检测）-->
@@ -15,10 +39,10 @@
           <div class="tier-label">
             <span class="tier-num">第 1 层</span>
             <span class="tier-title">DGA 七气体（直接检测）</span>
-            <span class="tier-desc">LSTM 预测目标 · 预警核心依据</span>
+            <span class="tier-desc">核心地位 · LSTM 预测目标 + 预警核心依据</span>
           </div>
           <span class="text-[10px] text-gray-400">
-            数据采样：每日 1 次 · 来源 IEC TC 10 公开数据集
+            数据采样：每日 1 次 · 当前值取最新一日（{{ latestDate }}）
           </span>
         </div>
         <div class="grid grid-cols-7 gap-2 flex-1" style="min-height: 0">
@@ -57,7 +81,7 @@
         <div class="tier-header tier-2">
           <div class="tier-label">
             <span class="tier-num">第 2 层</span>
-            <span class="tier-title">衍生指标（特征工程）</span>
+            <span class="tier-title">衍生指标（特征工程计算）</span>
             <span class="tier-desc">从 DGA 计算得到 · 喂入预警规则</span>
           </div>
           <span class="text-[10px] text-gray-400">
@@ -65,23 +89,20 @@
           </span>
         </div>
         <div class="grid grid-cols-12 gap-2 flex-1" style="min-height: 0">
-          <!-- 总烃 + 关键比值 -->
+          <!-- 总烃 -->
           <div class="col-span-3 flex flex-col gap-2 overflow-hidden">
-            <div class="derived-card highlight">
+            <div class="derived-card highlight flex-1">
               <p class="text-[11px] text-gray-400">总烃 = ΣCH₄+C₂H₄+C₂H₆+C₂H₂</p>
               <p class="text-3xl font-bold text-cyan-300 mt-1">
-                129.3<span class="text-xs ml-1 text-gray-400">ppm</span>
+                {{ totalHC.value }}<span class="text-xs ml-1 text-gray-400">ppm</span>
               </p>
-              <p class="text-[10px] text-gray-500">7d ↑ 18% · 阈值 150</p>
-            </div>
-            <div class="derived-card">
-              <p class="text-[11px] text-gray-400">CO₂ / CO 比值</p>
-              <p class="text-2xl font-bold text-green-300 mt-1">5.9</p>
-              <p class="text-[10px] text-gray-500">固体绝缘正常（&gt;3）</p>
+              <p class="text-[10px]" :class="totalHC.rateClass">
+                7d {{ totalHC.rate }} · 注意值 150
+              </p>
             </div>
           </div>
 
-          <!-- 三比值法编码 + 判定 -->
+          <!-- 气体特征比值（中性衍生数值，非 IEC 诊断编码）-->
           <div class="col-span-4 flex flex-col gap-2 overflow-hidden">
             <div class="derived-card flex-1 flex flex-col">
               <p class="text-[11px] text-gray-400 mb-1.5">
@@ -97,14 +118,9 @@
                   <p class="text-base font-bold text-yellow-400">{{ r.value }}</p>
                 </div>
               </div>
-              <div
-                class="mt-1.5 px-2 py-1.5 bg-orange-500/10 border border-orange-500/40 rounded flex items-center justify-between"
-              >
-                <span class="text-[10px] text-gray-300">码集</span>
-                <span class="text-[11px] text-orange-300 font-bold">
-                  021 → 低温过热 (&lt;300℃)
-                </span>
-              </div>
+              <p class="mt-auto text-[9px] text-gray-500 leading-tight">
+                比值为特征工程衍生数值,供模型/规则使用;具体故障判别属诊断范畴,不在本预警系统输出
+              </p>
             </div>
           </div>
 
@@ -126,7 +142,7 @@
           <div class="tier-label">
             <span class="tier-num">第 3 层</span>
             <span class="tier-title">运行工况（辅助判断）</span>
-            <span class="tier-desc">为规则引擎提供上下文 · 不参与 LSTM 预测</span>
+            <span class="tier-desc">辅助地位 · 为规则引擎提供上下文,不直接参与 LSTM 预测</span>
           </div>
           <span class="text-[10px] text-yellow-300/70">
             <iconify-icon icon="mdi:information"></iconify-icon>
@@ -171,17 +187,99 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, watch } from "vue";
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import EChart from "@/components/EChart.vue";
 import { AXIS, TT } from "@/utils/chartDefaults";
+import { getSnapshot, getTimeseries, getDates } from "@/service/api";
+
+const TRANSFORMER_ID = 1; // 单设备方案
+
+// 三层数据据实接真:snapshot(选中日的当前值 + 第2层 features)
+// + timeseries(截止选中日的近 30 天曲线,保证数字与曲线同窗口)
+const snapshot = ref(null);
+const series = ref([]); // 截止选中日的近 30 天逐日记录
+
+// 日期选择器:可回看任意一天的三层数据(默认最新日);异常日历标红点
+const pickedDate = ref(null); // "YYYY-MM-DD"
+const dateRange = ref({ start: null, end: null });
+const abnormalSet = ref(new Set()); // 异常日集合(二分类,无故障类型)
+
+const latestDate = computed(() => snapshot.value?.date ?? "—");
+
+// 本地日期 → YYYY-MM-DD(避开 toISOString 的 UTC 时区偏移)
+function toISO(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// 日历:范围外禁选
+const disabledDate = (d) => {
+  if (!dateRange.value.start || !dateRange.value.end) return false;
+  const iso = toISO(d);
+  return iso < dateRange.value.start || iso > dateRange.value.end;
+};
+// 日历:异常日单元格加红点 class(入参为原生 Date,见 verify)
+const cellClass = (d) =>
+  d instanceof Date && abnormalSet.value.has(toISO(d)) ? "abnormal-cell" : "";
+
+async function loadSnapshot(on) {
+  try {
+    snapshot.value = await getSnapshot(TRANSFORMER_ID, on);
+  } catch (e) {
+    console.warn("[AnalysisView] snapshot 拉取失败,三层显示占位", e);
+    return;
+  }
+  try {
+    // 曲线截止到选中日(end),与当前值同窗口;首次 on 为空时取最新日
+    const ts = await getTimeseries(TRANSFORMER_ID, 30, snapshot.value?.date);
+    series.value = ts?.series ?? [];
+  } catch (e) {
+    console.warn("[AnalysisView] timeseries 拉取失败,曲线显示空", e);
+  }
+}
+
+onMounted(async () => {
+  // 先拉日期表(范围 + 异常标记),再默认加载最新日
+  try {
+    const dd = await getDates(TRANSFORMER_ID);
+    dateRange.value = { start: dd.start_date, end: dd.end_date };
+    abnormalSet.value = new Set(
+      (dd.days ?? []).filter((x) => x.is_abnormal).map((x) => x.date)
+    );
+  } catch (e) {
+    console.warn("[AnalysisView] dates 拉取失败,日期选择器降级", e);
+  }
+  await loadSnapshot(); // 默认最新日
+  pickedDate.value = snapshot.value?.date ?? null;
+});
+
+// 切日期 → 重载三层(跳过与当前一致的回填)
+watch(pickedDate, (v) => {
+  if (v && v !== snapshot.value?.date) loadSnapshot(v);
+});
+
+// ============ 第 1 层:DGA 七气体 ============
+// 国标 DL/T 722 注意值(与 DetectionView 阈值表口径一致)
+const GAS_META = [
+  { key: "h2", sym: "H₂", zh: "氢气", color: "#10b981", attn: 150 },
+  { key: "ch4", sym: "CH₄", zh: "甲烷", color: "#06b6d4", attn: null },
+  { key: "c2h6", sym: "C₂H₆", zh: "乙烷", color: "#8b5cf6", attn: null },
+  { key: "c2h4", sym: "C₂H₄", zh: "乙烯", color: "#f59e0b", attn: null },
+  { key: "c2h2", sym: "C₂H₂", zh: "乙炔", color: "#ef4444", attn: 5 },
+  { key: "co", sym: "CO", zh: "一氧化碳", color: "#a3e635", attn: 300 },
+  { key: "co2", sym: "CO₂", zh: "二氧化碳", color: "#f472b6", attn: null },
+];
 
 const buildSpark = (data, color, threshold) => ({
   tooltip: { ...TT, trigger: "axis" },
   grid: { top: 4, bottom: 16, left: 4, right: 4 },
   xAxis: {
     type: "category",
-    data: Array.from({ length: 30 }, (_, i) => `D-${29 - i}`),
+    data: data.map((_, i) => `D-${data.length - 1 - i}`),
     show: false,
   },
   yAxis: { type: "value", show: false, max: threshold ? threshold : null },
@@ -194,11 +292,7 @@ const buildSpark = (data, color, threshold) => ({
       lineStyle: { color, width: 1.5 },
       areaStyle: {
         color: {
-          type: "linear",
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
+          type: "linear", x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
             { offset: 0, color: color + "55" },
             { offset: 1, color: color + "00" },
@@ -219,179 +313,151 @@ const buildSpark = (data, color, threshold) => ({
   ],
 });
 
-const genHist = (start, end, wave = 0.05) =>
-  Array.from({ length: 30 }, (_, i) => {
-    const t = i / 29;
-    const v = start + (end - start) * t;
-    return +(
-      v *
-      (1 + (Math.sin(i * 0.7) + (Math.random() - 0.5) * 0.5) * wave)
-    ).toFixed(2);
-  });
+const gases = computed(() =>
+  GAS_META.map((m) => {
+    const g = snapshot.value?.gases;
+    const hist = series.value.map((d) => d[m.key]).filter((v) => v != null);
+    const cur = g?.[m.key];
+    // 近 7 天涨幅:用 series 头尾(无足够历史则不显)
+    let trend = "";
+    let trendClass = "text-gray-500";
+    if (hist.length >= 8) {
+      const prev = hist[hist.length - 8];
+      const last = hist[hist.length - 1];
+      if (prev > 0) {
+        const pct = ((last - prev) / prev) * 100;
+        const s = pct >= 0 ? "↑" : "↓";
+        trend = `7d ${s} ${Math.abs(pct).toFixed(0)}%`;
+        trendClass =
+          pct >= 20 ? "text-red-400" : pct >= 8 ? "text-orange-400"
+            : pct >= 0 ? "text-yellow-400" : "text-green-400";
+      }
+    }
+    // 超国标注意值则标警(仅有注意值的气体)
+    const over = m.attn != null && cur != null && cur > m.attn;
+    return {
+      sym: m.sym,
+      zh: m.zh,
+      value: cur != null ? cur.toFixed(cur < 10 ? 2 : 1) : "—",
+      thresholdLabel: m.attn != null ? `/ ${m.attn}${over ? " ⚠" : ""}` : "无注意值",
+      trend,
+      trendClass,
+      valueClass: over ? "text-red-400" : "text-gray-100",
+      cls: over ? "danger" : "",
+      alert: over,
+      alertClass: "text-red-400",
+      sparkOption: buildSpark(hist, m.color, m.attn),
+    };
+  })
+);
 
-const gases = [
-  {
-    sym: "H₂",
-    zh: "氢气",
-    value: "42.5",
-    thresholdLabel: "/ 150",
-    trend: "↑ 5%",
-    trendClass: "text-yellow-400",
-    valueClass: "text-green-400",
-    cls: "",
-    alert: false,
-    sparkOption: buildSpark(genHist(25, 42.5), "#10b981"),
-  },
-  {
-    sym: "CH₄",
-    zh: "甲烷",
-    value: "58.2",
-    thresholdLabel: "/ 100",
-    trend: "↑ 38%",
-    trendClass: "text-orange-400",
-    valueClass: "text-cyan-400",
-    cls: "",
-    alert: false,
-    sparkOption: buildSpark(genHist(35, 58.2), "#06b6d4"),
-  },
-  {
-    sym: "C₂H₆",
-    zh: "乙烷",
-    value: "22.8",
-    thresholdLabel: "/ 50",
-    trend: "↑ 27%",
-    trendClass: "text-yellow-400",
-    valueClass: "text-purple-400",
-    cls: "",
-    alert: false,
-    sparkOption: buildSpark(genHist(15, 22.8), "#8b5cf6"),
-  },
-  {
-    sym: "C₂H₄",
-    zh: "乙烯（过热）",
-    value: "45.1",
-    thresholdLabel: "/ 100 ⚠",
-    trend: "72h ↑ 23%",
-    trendClass: "text-orange-400",
-    valueClass: "text-yellow-400",
-    cls: "warn",
-    alert: false,
-    sparkOption: buildSpark(genHist(22, 45.1), "#f59e0b"),
-  },
-  {
-    sym: "C₂H₂",
-    zh: "乙炔（放电）",
-    value: "3.24",
-    thresholdLabel: "/ 5 ⚠",
-    trend: "↑ 18%",
-    trendClass: "text-red-400",
-    valueClass: "text-red-400",
-    cls: "danger",
-    alert: true,
-    alertClass: "text-red-400",
-    sparkOption: buildSpark(
-      [
-        0.8, 0.9, 1.0, 1.1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0,
-        2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.05, 3.1, 3.15, 3.2,
-        3.22, 3.24,
-      ],
-      "#ef4444",
-      5
-    ),
-  },
-  {
-    sym: "CO",
-    zh: "一氧化碳",
-    value: "312",
-    thresholdLabel: "绝缘老化",
-    trend: "↑ 3%",
-    trendClass: "text-green-400",
-    valueClass: "text-lime-400",
-    cls: "",
-    alert: false,
-    sparkOption: buildSpark(genHist(260, 312), "#a3e635"),
-  },
-  {
-    sym: "CO₂",
-    zh: "二氧化碳",
-    value: "1840",
-    thresholdLabel: "/ 2000",
-    trend: "↑ 2%",
-    trendClass: "text-yellow-400",
-    valueClass: "text-pink-400",
-    cls: "",
-    alert: false,
-    sparkOption: buildSpark(genHist(1500, 1840), "#f472b6"),
-  },
-];
-
-// 气体特征比值(中性衍生指标)。注:不展示 IEC 三比值「编码」——
-// 编码是 IEC 故障推理的内部步骤,属诊断系统职责,守系统边界(docs/04)
-const ratios = [
-  { name: "C₂H₂/C₂H₄", value: "0.072" },
-  { name: "CH₄/H₂", value: "1.37" },
-  { name: "C₂H₄/C₂H₆", value: "1.98" },
-];
-
-const rateOption = {
-  tooltip: { trigger: "axis", ...TT },
-  grid: { top: 8, bottom: 18, left: 40, right: 18 },
-  xAxis: {
-    type: "value",
-    ...AXIS,
-    axisLabel: { ...AXIS.axisLabel, fontSize: 9, formatter: "{value}%" },
-  },
-  yAxis: {
-    type: "category",
-    data: ["CO₂", "CO", "C₂H₂", "C₂H₄", "C₂H₆", "CH₄", "H₂"],
-    ...AXIS,
-    axisLabel: { ...AXIS.axisLabel, fontSize: 10 },
-  },
-  series: [
-    {
-      type: "bar",
-      data: [8, 12, 38, 23, 27, 18, 15],
-      itemStyle: {
-        color: (p) =>
-          p.value >= 20 ? "#ef4444" : p.value >= 15 ? "#f59e0b" : "#10b981",
-        borderRadius: [0, 4, 4, 0],
-      },
-      label: {
-        show: true,
-        position: "right",
-        color: "#e5e7eb",
-        fontSize: 9,
-        formatter: "{c}%",
-      },
-      barWidth: 12,
-      markLine: {
-        symbol: "none",
-        data: [
-          {
-            xAxis: 20,
-            lineStyle: { color: "#ef4444", type: "dashed" },
-            label: {
-              formatter: "20% 预警",
-              color: "#fca5a5",
-              fontSize: 9,
-              position: "end",
-            },
-          },
-        ],
-      },
-    },
-  ],
+// ============ 第 2 层:衍生指标(特征工程) ============
+const fmtRate = (v) => {
+  if (v == null) return { rate: "—", rateClass: "text-gray-500" };
+  const s = v >= 0 ? "↑" : "↓";
+  const cls =
+    v >= 20 ? "text-red-400" : v >= 8 ? "text-orange-400"
+      : v >= 0 ? "text-yellow-400" : "text-green-400";
+  return { rate: `${s} ${Math.abs(v).toFixed(1)}%`, rateClass: cls };
 };
 
+const totalHC = computed(() => {
+  const f = snapshot.value?.features;
+  const r = fmtRate(f?.total_hydrocarbon_rate);
+  return {
+    value: f?.total_hydrocarbon != null ? f.total_hydrocarbon.toFixed(1) : "—",
+    rate: r.rate,
+    rateClass: r.rateClass,
+  };
+});
+
+// 三比值:仅数值(中性衍生指标),不含 IEC 编码/故障类型(守系统边界 docs/04)
+const ratios = computed(() => {
+  const r = snapshot.value?.features?.ratios;
+  const fmt = (v) => (v != null ? v.toFixed(2) : "—");
+  return [
+    { name: "C₂H₂/C₂H₄", value: fmt(r?.c2h2_c2h4) },
+    { name: "CH₄/H₂", value: fmt(r?.ch4_h2) },
+    { name: "C₂H₄/C₂H₆", value: fmt(r?.c2h4_c2h6) },
+  ];
+});
+
+// 7 气体 72h 产气速率(%),接 features.gas_rate_pct 真值
+const RATE_ORDER = [
+  { key: "co2", sym: "CO₂" }, { key: "co", sym: "CO" },
+  { key: "c2h2", sym: "C₂H₂" }, { key: "c2h4", sym: "C₂H₄" },
+  { key: "c2h6", sym: "C₂H₆" }, { key: "ch4", sym: "CH₄" },
+  { key: "h2", sym: "H₂" },
+];
+const rateOption = computed(() => {
+  const gr = snapshot.value?.features?.gas_rate_pct ?? {};
+  const cats = RATE_ORDER.map((r) => r.sym);
+  const vals = RATE_ORDER.map((r) => {
+    const v = gr[r.key];
+    return v == null ? 0 : +v.toFixed(1);
+  });
+  return {
+    tooltip: { trigger: "axis", ...TT },
+    grid: { top: 20, bottom: 18, left: 40, right: 30 },
+    xAxis: {
+      type: "value",
+      ...AXIS,
+      axisLabel: { ...AXIS.axisLabel, fontSize: 9, formatter: "{value}%" },
+    },
+    yAxis: {
+      type: "category",
+      data: cats,
+      ...AXIS,
+      axisLabel: { ...AXIS.axisLabel, fontSize: 10 },
+    },
+    series: [
+      {
+        type: "bar",
+        data: vals,
+        itemStyle: {
+          color: (p) =>
+            p.value >= 20 ? "#ef4444" : p.value >= 15 ? "#f59e0b"
+              : p.value >= 0 ? "#10b981" : "#3b82f6",
+          borderRadius: [0, 4, 4, 0],
+        },
+        label: {
+          show: true,
+          position: "right",
+          color: "#e5e7eb",
+          fontSize: 9,
+          formatter: "{c}%",
+        },
+        barWidth: 12,
+        markLine: {
+          symbol: "none",
+          data: [
+            {
+              xAxis: 20,
+              lineStyle: { color: "#ef4444", type: "dashed" },
+              label: {
+                formatter: "20% 预警",
+                color: "#fca5a5",
+                fontSize: 9,
+                position: "end",
+                distance: [0, 2],
+                padding: [1, 3],
+                backgroundColor: "rgba(17,24,39,0.85)",
+                borderRadius: 2,
+              },
+            },
+          ],
+        },
+      },
+    ],
+  };
+});
+
+// ============ 第 3 层:运行工况 ============
 const buildCondTrend = (data, color, threshold) => ({
   tooltip: { ...TT, trigger: "axis" },
   grid: { top: 4, bottom: 16, left: 4, right: 4 },
-  xAxis: {
-    type: "category",
-    data: ["00", "04", "08", "12", "16", "20", "24"],
-    show: false,
-  },
-  yAxis: { type: "value", show: false, max: threshold * 1.1 },
+  xAxis: { type: "category", data: data.map((_, i) => i), show: false },
+  yAxis: { type: "value", show: false, max: threshold ? threshold * 1.1 : null },
   series: [
     {
       type: "line",
@@ -401,87 +467,87 @@ const buildCondTrend = (data, color, threshold) => ({
       lineStyle: { color, width: 1.5 },
       areaStyle: {
         color: {
-          type: "linear",
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
+          type: "linear", x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
             { offset: 0, color: color + "55" },
             { offset: 1, color: color + "00" },
           ],
         },
       },
-      markLine: {
-        symbol: "none",
-        lineStyle: { color: "#ef4444", type: "dashed", width: 1 },
-        label: { show: false },
-        data: [{ yAxis: threshold }],
-      },
+      ...(threshold
+        ? {
+            markLine: {
+              symbol: "none",
+              lineStyle: { color: "#ef4444", type: "dashed", width: 1 },
+              label: { show: false },
+              data: [{ yAxis: threshold }],
+            },
+          }
+        : {}),
     },
   ],
 });
 
-const conditions = [
-  {
-    label: "顶层油温",
-    value: "59",
-    unit: "℃",
-    threshold: "/ 95",
-    valueClass: "text-green-400",
-    cls: "ok",
-    alert: false,
-    option: buildCondTrend(
-      [45, 42, 40, 42, 48, 52, 56, 58, 59, 58, 55, 50, 46].slice(0, 7),
-      "#10b981",
-      95
-    ),
-  },
-  {
-    label: "温升速率",
-    value: "1.2",
-    unit: "℃/h",
-    threshold: "/ 3",
-    valueClass: "text-green-400",
-    cls: "ok",
-    alert: false,
-    option: buildCondTrend(
-      [0.4, 0.3, 0.5, 0.7, 1.4, 1.2, 1.0],
-      "#10b981",
-      3
-    ),
-  },
-  {
-    label: "负载电流",
-    value: "1.05",
-    unit: "倍",
-    threshold: "/ 1.1",
-    valueClass: "text-orange-400",
-    cls: "warn",
-    alert: true,
-    alertClass: "text-orange-400",
-    option: buildCondTrend(
-      [0.48, 0.44, 0.58, 0.79, 1.05, 0.87, 0.68],
-      "#f97316",
-      1.1
-    ),
-  },
-  {
-    label: "环境温度",
-    value: "38",
-    unit: "℃",
-    threshold: "/ 40",
-    valueClass: "text-yellow-400",
-    cls: "warn",
-    alert: true,
-    alertClass: "text-yellow-400",
-    option: buildCondTrend(
-      [26, 24, 22, 24, 28, 31, 34, 36, 38].slice(0, 7),
-      "#eab308",
-      40
-    ),
-  },
-];
+// 工况口径:油温注意 95℃、负载额定 250A、环温参考 40℃(承 Dashboard/合成器口径)
+const conditions = computed(() => {
+  const c = snapshot.value?.conditions;
+  const oilHist = series.value.map((d) => d.oil_temp).filter((v) => v != null);
+  const loadHist = series.value.map((d) => d.load_current).filter((v) => v != null);
+  const ambHist = series.value.map((d) => d.ambient_temp).filter((v) => v != null);
+  const fmt = (v, d = 0) => (v != null ? v.toFixed(d) : "—");
+  const oil = c?.oil_temp;
+  const load = c?.load_current;
+  const amb = c?.ambient_temp;
+  return [
+    {
+      label: "顶层油温",
+      value: fmt(oil, 1),
+      unit: "℃",
+      threshold: "/ 95",
+      valueClass: oil != null && oil > 95 ? "text-red-400" : "text-green-400",
+      cls: oil != null && oil > 95 ? "warn" : "ok",
+      alert: oil != null && oil > 95,
+      alertClass: "text-red-400",
+      option: buildCondTrend(oilHist, "#10b981", 95),
+    },
+    {
+      label: "温升速率(油温日变化)",
+      value: oilHist.length >= 2 ? fmt(oilHist[oilHist.length - 1] - oilHist[oilHist.length - 2], 1) : "—",
+      unit: "℃/d",
+      threshold: "参考",
+      valueClass: "text-green-400",
+      cls: "ok",
+      alert: false,
+      option: buildCondTrend(
+        oilHist.slice(1).map((v, i) => +(v - oilHist[i]).toFixed(2)),
+        "#10b981",
+        null
+      ),
+    },
+    {
+      label: "负载电流",
+      value: fmt(load, 0),
+      unit: "A",
+      threshold: "/ 250",
+      valueClass: load != null && load > 250 ? "text-orange-400" : "text-green-400",
+      cls: load != null && load > 250 ? "warn" : "ok",
+      alert: load != null && load > 250,
+      alertClass: "text-orange-400",
+      option: buildCondTrend(loadHist, "#f97316", 250),
+    },
+    {
+      label: "环境温度",
+      value: fmt(amb, 1),
+      unit: "℃",
+      threshold: "/ 40",
+      valueClass: amb != null && amb > 40 ? "text-yellow-400" : "text-green-400",
+      cls: amb != null && amb > 40 ? "warn" : "ok",
+      alert: amb != null && amb > 40,
+      alertClass: "text-yellow-400",
+      option: buildCondTrend(ambHist, "#eab308", 40),
+    },
+  ];
+});
 </script>
 
 <style scoped>
@@ -502,27 +568,15 @@ const conditions = [
   flex-shrink: 0;
 }
 .tier-1 {
-  background: linear-gradient(
-    90deg,
-    rgba(6, 182, 212, 0.15),
-    rgba(6, 182, 212, 0)
-  );
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0));
   border-color: #06b6d4;
 }
 .tier-2 {
-  background: linear-gradient(
-    90deg,
-    rgba(168, 85, 247, 0.15),
-    rgba(168, 85, 247, 0)
-  );
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(168, 85, 247, 0));
   border-color: #a855f7;
 }
 .tier-3 {
-  background: linear-gradient(
-    90deg,
-    rgba(245, 158, 11, 0.15),
-    rgba(245, 158, 11, 0)
-  );
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0));
   border-color: #f59e0b;
 }
 .tier-label {

@@ -46,6 +46,8 @@
     <div
       class="flex items-center gap-3 text-xs text-gray-400 w-1/4 justify-end"
     >
+      <!-- 页面级控件插槽(如 AnalysisView 的日期选择器) -->
+      <slot name="actions"></slot>
       <span v-if="subtitle">{{ subtitle }}</span>
       <span class="text-cyan-300 font-mono">{{ clock }}</span>
     </div>

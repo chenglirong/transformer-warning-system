@@ -95,3 +95,61 @@ body {
   margin: 0 8px;
 }
 .bar-fill { height: 100%; border-radius: 2px; transition: width .4s; }
+
+/* ===== AnalysisView 日期选择器:深色适配 + 异常日红点 ===== */
+/* 弹层 teleport 到 body,样式须全局(限定 popper-class 不污染他处)。 */
+.analysis-picker-popper {
+  --el-bg-color: #111827;
+  --el-bg-color-overlay: #111827;
+  --el-text-color-regular: #d1d5db;
+  --el-text-color-primary: #e5e7eb;
+  --el-border-color: rgba(75, 85, 99, .5);
+  --el-border-color-light: rgba(75, 85, 99, .4);
+  --el-fill-color-blank: #111827;
+  --el-datepicker-off-text-color: #6b7280;
+  --el-datepicker-inrange-bg-color: rgba(6, 182, 212, .12);
+}
+.analysis-picker-popper.el-popper {
+  background: #111827;
+  border: 1px solid rgba(75, 85, 99, .5);
+}
+.analysis-picker-popper .el-popper__arrow::before {
+  background: #111827 !important;
+  border: 1px solid rgba(75, 85, 99, .5) !important;
+}
+.analysis-picker-popper .el-date-table th {
+  color: #9ca3af;
+  border-bottom-color: rgba(75, 85, 99, .4);
+}
+.analysis-picker-popper .el-picker-panel__icon-btn,
+.analysis-picker-popper .el-date-picker__header-label {
+  color: #d1d5db;
+}
+/* 异常日红点:cellClassName 落在 td.abnormal-cell;红点挂内层 cell text,
+   两种结构都覆盖(class 可能在 td 或内层 .el-date-table-cell)。 */
+.analysis-picker-popper td.abnormal-cell .el-date-table-cell,
+.analysis-picker-popper .abnormal-cell .el-date-table-cell {
+  position: relative;
+}
+.analysis-picker-popper td.abnormal-cell .el-date-table-cell__text::after,
+.analysis-picker-popper .abnormal-cell .el-date-table-cell__text::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+/* 头部输入框:深色 */
+.analysis-date-picker .el-input__wrapper {
+  background: rgba(17, 24, 39, .72);
+  box-shadow: 0 0 0 1px rgba(75, 85, 99, .5) inset;
+}
+.analysis-date-picker .el-input__inner {
+  color: #e5e7eb;
+}
+.analysis-date-picker .el-input__inner::placeholder {
+  color: #6b7280;
+}

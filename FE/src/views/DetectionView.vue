@@ -83,21 +83,8 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 overflow-hidden" style="flex: 1">
-          <div class="glass rounded-lg p-3 flex flex-col overflow-hidden">
-            <h3
-              class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5"
-            >
-              <iconify-icon icon="mdi:scatter-plot"></iconify-icon>
-              Isolation Forest 降维散点（PCA）
-              <span class="demo-badge">示意</span>
-            </h3>
-            <div class="flex-1" style="min-height: 0">
-              <EChart :option="scatterOption" />
-            </div>
-          </div>
-
-          <div class="glass rounded-lg p-3 flex flex-col overflow-hidden">
+        <div class="overflow-hidden" style="flex: 1">
+          <div class="glass rounded-lg p-3 flex flex-col overflow-hidden h-full">
             <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2">
               <iconify-icon icon="mdi:gauge"></iconify-icon>
               Isolation Forest 混淆矩阵（最优方法）
@@ -133,8 +120,7 @@
         <div class="glass rounded-lg p-3 flex flex-col overflow-hidden" style="flex: 1">
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
             <iconify-icon icon="mdi:timeline-check"></iconify-icon>
-            近 7 日检测一致性（融合规则：≥2 异常 → 异常）
-            <span class="demo-badge">示意</span>
+            近 7 日检测一致性（融合规则：3 方法 ≥2 异常 → 异常）
           </h3>
           <table class="consistency-table flex-1">
             <thead>
@@ -147,7 +133,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="d in dailyDetections" :key="d.day">
+              <tr v-for="d in recentDaily" :key="d.day">
                 <td class="text-cyan-300 font-mono text-[11px]">{{ d.day }}</td>
                 <td><span class="dot-result" :class="d.threshold"></span></td>
                 <td><span class="dot-result" :class="d.ratio"></span></td>
@@ -160,10 +146,15 @@
                   >
                 </td>
               </tr>
+              <tr v-if="!recentDaily.length">
+                <td colspan="5" class="text-center text-gray-500 text-[11px] py-3">
+                  暂无数据
+                </td>
+              </tr>
             </tbody>
           </table>
           <p class="text-[10px] text-gray-500 mt-1.5">
-            ● 异常　○ 正常 · 融合避免单方法误判
+            ● 异常　○ 正常 · 阈值/IEC/iForest 三方逐日投票观察;实测等权融合未优于单一 iForest(弱方法拖累)
           </p>
         </div>
 
@@ -177,7 +168,7 @@
               <tr>
                 <th>气体</th>
                 <th>注意值</th>
-                <th>当前</th>
+                <th>最新日值</th>
                 <th>判定</th>
               </tr>
             </thead>
@@ -185,7 +176,7 @@
               <tr v-for="t in thresholds" :key="t.gas">
                 <td class="text-gray-300">{{ t.gas }}</td>
                 <td class="text-gray-400">{{ t.threshold }}</td>
-                <td class="font-mono" :class="t.currClass">{{ t.current }}</td>
+                <td class="font-mono" :class="t.currClass">{{ t.latestVal }}</td>
                 <td>
                   <span class="px-1.5 py-0.5 rounded text-[10px]" :class="t.tag">
                     {{ t.result }}
@@ -201,6 +192,9 @@
             <iconify-icon icon="mdi:code-tags"></iconify-icon>
             三比值法编码规则
           </h3>
+          <p class="text-[10px] text-gray-400 leading-snug mb-1.5">
+            <span class="text-cyan-300">第 1 步</span>:三对气体比值按下表各映射为编码 0/1/2。
+          </p>
           <div class="grid grid-cols-3 gap-1.5 text-[10px]">
             <div class="code-cell">
               <p class="text-cyan-300 font-bold">C₂H₂/C₂H₄</p>
@@ -221,8 +215,20 @@
               <p>&gt;3 → 2</p>
             </div>
           </div>
-          <!-- 系统边界:三比值编码规则可作科普展示,但禁止推出并展示具体故障类型 -->
-          <!-- (原"021 → 低温过热"已删除,IEC 故障类型属诊断系统职责,见 docs/04-architecture.md)-->
+          <div
+            class="mt-2 px-2 py-1.5 rounded text-[10px] leading-snug"
+            style="background: rgba(234,179,8,.08); border: 1px solid rgba(234,179,8,.25)"
+          >
+            <p class="text-yellow-300/90">
+              <iconify-icon icon="mdi:shield-half-full" class="align-middle"></iconify-icon>
+              第 2 步(编码组合 → 具体故障类型)属<span class="font-semibold">诊断</span>范畴,本预警系统<span class="font-semibold">不对外输出</span>。
+            </p>
+            <p class="text-gray-400 mt-0.5">
+              本系统仅将三比值法用于<span class="text-gray-300">内部异常二分类</span>(实测召回约 40%,见左侧对比),对外只给 is_abnormal,不给故障结论 —— 这是预警系统与诊断系统的职责边界。
+            </p>
+          </div>
+          <!-- 系统边界:只展示第1步编码规则(方法论),禁止展示第2步的具体故障类型映射 -->
+          <!-- 历史:曾误把第2步诊断结论渲染到页面,已删(D-034),见 docs/04-architecture.md -->
         </div>
       </div>
     </main>
@@ -237,7 +243,7 @@ import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import EChart from "@/components/EChart.vue";
 import { AXIS, TT } from "@/utils/chartDefaults";
-import { getDetectCompare, getLatest } from "@/service/api";
+import { getDetectCompare, getLatest, getDetectRecent, getDetectMethods } from "@/service/api";
 
 // ============ 真值兜底常量(防 Demo 断网)============
 // 来源:scripts/compare_detection.py / GET /api/detect/_internal/compare
@@ -262,6 +268,8 @@ const compare = ref(FALLBACK);
 // 单台最新一条监测(阈值参考表用真实气体值)
 const TRANSFORMER_ID = 1; // 单设备方案
 const latest = ref(null);
+const recent = ref([]); // 最近 7 天三方法逐日 + 投票(接真,非杜撰)
+const methodsResult = ref(null); // 后端阈值/IEC 对最新日的判定(阈值表判定取此,不前端复刻)
 
 const pct = (x) => +(x * 100).toFixed(1); // 比率 → 百分比(1 位小数)
 
@@ -277,6 +285,19 @@ onMounted(async () => {
     latest.value = await getLatest(TRANSFORMER_ID);
   } catch (e) {
     console.warn("[DetectionView] latest 拉取失败,阈值表显示占位", e);
+  }
+  try {
+    const r = await getDetectRecent(TRANSFORMER_ID, 7);
+    recent.value = r?.daily ?? [];
+  } catch (e) {
+    console.warn("[DetectionView] recent 拉取失败,一致性表显示空", e);
+  }
+  try {
+    // 阈值表判定取后端权威结果(exceeded_gases),不在前端复刻判定口径
+    const m = await getDetectMethods(TRANSFORMER_ID);
+    methodsResult.value = m?.methods ?? null;
+  } catch (e) {
+    console.warn("[DetectionView] methods 拉取失败,阈值表判定降级前端计算", e);
   }
 });
 
@@ -387,101 +408,50 @@ const compareOption = computed(() => {
 // ③ 混淆矩阵:展示最优方法 Isolation Forest 的真实四格(D-021)
 const iforestConfusion = computed(() => compare.value.metrics.iforest.confusion);
 
-// ⚠️ 以下为右侧栏示意数据(Y2):散点/近7日一致性/阈值参考表
-// 本周仅接左侧指标对比真值,右侧明细待第 8 周联调时接业务接口。
-const scatterData = [];
-for (let i = 0; i < 220; i++) {
-  scatterData.push([
-    +(Math.random() * 2 - 1).toFixed(3),
-    +(Math.random() * 2 - 1).toFixed(3),
-    "normal",
-  ]);
-}
-for (let i = 0; i < 16; i++) {
-  scatterData.push([
-    +(Math.random() * 3 + 1.5).toFixed(3),
-    +(Math.random() * 3 - 2.5).toFixed(3),
-    "anomaly",
-  ]);
-}
-
-const scatterOption = {
-  tooltip: {
-    ...TT,
-    formatter: (p) => `PC1=${p.data[0]}<br/>PC2=${p.data[1]}<br/>${p.data[2]}`,
-  },
-  legend: {
-    textStyle: { color: "#9ca3af", fontSize: 10 },
-    top: 0,
-    right: 0,
-  },
-  grid: { top: 25, bottom: 20, left: 36, right: 10 },
-  xAxis: {
-    type: "value",
-    name: "PC1",
-    nameTextStyle: { color: "#9ca3af", fontSize: 10 },
-    ...AXIS,
-  },
-  yAxis: {
-    type: "value",
-    name: "PC2",
-    nameTextStyle: { color: "#9ca3af", fontSize: 10 },
-    ...AXIS,
-  },
-  series: [
-    {
-      name: "正常",
-      type: "scatter",
-      data: scatterData.filter((d) => d[2] === "normal"),
-      symbolSize: 6,
-      itemStyle: { color: "rgba(16, 185, 129, .55)" },
-    },
-    {
-      name: "异常",
-      type: "scatter",
-      data: scatterData.filter((d) => d[2] === "anomaly"),
-      symbolSize: 11,
-      itemStyle: {
-        color: "#ef4444",
-        shadowBlur: 8,
-        shadowColor: "#ef4444",
-      },
-    },
-  ],
-};
-
-const dailyDetections = [
-  { day: "D-6", threshold: "ok", ratio: "ok", forest: "ok", final: "正常", finalTag: "tag-grn" },
-  { day: "D-5", threshold: "ok", ratio: "ok", forest: "bad", final: "正常", finalTag: "tag-grn" },
-  { day: "D-4", threshold: "ok", ratio: "bad", forest: "bad", final: "异常", finalTag: "tag-org" },
-  { day: "D-3", threshold: "ok", ratio: "bad", forest: "bad", final: "异常", finalTag: "tag-org" },
-  { day: "D-2", threshold: "bad", ratio: "bad", forest: "bad", final: "异常", finalTag: "tag-red" },
-  { day: "D-1", threshold: "bad", ratio: "bad", forest: "bad", final: "异常", finalTag: "tag-red" },
-  { day: "今日", threshold: "bad", ratio: "bad", forest: "bad", final: "异常", finalTag: "tag-red" },
-];
+// 近 7 日三方法逐日一致性 + 投票(接真 /detect/recent,非杜撰)
+// dot class:异常→"bad"(红点) / 正常→"ok"(灰点),复用既有 .dot-result 样式
+// 融合标签:≥2 异常→异常(橙),否则正常(绿)
+const recentDaily = computed(() =>
+  recent.value.map((d) => {
+    const dot = (b) => (b ? "bad" : "ok");
+    const md = d.date.slice(5); // "03-26"
+    return {
+      day: md,
+      threshold: dot(d.threshold),
+      ratio: dot(d.iec),
+      forest: dot(d.iforest),
+      votes: d.vote_abnormal,
+      final: d.is_abnormal ? "异常" : "正常",
+      finalTag: d.is_abnormal ? "tag-org" : "tag-grn",
+    };
+  })
+);
 
 // 阈值参考表:接 latest.gases 真实气体值,阈值口径与后端 ATTENTION_VALUES 一致
-// (threshold.py:h2=150 / c2h2=5 / 总烃=150 / co=300;单个烃类不单设,按总烃合并判)
-// 判定分档:超注意值→异常;≥80%→趋近;≥50%→关注;否则正常
-const ATTENTION = { h2: 150, c2h2: 5, total_hydrocarbon: 150, co: 300 };
+// (threshold.py:h2=150 / c2h2=5 / 总烃=150 / co=300 / co2=10000;烃类不单设,按总烃合并判)
+const ATTENTION = { h2: 150, c2h2: 5, total_hydrocarbon: 150, co: 300, co2: 10000 };
 
-const judge = (v, limit) => {
+// 「超标」判定权威取后端(exceeded_gases),前端不复刻;未超标时再按占比
+// 细分 趋近/关注/正常 —— 纯 UI 渐进提示,不改变"是否超标"的权威结论。
+const subVerdict = (v, limit) => {
   const ratio = v / limit;
-  if (ratio > 1) return { result: "异常", currClass: "text-red-400", tag: "tag-red" };
   if (ratio >= 0.8) return { result: "趋近", currClass: "text-orange-400", tag: "tag-org" };
   if (ratio >= 0.5) return { result: "关注", currClass: "text-yellow-400", tag: "tag-yel" };
   return { result: "正常", currClass: "text-green-400", tag: "tag-grn" };
 };
+// 后端未就绪时的兜底:前端按 val>limit 判超标(口径同后端,仅断网兜底)
+const fallbackOver = (v, limit) => v > limit;
 
 const thresholds = computed(() => {
   const g = latest.value?.gases;
   if (!g) {
     // 未加载:显示占位(横线),不杜撰数值
     return [
-      { gas: "H₂", threshold: "150 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
-      { gas: "C₂H₂", threshold: "5 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
-      { gas: "总烃", threshold: "150 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
-      { gas: "CO", threshold: "300 ppm", current: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "H₂", threshold: "150 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "C₂H₂", threshold: "5 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "总烃", threshold: "150 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "CO", threshold: "300 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "CO₂", threshold: "10000 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
     ];
   }
   const totalHc = g.ch4 + g.c2h4 + g.c2h6 + g.c2h2; // 总烃合成项(同后端口径)
@@ -490,13 +460,24 @@ const thresholds = computed(() => {
     { gas: "C₂H₂", key: "c2h2", val: g.c2h2, limit: ATTENTION.c2h2 },
     { gas: "总烃", key: "total_hydrocarbon", val: totalHc, limit: ATTENTION.total_hydrocarbon },
     { gas: "CO", key: "co", val: g.co, limit: ATTENTION.co },
+    { gas: "CO₂", key: "co2", val: g.co2, limit: ATTENTION.co2 },
   ];
-  return rows.map((r) => ({
-    gas: r.gas,
-    threshold: `${r.limit} ppm`,
-    current: r.val.toFixed(2),
-    ...judge(r.val, r.limit),
-  }));
+  // 「超标」判定权威取后端 exceeded_gases(判定项 key 与本表对齐);
+  // 后端未就绪则用前端兜底。未超标时按占比细分 趋近/关注/正常(纯 UI 提示)。
+  const exceeded = methodsResult.value?.threshold?.exceeded_gases ?? null;
+  return rows.map((r) => {
+    const isOver =
+      exceeded !== null ? exceeded.includes(r.key) : fallbackOver(r.val, r.limit);
+    const verdict = isOver
+      ? { result: "超标", currClass: "text-red-400", tag: "tag-red" }
+      : subVerdict(r.val, r.limit);
+    return {
+      gas: r.gas,
+      threshold: `${r.limit} ppm`,
+      latestVal: r.val.toFixed(2),
+      ...verdict,
+    };
+  });
 });
 </script>
 
