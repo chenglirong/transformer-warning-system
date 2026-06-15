@@ -30,10 +30,10 @@ jupyter==1.1.1
 tensorflow==2.16.2         # 本机 Intel Mac 用标准 tensorflow(Apple Silicon 才需 tensorflow-macos);自带 Keras 3.14.1
 # 注:Keras 3 加载 .h5 须 load_model(path, compile=False),否则反序列化 metrics 报错(D-027 踩坑)
 
-# === LangChain Agent(第 12-13 周再装,先注释)===
-# langchain==0.3.7
-# langchain-community==0.3.5
-# dashscope==1.20.14       # 通义千问 SDK
+# === LangChain Agent(第 7 周提前装,已落地 D-041)===
+langchain==0.3.7
+langchain-community==0.3.5
+dashscope==1.20.14       # 通义千问 SDK
 
 # === 工具 ===
 python-dotenv==1.0.1

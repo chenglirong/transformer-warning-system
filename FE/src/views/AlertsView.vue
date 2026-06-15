@@ -71,6 +71,14 @@
               <div class="flex items-center gap-2">
                 <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="t.tag">{{ t.level }}</span>
                 <span class="text-[10px] text-cyan-300 font-mono">{{ t.id }}</span>
+                <span
+                  v-if="agentDates.has(t.date)"
+                  class="agent-traceable"
+                  title="该工单有 Agent 预跑推理轨迹,可点单追溯"
+                >
+                  <iconify-icon icon="mdi:robot-outline"></iconify-icon>
+                  可追溯
+                </span>
               </div>
               <span class="text-[10px] text-gray-500">{{ t.date }}</span>
             </div>
@@ -120,28 +128,28 @@
           </div>
         </div>
 
-        <!-- 中:Agent 推理追溯(模拟数据,带规划中标识)-->
+        <!-- 中:Agent 推理追溯(接真 /api/agent/run,LangChain ReAct)-->
         <div class="glass rounded-lg p-3 overflow-hidden flex flex-col" style="flex: 1">
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-2">
             <iconify-icon icon="mdi:robot-outline"></iconify-icon>
             Agent 推理追溯（该预警如何被推导）
           </h3>
           <div class="flex-1 overflow-hidden" style="min-height: 0">
-            <AgentTrace v-if="selected" :steps="agentSteps" :run-status="agentRunStatus" />
+            <AgentTrace v-if="selected && agentReady" :steps="agentSteps" :run-status="agentRunStatus" :duration-ms="agentDurationMs" />
+            <p v-else-if="selected && agentLoading" class="text-xs text-gray-500 p-2">加载 Agent 轨迹…</p>
+            <p v-else-if="selected" class="text-xs text-gray-500 p-2 leading-relaxed">
+              该工单未预跑 Agent 轨迹。<br />
+              Agent 预跑覆盖各等级代表性工单(脚本 scripts/run_agent_demo.py 离线落盘);
+              其余工单可后续按需补跑。
+            </p>
           </div>
         </div>
 
-        <!-- 下:AI 预警通知(LLM 生成,归模块6,示意数据)-->
-        <div v-if="selected" class="glass rounded-lg p-3 overflow-hidden flex flex-col" style="flex: 0.7">
-          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between">
-            <span class="flex items-center gap-2">
-              <iconify-icon icon="mdi:bullhorn-outline"></iconify-icon>
-              AI 预警通知（LLM 生成）
-            </span>
-            <span class="planning-pill">
-              <iconify-icon icon="mdi:progress-clock"></iconify-icon>
-              模块 6 · 第 13 周 · 示意数据
-            </span>
+        <!-- 下:AI 预警通知(LLM 生成,接真 Agent Final Answer)-->
+        <div v-if="selected && agentReady" class="glass rounded-lg p-3 overflow-hidden flex flex-col" style="flex: 0.7">
+          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-2">
+            <iconify-icon icon="mdi:bullhorn-outline"></iconify-icon>
+            AI 预警通知（LLM 生成）
           </h3>
           <pre class="notice-block flex-1">{{ noticeText }}</pre>
         </div>
@@ -157,7 +165,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import AgentTrace from "@/components/AgentTrace.vue";
-import { getWarningBacktest } from "@/service/api";
+import { getWarningBacktest, getAgentRun, getAgentDates } from "@/service/api";
 
 // ============ 真值兜底(防 Demo 断网)============
 // 来源:GET /api/warning/backtest(scripts/backtest.py 落盘的全量告警)。
@@ -168,12 +176,21 @@ const FALLBACK = {
 };
 const data = ref(FALLBACK);
 
+// 已预跑 Agent 轨迹的工单日期(给「可追溯」工单卡片打标;预跑仅覆盖代表性工单)
+const agentDates = ref(new Set());
+
 onMounted(async () => {
   try {
     const r = await getWarningBacktest();
     if (r?.alerts) data.value = r;
   } catch (e) {
     console.warn("[AlertsView] 回测接口拉取失败,使用兜底常量", e);
+  }
+  try {
+    const d = await getAgentDates(1);   // 单设备方案 transformer_id=1
+    agentDates.value = new Set(d?.dates || []);
+  } catch (e) {
+    console.warn("[AlertsView] Agent 预跑日期拉取失败", e);
   }
 });
 
@@ -253,77 +270,39 @@ watch(filtered, (list) => {
   else if (!list.length) selected.value = null;
 });
 
-// ============ Agent 模拟轨迹(示意数据,模块6开发后接 /api/agent/run)============
-// 按工单等级生成对应 ReAct 轨迹。守边界:forecast 用 ARIMA(D-032,非 LSTM),
-// 无故障类型/置信度/运维处置建议。模块6完成后此常量替换为后端真实 trace。
-function mockTrace(t) {
-  if (!t) return [];
-  const lvl = t.levelKey;
-  const base = [
-    {
-      tool: "get_today_data", status: "success", duration: "0.2s",
-      summary: "获取最新 DGA 与工况数据",
-      thought: "需要当日 7 气体 + 工况作为后续分析输入。",
-      action: "get_today_data(transformer_id=1)",
-      observation: "{H₂, CH₄, C₂H₂, C₂H₄, C₂H₆, CO, CO₂, 油温, 负载电流}",
-    },
-    {
-      tool: "detect_anomaly", status: "success", duration: "0.3s",
-      summary: "三方法异常检测(只输出二分类)",
-      thought: "调用阈值法 / 三比值法 / 孤立森林判断当前是否异常。",
-      action: "detect_anomaly(data=today)",
-      observation: lvl === "red"
-        ? "is_abnormal=true(规则法触发)"
-        : "is_abnormal=false(当前未超标)",
-    },
-    {
-      tool: "forecast_trend", status: "success", duration: "1.1s",
-      summary: "ARIMA 预测未来 1-3 天趋势",
-      thought: "用更稳健的 ARIMA(对比实验结论)预测 7 气体未来 3 天走势。",
-      action: "forecast_trend(model='arima', horizon=3)",
-      observation: lvl === "yellow"
-        ? "关键气体呈上升趋势,3 天内未达注意值"
-        : (lvl === "red" ? "预测 1-3 天内将达注意值" : "预测平稳"),
-    },
-    {
-      tool: "check_warning", status: "success", duration: "0.1s",
-      summary: "规则引擎判定预警等级",
-      thought: "综合当前值与预测,按规则库判定等级并取最高。",
-      action: "check_warning(detection=..., forecast=...)",
-      observation: `触发 ${t.ruleIds} → 等级=${t.level}`,
-    },
-    {
-      tool: "compose_notice", status: "success", duration: "0.7s",
-      summary: "生成预警通知文本并入库",
-      thought: "按通知模板组织等级 / 触发规则 / 响应级别,写入 warning 表。",
-      action: "compose_notice(level, rules)",
-      observation: `${t.level} · ${t.response} · 触发 ${t.ruleIds}`,
-    },
-  ];
-  return base;
-}
-const agentSteps = computed(() => mockTrace(selected.value));
+// ============ Agent ReAct 轨迹(接真 /api/agent/run,模块6)============
+// 选中工单时按工单日期拉该工单的 Agent 预跑轨迹(scripts/run_agent_demo.py 离线
+// 落盘,D-027 在线轻量)。预跑只覆盖代表性工单,未覆盖的工单据实显「未预跑」占位
+// (不杜撰,承 D-023)。守边界:轨迹/通知由后端 Prompt+黑名单双校验守住。
+const agentSteps = ref([]);
 const agentRunStatus = ref("success");
+const noticeText = ref("");
+const agentReady = ref(false);          // 该工单是否有预跑轨迹
+const agentLoading = ref(false);
+const agentDurationMs = ref(0);         // 整轮真实耗时(后端 duration_ms)
 
-// AI 预警通知文本(示意数据,模块6 LLM 生成后接真)。
-// 守边界:只含等级/触发规则/响应级别/趋势,无故障类型/置信度/运维处置建议;趋势措辞用 ARIMA。
-const noticeText = computed(() => {
-  const t = selected.value;
-  if (!t) return "";
-  const trend = t.levelKey === "yellow"
-    ? "ARIMA 预测关键气体呈上升趋势,3 天内未达注意值"
-    : (t.levelKey === "red" ? "ARIMA 预测 1-3 天内将达注意值" : "ARIMA 预测趋势平稳");
-  return [
-    `【${t.level.replace(/^.\s*/, "")}预警】#1 主变压器`,
-    ``,
-    `· 触发规则:${t.ruleIds}(${t.ruleTypeLabel})`,
-    `· 预测趋势:${trend}`,
-    `· 响应级别:${t.response}`,
-    `· 触发日期:${t.date}`,
-    ``,
-    `(本通知由 LLM 按模板生成,模块6开发后接入真实文本)`,
-  ].join("\n");
-});
+async function loadAgentTrace(t) {
+  agentReady.value = false;
+  agentSteps.value = [];
+  noticeText.value = "";
+  agentDurationMs.value = 0;
+  if (!t) return;
+  agentLoading.value = true;
+  try {
+    const r = await getAgentRun(1, t.date);   // 单设备方案 transformer_id=1
+    agentSteps.value = r.steps || [];
+    agentRunStatus.value = r.status || "success";
+    noticeText.value = r.notice || "";
+    agentDurationMs.value = r.duration_ms || 0;
+    agentReady.value = (r.steps || []).length > 0;
+  } catch (e) {
+    // 404 = 该工单未预跑 Agent(预跑仅覆盖代表性工单),据实占位
+    agentReady.value = false;
+  } finally {
+    agentLoading.value = false;
+  }
+}
+watch(selected, (t) => loadAgentTrace(t));
 </script>
 
 <style scoped>
@@ -407,6 +386,18 @@ const noticeText = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  white-space: nowrap;
+}
+.agent-traceable {
+  font-size: 9px;
+  color: #d8b4fe;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  padding: 1px 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   white-space: nowrap;
 }
 .notice-block {

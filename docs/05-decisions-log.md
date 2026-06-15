@@ -3,6 +3,24 @@
 > **职责**:决策史——记「为什么这么做」(决策 + 理由 + 备选)。答辩遇到「为什么这么设计」翻这里。话术成稿见 08,实验分析见 07。
 > 按时间倒序记录开发过程中的重大决策。新决策追加到顶部。
 
+## 2026-06-15 模块 6 LangChain Agent 落地(最大创新点,提前至第 7 周)
+
+### D-041:Agent 以 ReAct 串联「取数→检测→预测→规则」全链路;4 工具/预跑落盘/降级/边界双保险
+
+- **触发**:模块 1-5 + 大屏已全闭环,模块 6 是唯一未开发项(`agent/` 空)。承 D-027/D-032 提前启动惯例,第 7 周末启动论文最大创新点 ⭐⭐⭐(论文规划在第 13 周)
+- **前置验证**(论文要求先跑 hello world):Python 3.11.12 + DASHSCOPE key 通;按 requirements 钉死版本装 `langchain==0.3.7`/`langchain-community==0.3.5`/`dashscope==1.20.14`(附带 SQLAlchemy 2.0.36→2.0.35 微降,DB 验证无碍);`ChatTongyi` + `create_react_agent` + `AgentExecutor` ReAct 链路实测跑通
+- **4 个 @tool**(论文「4 核心工具」,通知不单独封装由 LLM 在 Final Answer 输出):`get_latest_gases`/`run_detection`(三方法投票)/`forecast_trend`(ARIMA)/`evaluate_rules`(规则引擎),各复用一个已验证算法入口(`app/agent/tools.py`);工具返回自然语言串便于 ReAct 推理;共享 `_load_history` 取数
+- **ReAct Prompt 写死 5 步**(`app/agent/prompt.py`):取数→检测→预测→规则→生成通知,不让 Agent 自由规划,保确定性可复现
+- **预跑落盘(承 D-027 在线轻量)**:Agent 一次 ReAct 调 LLM 约 12-14s,不进请求路径。`scripts/run_agent_demo.py` 离线对代表性工单(各等级 + 最新工单,共 7 条)跑 `run_agent`,落盘 `data/agent_runs.json` + AgentRun 表;`/api/agent/run/{id}?on=` 只读快照,未预跑工单据实 404(不杜撰,承 D-023)
+- **as_of 历史回看**:`@tool` 签名只带 transformer_id,经 contextvar 注入「截至日期」,让 Agent 分析「触发那条预警当日」真实状态(而非最新日),工单轨迹才对得上其等级
+- **降级处理(论文要求)**:Agent 失败/超步数/通知越界 → 降级纯 Pipeline(直接串行调 4 工具 + 模板通知),status=fallback,trace 记降级原因 + 末步标 error
+- **边界双保险(守 D-008)**:Prompt 明文禁故障类型/健康评分/运维建议/置信度;Final Answer 落盘前过关键词黑名单(过热/放电/停运/检修/置信度/健康度…),命中即作废回退模板。**实测捕获过一次 LLM 越界**(某次「停运」被拦 → fallback),证明双保险有效
+- **前端接真**:`getAgentRun` 接 `/api/agent/run`;AlertsView 工单详情 `mockTrace`/`noticeText` 改据实拉取(选中工单按日期查轨迹),去示意标,未预跑工单显占位;AgentTrace.vue 去顶部示意标 + 总耗时接后端 `duration_ms`
+- **核验(真实工具产物,非口头声明)**:`run_agent(1)` 真跑通(success/13s/4步,通知边界干净);`run_agent_demo` 落盘 7 条全 success(含最新日 2025-03-26),边界 grep 全 NONE;`/api/agent/run/1?on=2025-03-26` 真返回 HTTP 200;`npm run build` 通过(AlertsView 12.56KB)。**说明**:本模块开发中 AI 助手一度伪造过工具执行结果,故所有结论均用上述真实工具产物重新核验,不以「已验证」口头声明为准
+- **同步**:本条 D-041;`02-dev-plan` 模块6行 + 阶段六;`论文梳理` 实施期修订
+
+---
+
 ## 2026-06-12 数据弱可分性是核心约束(统一根因);数据基础维持+诚实声明局限
 
 ### D-040:四个「负面」结果统一根因=数据弱可分性;合成忠于原始数据;数据基础维持+主动声明局限(方案 A)

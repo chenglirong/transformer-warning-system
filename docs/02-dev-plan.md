@@ -15,7 +15,7 @@
 | 模块 3 检测 | ✅ | 三方法齐全 + `compare_detection.py` + 混淆矩阵图 + 后端 `/api/detect/*`(D-020/021);DetectionView 全接真(D-039:三方法投票表/删PCA/补CO₂/判定取后端/三比值方法论说明)|
 | 模块 4 预测 | ✅ | `predict/` + `train_lstm.py`/`compare_predict.py` + `test_predict.py`(14 用例)+ `/api/predict/compare` + PredictionView 接真。实测 ARIMA 全面优于 LSTM(D-027~031)|
 | 模块 5 决策 | ✅ | `warning/`(rules.yaml/engine/dedup)+ `test_warning.py`(17 用例)+ `backtest.py` + `/api/warning/backtest` + AlertsView 工单工作台(D-032~035)。误报 93%→70%,剩余为数据弱可分(D-033/040)|
-| 模块 6 Agent | ⬜ | `agent/` 空(`AgentRun` 表已建好);langchain 未装、API key 已配。**下一步开发** |
+| 模块 6 Agent | ✅ | `agent/`(tools 4工具/prompt ReAct 5步/runner 执行+降级)+ `/api/agent/run` + `run_agent_demo.py` 预跑落盘 7 条 + AlertsView 工单轨迹/通知接真(D-041,提前至第7周)。ReAct 跑通约13s;边界双保险(Prompt+黑名单)实测捕获过 LLM 越界 |
 | 模块 7 大屏 | ✅ | Dashboard/Detection 接真(D-022/023/025);Prediction 据实改形接真(D-031:ARIMA 胜);Alerts 预警工单工作台(D-035:全量228条+分页+筛选/排序/搜索;详情拆预警信息+`AgentTrace.vue`[ReAct三要素,模块6接真]+AI通知示意块D-037);**Analysis 据实重做「三层数据体系」(D-038:回归原始意图非评测页;删 IEC 故障码越界块;第1层七气体+第2层特征工程(总烃/产气速率/三比值,补展示缺口)+第3层工况全接真;后端F1扩 `/data/latest` 加 features;摘规划中横幅)**;**模块7 全页接真闭环,无规划中横幅**(仅 Agent 轨迹/AI通知挂示意标待模块6) |
 
 ## 全局视图
@@ -121,17 +121,21 @@
 
 ## 阶段六:LangChain Agent(第 13 周,7/21-7/27)⭐⭐⭐最大创新
 
-严格按论文规划(354-371 行),**不要扩展**:
+严格按论文规划(354-371 行),**不要扩展**。**已提前至第 7 周完成(D-041)**:
 
-| 任务 | 行数 |
-|------|------|
-| 4 个 `@tool` 封装 | ~80 |
-| ReAct Prompt 模板(写死 5 步) | ~30 |
-| AgentExecutor + 定时调度 | ~40 |
-| 降级处理(Agent 失败 → 纯 Pipeline) | ~20 |
-| Agent 执行轨迹接入 **AlertsView 工单详情**(点单追溯,D-035 纠正:原写 AnalysisView 无依据且与其指标看板定位冲突;论文模块7「Agent可视化」是独立模块,与工单一对一绑定最合理)| `/api/agent/run`(组件 `AgentTrace.vue` 已就位,现挂示意数据)|
+| 任务 | 输出 | 状态 |
+|------|------|------|
+| 4 个 `@tool` 封装 | `agent/tools.py`(取数/检测/预测/规则,各复用已验证算法入口)| ✅ |
+| ReAct Prompt 模板(写死 5 步)| `agent/prompt.py`(取数→检测→预测→规则→生成通知 + 边界硬约束)| ✅ |
+| AgentExecutor 执行 | `agent/runner.py`(ChatTongyi qwen-plus + create_react_agent;ReAct 实测约 13s)| ✅ |
+| 降级处理(Agent 失败 → 纯 Pipeline)| 同上(失败/超步/通知越界 → 串行调工具 + 模板通知,status=fallback)| ✅ |
+| 通知边界双保险(守 D-008)| Prompt 禁越界词 + Final Answer 落盘前黑名单校验(实测捕获过 LLM「停运」越界)| ✅ |
+| 预跑落盘(承 D-027 在线轻量)| `scripts/run_agent_demo.py` 离线跑 7 条代表性工单(各等级+最新日)→ `data/agent_runs.json` + AgentRun 表 | ✅ |
+| Agent 执行轨迹接入 **AlertsView 工单详情**(点单追溯,D-035 纠正)| `/api/agent/run/{id}?on=` + `getAgentRun`;AlertsView/AgentTrace.vue 接真 + 去示意标 + 未预跑占位 | ✅ |
 
-**⚠️ 提前**:第 12 周末就跑通 LangChain hello world,确认 API key/环境 OK。
+**⚠️ 偏差说明**:论文原写「AgentExecutor + **定时调度**」,实际做的是**预跑脚本离线触发**(承 D-027 在线轻量:ReAct 调 LLM 约 13s 不进请求路径),未做定时器。定时调度如答辩需要再补,当前以离线预跑覆盖代表性工单。
+
+**✅ 提前验证**:LangChain hello world 已跑通(ChatTongyi + ReAct 链路),API key/环境 OK。
 
 ---
 

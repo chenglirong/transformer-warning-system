@@ -66,3 +66,23 @@ export const getPredictCompare = () => http.get('/predict/compare')
  *        alerts:[{date, level, rule_ids, rule_types, response, true_abnormal}] }。
  */
 export const getWarningBacktest = () => http.get('/warning/backtest')
+
+// ============ Agent 接口(模块 6)============
+
+/**
+ * Agent 预跑 ReAct 预警轨迹(点单追溯:这条预警背后 Agent 怎么推出来的)。
+ * 读后端 agent_runs.json 快照(scripts/run_agent_demo.py 离线落盘,D-027 在线轻量)。
+ * on 传工单日期 YYYY-MM-DD(预跑按工单日 as_of 分析);缺省取最新一条。
+ * 守边界:只回 等级/规则编号/趋势/响应级别,不回故障类型/健康评分/运维建议。
+ * 返回 { transformer_id, as_of, status:'success'|'fallback', steps:[...],
+ *        notice, duration_ms, fallback_reason }。该工单未预跑 → 404。
+ */
+export const getAgentRun = (transformerId, on) =>
+  http.get(`/agent/run/${transformerId}`, on ? { on } : {})
+
+/**
+ * 已预跑 Agent 轨迹的工单日期列表(前端给「可追溯」工单卡片打标用)。
+ * 预跑仅覆盖代表性工单,据此标记避免点到未预跑工单。返回 { dates: [...] }。
+ */
+export const getAgentDates = (transformerId) =>
+  http.get(`/agent/dates/${transformerId}`)

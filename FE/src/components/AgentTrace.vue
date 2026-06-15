@@ -1,6 +1,6 @@
 <template>
   <div class="agent-trace flex flex-col h-full">
-    <!-- 顶部状态条 + 示意标识 -->
+    <!-- 顶部状态条(接真 /api/agent/run,LangChain ReAct 轨迹)-->
     <div class="trace-statusbar">
       <div class="flex items-center gap-2">
         <span class="text-xs font-bold text-gray-100">ReAct 推理</span>
@@ -11,10 +11,6 @@
           {{ statusLabel }}
         </span>
       </div>
-      <span class="planning-pill">
-        <iconify-icon icon="mdi:progress-clock"></iconify-icon>
-        模块 6 · 第 13 周开发 · 示意数据
-      </span>
     </div>
 
     <!-- ReAct 5 步时间线 -->
@@ -78,10 +74,12 @@ import { ref, computed } from "vue";
 
 const props = defineProps({
   // 每步:{ tool, summary, status:'success'|'running'|'error'|'pending',
-  //        duration, thought, action, observation, errorReason }
+  //        thought, action, observation, errorReason }(后端不含逐步耗时)
   steps: { type: Array, default: () => [] },
   // 整轮状态:success | fallback | running
   runStatus: { type: String, default: "success" },
+  // 整轮总耗时(ms);后端 /api/agent/run 顶层 duration_ms,优先用它
+  durationMs: { type: Number, default: 0 },
 });
 
 const expanded = ref({});
@@ -90,6 +88,8 @@ function toggle(i) {
 }
 
 const totalDuration = computed(() => {
+  // 优先用后端整轮真实耗时(durationMs);缺省时回退逐步 duration 累加(兼容)
+  if (props.durationMs) return (props.durationMs / 1000).toFixed(1) + "s";
   const ms = props.steps.reduce((sum, s) => {
     const m = (s.duration || "").match(/([\d.]+)\s*s/);
     return sum + (m ? parseFloat(m[1]) : 0);

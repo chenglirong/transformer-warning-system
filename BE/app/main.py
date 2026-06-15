@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.api import health, data, detect, predict, warning
+from app.api import health, data, detect, predict, warning, agent
 from app.core.response import UnifiedResponseMiddleware, register_exception_handlers
 
 app = FastAPI(
@@ -37,6 +37,7 @@ app.include_router(data.router)
 app.include_router(detect.router)
 app.include_router(predict.router)
 app.include_router(warning.router)
+app.include_router(agent.router)
 
 
 @app.get("/")
