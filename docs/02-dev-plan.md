@@ -13,8 +13,8 @@
 | 模块 2 特征 | ✅ | `features.py`(48 特征);`featured_timeseries.csv` |
 | 前端联调 | ✅ | vite proxy + `api/data.py`(已守系统边界,只回 is_abnormal) |
 | 模块 3 检测 | ✅ | 三方法齐全 + `compare_detection.py` + 混淆矩阵图 + 后端 `/api/detect/*`(D-020/021);DetectionView 全接真(D-039:三方法投票表/删PCA/补CO₂/判定取后端/三比值方法论说明)|
-| 模块 4 预测 | ✅ | `predict/` + `train_lstm.py`/`compare_predict.py` + `test_predict.py`(14 用例)+ `/api/predict/compare` + PredictionView 接真。实测 ARIMA 全面优于 LSTM(D-027~031)|
-| 模块 5 决策 | ✅ | `warning/`(rules.yaml/engine/dedup)+ `test_warning.py`(17 用例)+ `backtest.py` + `/api/warning/backtest` + AlertsView 工单工作台(D-032~035)。误报 93%→70%,剩余为数据弱可分(D-033/040)|
+| 模块 4 预测 | ✅ | `predict/` + `train_lstm.py`/`compare_predict.py` + `test_predict.py`(14 用例)+ `/api/predict/compare` + PredictionView 接真。实测 ARIMA 优于 LSTM(D-027~031;D-044 新数据重跑:ARIMA 胜 6/7,MAE 148 vs 160)|
+| 模块 5 决策 | ✅ | `warning/`(rules.yaml/engine/dedup)+ `test_warning.py`(20 用例)+ `backtest.py` + `/api/warning/backtest` + AlertsView 工单工作台(D-032~035)。误报率 73.2%(D-044 全链路重跑;CO/CO₂ 改 §10.2.3.1 比值法 C-02);残余误判为早期/轻微异常边界样本(D-044)|
 | 模块 6 Agent | ✅ | `agent/`(tools 4工具/prompt ReAct 5步/runner 执行+降级)+ `/api/agent/run` + `run_agent_demo.py` 预跑落盘 7 条 + AlertsView 工单轨迹/通知接真(D-041,提前至第7周)。ReAct 跑通约13s;边界双保险(Prompt+黑名单)实测捕获过 LLM 越界 |
 | 模块 7 大屏 | ✅ | Dashboard/Detection 接真(D-022/023/025);Prediction 据实改形接真(D-031:ARIMA 胜);Alerts 预警工单工作台(D-035:全量228条+分页+筛选/排序/搜索;详情拆预警信息+`AgentTrace.vue`[ReAct三要素,模块6接真]+AI通知示意块D-037);**Analysis 据实重做「三层数据体系」(D-038:回归原始意图非评测页;删 IEC 故障码越界块;第1层七气体+第2层特征工程(总烃/产气速率/三比值,补展示缺口)+第3层工况全接真;后端F1扩 `/data/latest` 加 features;摘规划中横幅)**;**模块7 全页接真闭环,无规划中横幅**(仅 Agent 轨迹/AI通知挂示意标待模块6) |
 
@@ -52,7 +52,7 @@
 | 任务 | 输出 | 状态 |
 |------|------|------|
 | 阈值法(国标 DL/T 722) | `algorithms/detect/threshold.py` | ✅ |
-| IEC 三比值法 | `algorithms/detect/iec.py` | ✅ |
+| 三比值法(DL/T 722-2014) | `algorithms/detect/iec.py` | ✅ |
 | Isolation Forest | `algorithms/detect/iforest.py` | ✅ |
 | 三方法对比实验(以合成真值 fault_state 为基准,D-020) | `scripts/compare_detection.py` | ✅ |
 | 准确率/召回率/误报率对比表 → 论文素材 | 表格 + 混淆矩阵图(`figures/detection_confusion.png`) | ✅ |
@@ -60,7 +60,7 @@
 | DetectionView 对接(前端) | FE 调用 `/api/detect/*` 渲染三方法对比 | ✅ 全页接真(D-039):左侧指标对比(D-022)+ 混淆矩阵;右侧近7日三方法逐日投票表接 `/detect/recent`、阈值表 5 项补齐 CO₂ 接 latest 真值、判定取后端 exceeded(方案C 渐进档)、三比值编码块加方法论+边界说明;删 PCA 散点(D-030 据实不硬做)+ 删 demo-badge 杜撰数据 |
 | 算法层单元测试 | `tests/test_detect.py`(pytest,17 用例覆盖三检测器 + metrics 契约与边界) | ✅ |
 
-**🎯 基准说明**(D-020 修订):原始 `Fault` 列 97.6% 未标注(D-008),不可用。**最终以合成时序的真实状态标签 `fault_state` 为 ground truth**,三方法(阈值/IEC/IF)平等评估。IEC 自动打标仅用于合成器状态库分组,不再充当对比基准(避免"自己跟自己比")。
+**🎯 基准说明**(D-020 修订;D-044 更新打标口径):原始 `Fault` 列 97.6% 未标注(D-008),不可用。**最终以合成时序的真实状态标签 `fault_state` 为 ground truth**,三方法(阈值/三比值/IF)平等评估。`fault_state` 由国标 DL/T 722-2014 打标定义:表3 注意值定健康/异常二分、表7 三比值法细分故障类型(仅用于合成器状态库分组,不充当对比基准,避免"自己跟自己比")。
 
 **⚠️ 系统边界**:对比实验内部可按 fault_state 故障类型分组分析,但论文表格与大屏只呈现**二分类(is_abnormal)指标**,绝不暴露具体故障类型。
 
@@ -90,7 +90,7 @@
 | LSTM 多输出回归 `Sequential([LSTM(64), Dense(7)])` | `algorithms/predict/lstm.py` + `lstm.h5`(加载须 `compile=False`,见 D-027 踩坑)| ✅ 阶段 B1(D-028,推理模块)+ `train_lstm.py` 已训练落盘 |
 | 滚动预测(迭代 3 次 → 1-3 天) | `algorithms/predict/rolling.py` | ✅ 阶段 B2(D-029) |
 | 训练脚本(离线,落盘 `.h5`+scaler) | `scripts/train_lstm.py` | ✅ 阶段 B1(D-028,已跑通) |
-| 对比实验(MAE/RMSE/MAPE) | `scripts/compare_predict.py` + 7 子图(`figures/`) | ✅ 阶段 B2(D-029,ARIMA 全面胜)|
+| 对比实验(MAE/RMSE/MAPE) | `scripts/compare_predict.py` + 7 子图(`figures/`) | ✅ 阶段 B2(D-029;D-044 重跑 ARIMA 胜 6/7)|
 | 算法层单元测试 | `tests/test_predict.py`(pytest,14 用例覆盖 dataset/arima/rolling 契约与边界;rolling 用 stub model 不依赖 .h5)| ✅ 阶段 B 收尾 |
 | PredictionView 对接 + 摘「规划中」横幅(D-026)| `/api/predict/compare` + predict_eval.json 落盘 | ✅ 阶段 C/D(D-031 翻转 ARIMA 胜;D-036 补回滚动预测块:tab 切 LSTM 回灌/ARIMA 多步 + 气体可切换,接真)|
 
@@ -112,10 +112,10 @@
 | 四级分级(红橙黄蓝) | 同上(LEVEL_ORDER 取最高) | ✅ B1(D-032) |
 | 误报控制:连续 N 次触发 + 24h 去重 | `algorithms/warning/dedup.py` | ✅ B1(D-032) |
 | 算法层单元测试 | `tests/test_warning.py`(17 用例) | ✅ B1(D-032) |
-| 历史回测(360 天合成时序) | `scripts/backtest.py` + `warning_backtest.json` + 图 | ✅ B2(D-033,误报率 93%→70%,剩余为数据弱可分性)|
+| 历史回测(360 天合成时序) | `scripts/backtest.py` + `warning_backtest.json` + 图 | ✅ B2(D-033;D-044 重跑误报率 73.2%/召回 0.65,残余为早期异常边界样本)|
 | AlertsView 对接 | `/api/warning/backtest` + 接真 + 摘横幅 | ✅ C(D-034,工单接真+清越界+Agent标规划中)|
 
-**🎯 回测基准**(D-033 修订):原始快照无时间维,无法回测时序预警。改用 **360 天合成时序**,以**合成真值 `fault_state`** 算 TP/FP/FN(与检测模块 D-020 同一基准,不再用 IEC 标签——IEC 是内部打标工具,且 D-020 已否决其作基准)→ 论文素材。当日对齐口径;软规则预测源 ARIMA(D-032)。
+**🎯 回测基准**(D-033 修订):原始快照无时间维,无法回测时序预警。改用 **360 天合成时序**,以**合成真值 `fault_state`** 算 TP/FP/FN(与检测模块 D-020 同一基准)→ 论文素材。当日对齐口径;软规则预测源 ARIMA(D-032)。CO/CO₂ 不再设绝对硬规则,改 §10.2.3.1 CO₂/CO 比值组合判据(D-044)。
 
 ---
 
