@@ -3,96 +3,230 @@
   "n_days": 330,
   "confusion": {
     "tp": 52,
-    "tn": 74,
-    "fp": 176,
+    "tn": 67,
+    "fp": 183,
     "fn": 28
   },
   "metrics": {
-    "accuracy": 0.3818,
-    "precision": 0.2281,
+    "accuracy": 0.3606,
+    "precision": 0.2213,
     "recall": 0.65,
-    "f1": 0.3377,
-    "fpr": 0.704
+    "f1": 0.3302,
+    "fpr": 0.732
   },
   "level_distribution": {
-    "red": 80,
-    "orange": 13,
-    "yellow": 135,
+    "red": 77,
+    "orange": 15,
+    "yellow": 143,
     "blue": 0
   },
-  "n_alerts": 228,
+  "n_alerts": 235,
   "alerts": [
     {
       "date": "2024-05-02",
-      "level": "yellow",
+      "level": "red",
       "rule_ids": [
+        "H-01",
+        "H-02",
+        "S-01",
+        "S-02",
         "T-02"
       ],
       "rule_types": [
+        "hard",
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 8.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-02",
+          "level": "red",
+          "message": "H₂ 当前值 457.6 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 8.8 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-02",
+          "level": "red",
+          "message": "H₂ 预测第 1 天达 1373.8 μL/L,超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 102%(26.5→53.7 μL/L)"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": false
     },
     {
       "date": "2024-05-03",
-      "level": "yellow",
+      "level": "red",
       "rule_ids": [
+        "H-01",
+        "H-02",
+        "S-01",
+        "S-02",
         "T-02"
       ],
       "rule_types": [
+        "hard",
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 8.4 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-02",
+          "level": "red",
+          "message": "H₂ 当前值 376.9 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 7.3 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-02",
+          "level": "red",
+          "message": "H₂ 预测第 1 天达 185.9 μL/L,超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 53%(27.1→41.3 μL/L)"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-05-04",
+      "level": "red",
+      "rule_ids": [
+        "H-02",
+        "C-02",
+        "S-01",
+        "S-02"
+      ],
+      "rule_types": [
+        "combo",
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-02",
+          "level": "red",
+          "message": "H₂ 当前值 373.9 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=1.9(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 8.4 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-02",
+          "level": "red",
+          "message": "H₂ 预测第 1 天达 675.5 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": false
     },
     {
       "date": "2024-05-05",
-      "level": "yellow",
+      "level": "red",
       "rule_ids": [
-        "T-01"
+        "S-01",
+        "S-02"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 3 天达 6.5 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-02",
+          "level": "red",
+          "message": "H₂ 预测第 1 天达 644.5 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": false
     },
     {
       "date": "2024-05-06",
-      "level": "yellow",
+      "level": "orange",
       "rule_ids": [
-        "T-01"
+        "S-01"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 3 天达 6.3 μL/L,超国标注意值 5.0 μL/L"
+        }
+      ],
+      "response": "24 小时内处理",
       "true_abnormal": false
     },
     {
       "date": "2024-05-07",
-      "level": "yellow",
+      "level": "orange",
       "rule_ids": [
-        "T-01"
+        "S-01"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 2 天达 5.7 μL/L,超国标注意值 5.0 μL/L"
+        }
+      ],
+      "response": "24 小时内处理",
       "true_abnormal": false
     },
     {
       "date": "2024-05-08",
       "level": "red",
       "rule_ids": [
-        "H-04",
-        "T-01",
-        "T-02"
+        "S-02"
       ],
       "rule_types": [
-        "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-02",
+          "level": "red",
+          "message": "H₂ 预测第 1 天达 268.3 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -101,153 +235,17 @@
       "date": "2024-05-09",
       "level": "red",
       "rule_ids": [
-        "H-04",
-        "S-04",
-        "T-01"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-10",
-      "level": "red",
-      "rule_ids": [
-        "H-04",
-        "S-04"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-11",
-      "level": "red",
-      "rule_ids": [
-        "H-04",
-        "S-04"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-12",
-      "level": "red",
-      "rule_ids": [
-        "H-04",
-        "S-04"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-13",
-      "level": "red",
-      "rule_ids": [
-        "S-04"
+        "S-02"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-17",
-      "level": "orange",
-      "rule_ids": [
-        "S-04"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "24 小时内处理",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-20",
-      "level": "red",
-      "rule_ids": [
-        "H-04"
-      ],
-      "rule_types": [
-        "hard"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-21",
-      "level": "red",
-      "rule_ids": [
-        "S-04"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-25",
-      "level": "red",
-      "rule_ids": [
-        "S-04"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-26",
-      "level": "red",
-      "rule_ids": [
-        "S-04"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-27",
-      "level": "orange",
-      "rule_ids": [
-        "S-04"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "24 小时内处理",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-05-28",
-      "level": "red",
-      "rule_ids": [
-        "H-04",
-        "S-04"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
+      "messages": [
+        {
+          "rule_id": "S-02",
+          "level": "red",
+          "message": "H₂ 预测第 1 天达 249.5 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -257,12 +255,23 @@
       "level": "red",
       "rule_ids": [
         "H-01",
-        "H-04",
-        "S-04"
+        "C-02"
       ],
       "rule_types": [
-        "hard",
-        "soft"
+        "combo",
+        "hard"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 5.4 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.1(<国标参考 3),建议关注固体绝缘状态"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -271,11 +280,17 @@
       "date": "2024-05-30",
       "level": "red",
       "rule_ids": [
-        "S-01",
-        "S-04"
+        "S-01"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 5.9 μL/L,超国标注意值 5.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -289,17 +304,71 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 206%(0.4→1.2 μL/L)"
+        }
+      ],
       "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-06-08",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "C-02"
+      ],
+      "rule_types": [
+        "combo",
+        "hard"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 675.6 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.0(<国标参考 3),建议关注固体绝缘状态"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": true
     },
     {
       "date": "2024-06-09",
       "level": "red",
       "rule_ids": [
-        "H-04"
+        "H-03",
+        "C-02",
+        "S-03"
       ],
       "rule_types": [
-        "hard"
+        "combo",
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 329.3 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.0(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 903.0 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -308,12 +377,31 @@
       "date": "2024-06-10",
       "level": "red",
       "rule_ids": [
-        "H-04",
-        "S-04"
+        "H-03",
+        "C-02",
+        "S-03"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 450.1 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.0(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 3 天达 189.1 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -322,12 +410,31 @@
       "date": "2024-06-11",
       "level": "red",
       "rule_ids": [
-        "H-04",
-        "S-04"
+        "H-03",
+        "C-02",
+        "S-03"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 300.0 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.0(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1121.5 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -336,48 +443,71 @@
       "date": "2024-06-12",
       "level": "red",
       "rule_ids": [
-        "S-04"
+        "H-03",
+        "C-02",
+        "S-03"
       ],
       "rule_types": [
+        "combo",
+        "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 221.8 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.1(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 2 天达 213.3 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
     },
     {
       "date": "2024-06-13",
-      "level": "yellow",
+      "level": "red",
       "rule_ids": [
-        "T-02"
+        "S-03"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 449.1 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": false
     },
     {
       "date": "2024-06-14",
-      "level": "yellow",
+      "level": "orange",
       "rule_ids": [
-        "T-02"
+        "S-03"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
-      "true_abnormal": false
-    },
-    {
-      "date": "2024-06-15",
-      "level": "yellow",
-      "rule_ids": [
-        "T-02"
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 3 天达 183.9 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "加强监测",
+      "response": "24 小时内处理",
       "true_abnormal": false
     },
     {
@@ -388,6 +518,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 897%(11.5→114.6 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -401,6 +538,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 354%(21.0→95.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -412,6 +556,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 603%(12.3→86.2 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -425,6 +576,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 841%(7.8→73.6 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -436,6 +594,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 507%(11.1→67.4 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -449,6 +614,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 449%(11.6→63.7 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": true
     },
@@ -461,32 +633,34 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 478%(10.3→59.4 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": true
     },
     {
-      "date": "2024-06-25",
-      "level": "red",
-      "rule_ids": [
-        "H-05"
-      ],
-      "rule_types": [
-        "hard"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2024-07-01",
+      "date": "2024-06-23",
       "level": "yellow",
       "rule_ids": [
-        "T-01"
+        "T-02"
       ],
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 194%(19.7→57.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
-      "true_abnormal": false
+      "true_abnormal": true
     },
     {
       "date": "2024-07-05",
@@ -497,44 +671,15 @@
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
-      "true_abnormal": true
-    },
-    {
-      "date": "2024-07-06",
-      "level": "yellow",
-      "rule_ids": [
-        "T-01"
-      ],
-      "rule_types": [
-        "soft"
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 93%(0.5→1.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": true
-    },
-    {
-      "date": "2024-07-09",
-      "level": "red",
-      "rule_ids": [
-        "S-03"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2024-07-21",
-      "level": "yellow",
-      "rule_ids": [
-        "T-02"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "加强监测",
-      "true_abnormal": false
     },
     {
       "date": "2024-07-22",
@@ -544,6 +689,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 190%(22.7→65.7 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -557,6 +709,51 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 144%(27.5→67.1 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-24",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 71%(40.7→69.7 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-25",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 211%(24.6→76.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -568,6 +765,89 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 270%(17.6→65.0 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-27",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 102%(31.3→63.1 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-28",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 130%(30.9→71.1 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-29",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 104%(33.8→68.8 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-07-30",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 54%(45.5→70.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -581,6 +861,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 80%(35.8→64.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -592,6 +879,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 204%(23.0→69.9 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -605,6 +899,190 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 332%(14.4→62.1 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-07",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 103%(28.8→58.7 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-08",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 133%(29.0→67.5 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-09",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 113%(30.9→66.0 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-10",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 979%(0.1→1.2 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 112%(31.4→66.4 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-11",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 106%(32.2→66.2 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-12",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 134%(28.3→66.4 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-22",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 52%(42.4→64.4 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-26",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 72%(34.6→59.6 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-27",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 150%(26.1→65.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -616,6 +1094,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 86%(32.3→60.2 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -629,6 +1114,65 @@
       "rule_types": [
         "hard"
       ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 219.7 μL/L 已超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-01",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 198.8 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 156.5 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2024-09-02",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 856.5 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 170.2 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": true
     },
@@ -636,10 +1180,24 @@
       "date": "2024-09-03",
       "level": "red",
       "rule_ids": [
-        "H-03"
+        "H-03",
+        "S-03"
       ],
       "rule_types": [
-        "hard"
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 1449.6 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 786.2 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -655,6 +1213,18 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 2703.6 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1360.4 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": true
     },
@@ -669,6 +1239,18 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 2088.1 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 3798.5 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": true
     },
@@ -677,11 +1259,30 @@
       "level": "red",
       "rule_ids": [
         "H-03",
+        "C-02",
         "S-03"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 565.1 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.5(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 2472.0 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -691,11 +1292,30 @@
       "level": "red",
       "rule_ids": [
         "H-03",
+        "C-02",
         "S-03"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 333.6 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=1.6(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 3 天达 1224.3 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -705,11 +1325,30 @@
       "level": "red",
       "rule_ids": [
         "H-03",
+        "C-02",
         "S-03"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 197.3 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=1.8(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1207.9 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -718,22 +1357,126 @@
       "date": "2024-09-09",
       "level": "red",
       "rule_ids": [
+        "H-03",
+        "C-02",
         "S-03"
       ],
       "rule_types": [
+        "combo",
+        "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 172.3 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.9(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 2 天达 203.4 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
     },
     {
       "date": "2024-09-10",
+      "level": "red",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 234.5 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-11",
       "level": "orange",
       "rule_ids": [
         "S-03"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 2 天达 157.3 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-12",
+      "level": "orange",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 2 天达 161.6 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-13",
+      "level": "orange",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 3 天达 169.5 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "24 小时内处理",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-09-14",
+      "level": "orange",
+      "rule_ids": [
+        "S-03"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 2 天达 151.7 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "24 小时内处理",
       "true_abnormal": false
@@ -747,6 +1490,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 146%(43.9→108.0 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -758,6 +1508,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 182%(34.0→96.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -771,6 +1528,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 229%(30.4→99.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -782,6 +1546,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 81%(51.8→93.7 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -795,6 +1566,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 132%(45.8→106.4 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -806,6 +1584,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 104%(46.6→95.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -819,6 +1604,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 255%(29.3→103.8 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -830,6 +1622,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 378%(18.4→88.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -843,6 +1642,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 909%(9.3→93.6 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -855,6 +1661,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 645%(11.1→82.6 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -862,11 +1675,17 @@
       "date": "2024-09-28",
       "level": "yellow",
       "rule_ids": [
-        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 569%(13.5→90.4 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -880,6 +1699,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 367%(18.1→84.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -891,6 +1717,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 465%(16.1→90.8 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -904,6 +1737,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 665%(11.6→88.6 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -915,6 +1755,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 798%(9.7→87.4 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -928,6 +1775,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 526%(13.5→84.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -940,6 +1794,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 429%(16.4→86.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -951,6 +1812,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 521%(13.8→85.8 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -965,6 +1833,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 72%(0.5→0.9 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 507%(13.9→84.7 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -972,11 +1852,17 @@
       "date": "2024-10-07",
       "level": "yellow",
       "rule_ids": [
-        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 493%(14.1→83.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -990,6 +1876,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 354%(18.5→83.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1001,6 +1894,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 277%(22.3→84.2 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1014,6 +1914,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 489%(14.6→86.1 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1025,6 +1932,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 478%(14.1→81.4 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1038,6 +1952,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 423%(16.2→84.7 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1049,6 +1970,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 248%(23.7→82.3 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1062,6 +1990,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 195%(29.5→87.1 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1074,6 +2009,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 161%(33.0→86.1 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1082,11 +2024,30 @@
       "level": "red",
       "rule_ids": [
         "H-01",
+        "C-02",
         "T-02"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 10.2 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.3(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 194%(30.2→88.8 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1096,11 +2057,36 @@
       "level": "red",
       "rule_ids": [
         "H-01",
+        "C-02",
+        "S-01",
         "T-02"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 14.2 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=0.8(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 10.6 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 80%(50.1→90.1 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1110,12 +2096,36 @@
       "level": "red",
       "rule_ids": [
         "H-01",
+        "C-02",
         "S-01",
         "T-02"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 8.0 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=1.7(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 14.1 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 314%(24.5→101.5 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1125,12 +2135,36 @@
       "level": "red",
       "rule_ids": [
         "H-01",
+        "C-02",
         "S-01",
         "T-02"
       ],
       "rule_types": [
+        "combo",
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 7.9 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=1.6(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 7.4 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 242%(24.0→82.1 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1139,25 +2173,64 @@
       "date": "2024-10-20",
       "level": "red",
       "rule_ids": [
+        "H-01",
+        "C-02",
         "S-01",
         "T-02"
       ],
       "rule_types": [
+        "combo",
+        "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 5.4 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=2.9(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 6.9 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 258%(24.0→86.0 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
     },
     {
       "date": "2024-10-21",
-      "level": "yellow",
+      "level": "red",
       "rule_ids": [
+        "S-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 5.3 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 546%(13.0→84.1 μL/L)"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": false
     },
     {
@@ -1168,6 +2241,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 427%(15.0→79.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1181,6 +2261,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 562%(12.1→80.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1192,6 +2279,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 384%(16.1→78.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1205,6 +2299,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 633%(11.2→82.0 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1216,6 +2317,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 561%(11.7→77.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1229,6 +2337,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 474%(13.6→77.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1236,11 +2351,17 @@
       "date": "2024-10-28",
       "level": "yellow",
       "rule_ids": [
-        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 540%(12.1→77.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1254,6 +2375,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 519%(12.1→74.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1265,6 +2393,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 868%(7.9→76.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1278,6 +2413,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 786%(8.3→73.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1285,10 +2427,23 @@
       "date": "2024-11-01",
       "level": "yellow",
       "rule_ids": [
+        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 4901%(0.0→1.1 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1108%(6.3→75.6 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1302,6 +2457,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 479%(12.2→70.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1313,6 +2475,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 397%(15.4→76.6 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1326,6 +2495,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 217%(23.0→73.0 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1337,6 +2513,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 181%(27.8→78.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1350,6 +2533,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 230%(23.6→77.8 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1361,6 +2551,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 268%(20.4→75.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1374,6 +2571,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 443%(13.9→75.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1385,6 +2589,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 77%(38.8→68.6 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1398,6 +2609,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 289%(21.9→85.0 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -1409,6 +2627,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 105%(31.2→64.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -1422,30 +2647,31 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 145%(34.1→83.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
-    },
-    {
-      "date": "2024-11-13",
-      "level": "red",
-      "rule_ids": [
-        "H-05"
-      ],
-      "rule_types": [
-        "hard"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
     },
     {
       "date": "2024-11-16",
       "level": "red",
       "rule_ids": [
-        "H-03",
-        "H-05"
+        "H-03"
       ],
       "rule_types": [
         "hard"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 214.2 μL/L 已超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1456,10 +2682,28 @@
       "rule_ids": [
         "H-01",
         "H-03",
-        "H-05"
+        "S-03"
       ],
       "rule_types": [
-        "hard"
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 8.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 260.1 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 164.7 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1470,12 +2714,34 @@
       "rule_ids": [
         "H-01",
         "H-03",
-        "H-05",
-        "S-01"
+        "S-01",
+        "S-03"
       ],
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 7.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 535.3 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 8.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 252.3 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1486,13 +2752,34 @@
       "rule_ids": [
         "H-01",
         "H-03",
-        "H-05",
         "S-01",
         "S-03"
       ],
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 30.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 683.4 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 7.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 512.6 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1510,6 +2797,28 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 34.1 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 1006.9 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 29.1 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 540.3 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": true
     },
@@ -1525,6 +2834,28 @@
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 42.5 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 988.9 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 38.0 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1129.8 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1542,6 +2873,28 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 24.1 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 937.0 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 46.5 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 621.4 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": true
     },
@@ -1557,6 +2910,28 @@
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 109.5 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 1602.5 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 30.8 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 942.6 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1574,6 +2949,28 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 59.9 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 1422.1 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 33.6 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1568.9 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": true
     },
@@ -1589,6 +2986,28 @@
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 341.8 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 3227.7 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 110.0 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 950.4 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1606,6 +3025,28 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 195.9 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 4744.8 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 281.0 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 3132.8 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": true
     },
@@ -1621,6 +3062,28 @@
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 109.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 3820.0 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 520.4 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 4713.3 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -1638,6 +3101,28 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 89.2 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 2538.0 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 209.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 3380.4 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1653,6 +3138,28 @@
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 56.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 1631.8 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 130.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1809.2 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1670,6 +3177,28 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 35.4 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 631.3 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 60.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1490.8 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1686,6 +3215,28 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 28.5 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 310.6 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 37.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 427.0 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1694,12 +3245,35 @@
       "level": "red",
       "rule_ids": [
         "H-01",
+        "H-03",
         "S-01",
         "S-03"
       ],
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 19.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 194.9 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 28.8 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 321.3 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1716,6 +3290,23 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 19.6 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 22.4 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 204.1 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1731,6 +3322,23 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 7.4 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 19.9 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 156.6 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1739,11 +3347,29 @@
       "level": "red",
       "rule_ids": [
         "H-01",
-        "S-01"
+        "S-01",
+        "S-03"
       ],
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 5.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 13.1 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 2 天达 160.5 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1753,12 +3379,23 @@
       "level": "red",
       "rule_ids": [
         "H-01",
-        "S-01",
-        "T-02"
+        "S-01"
       ],
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 5.7 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 8.2 μL/L,超国标注意值 5.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1774,6 +3411,18 @@
         "hard",
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "H-01",
+          "level": "red",
+          "message": "C₂H₂ 当前值 5.2 μL/L 已超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 8.5 μL/L,超国标注意值 5.0 μL/L"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1785,6 +3434,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 7.9 μL/L,超国标注意值 5.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1799,6 +3455,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 6.9 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 361%(24.3→112.2 μL/L)"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1811,6 +3479,18 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 5.6 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 203%(40.2→122.0 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1825,6 +3505,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 6.6 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 533%(19.3→121.8 μL/L)"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1837,6 +3529,18 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 6.8 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 454%(19.7→109.3 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1851,6 +3555,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 5.9 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 574%(16.4→110.2 μL/L)"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1863,6 +3579,18 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 5.4 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 610%(16.6→118.0 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": false
@@ -1877,6 +3605,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 5.1 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 416%(20.6→106.4 μL/L)"
+        }
+      ],
       "response": "立即响应",
       "true_abnormal": false
     },
@@ -1890,12 +3630,24 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 2 天达 5.1 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 400%(22.7→113.6 μL/L)"
+        }
+      ],
       "response": "24 小时内处理",
       "true_abnormal": false
     },
     {
       "date": "2024-12-17",
-      "level": "red",
+      "level": "orange",
       "rule_ids": [
         "S-01",
         "T-02"
@@ -1903,12 +3655,24 @@
       "rule_types": [
         "soft"
       ],
-      "response": "立即响应",
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 2 天达 6.3 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 531%(16.9→106.6 μL/L)"
+        }
+      ],
+      "response": "24 小时内处理",
       "true_abnormal": false
     },
     {
       "date": "2024-12-18",
-      "level": "red",
+      "level": "orange",
       "rule_ids": [
         "S-01",
         "T-02"
@@ -1916,7 +3680,19 @@
       "rule_types": [
         "soft"
       ],
-      "response": "立即响应",
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 2 天达 5.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 974%(10.4→111.9 μL/L)"
+        }
+      ],
+      "response": "24 小时内处理",
       "true_abnormal": false
     },
     {
@@ -1928,6 +3704,18 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 3 天达 6.0 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1496%(6.3→100.1 μL/L)"
+        }
       ],
       "response": "24 小时内处理",
       "true_abnormal": false
@@ -1942,6 +3730,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 3 天达 5.7 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1438%(6.7→103.7 μL/L)"
+        }
+      ],
       "response": "24 小时内处理",
       "true_abnormal": false
     },
@@ -1954,6 +3754,18 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 3 天达 5.3 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1006%(8.8→97.8 μL/L)"
+        }
       ],
       "response": "24 小时内处理",
       "true_abnormal": false
@@ -1968,6 +3780,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 3 天达 5.2 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1469%(6.6→103.2 μL/L)"
+        }
+      ],
       "response": "24 小时内处理",
       "true_abnormal": false
     },
@@ -1981,59 +3805,101 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "S-01",
+          "level": "orange",
+          "message": "C₂H₂ 预测第 3 天达 5.3 μL/L,超国标注意值 5.0 μL/L"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1572%(5.7→94.6 μL/L)"
+        }
+      ],
       "response": "24 小时内处理",
       "true_abnormal": false
     },
     {
       "date": "2024-12-24",
-      "level": "orange",
+      "level": "yellow",
       "rule_ids": [
-        "S-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "24 小时内处理",
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1187%(7.8→100.9 μL/L)"
+        }
+      ],
+      "response": "加强监测",
       "true_abnormal": false
     },
     {
       "date": "2024-12-25",
-      "level": "orange",
+      "level": "yellow",
       "rule_ids": [
-        "S-01",
+        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "24 小时内处理",
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 28816%(0.0→4.9 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1357%(6.6→95.8 μL/L)"
+        }
+      ],
+      "response": "加强监测",
       "true_abnormal": false
     },
     {
       "date": "2024-12-26",
-      "level": "orange",
+      "level": "yellow",
       "rule_ids": [
-        "S-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "24 小时内处理",
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 4107%(2.3→98.7 μL/L)"
+        }
+      ],
+      "response": "加强监测",
       "true_abnormal": false
     },
     {
       "date": "2024-12-27",
-      "level": "orange",
+      "level": "yellow",
       "rule_ids": [
-        "S-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "24 小时内处理",
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 6298%(1.4→91.0 μL/L)"
+        }
+      ],
+      "response": "加强监测",
       "true_abnormal": false
     },
     {
@@ -2044,6 +3910,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 4364%(2.1→94.6 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2057,6 +3930,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 2609%(3.4→91.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2068,6 +3948,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 4208%(2.2→95.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2081,6 +3968,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 2707%(3.2→90.0 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2092,6 +3986,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 5615%(1.6→93.7 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2105,6 +4006,51 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 3496%(2.5→88.8 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-03",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 9472%(1.0→92.7 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-04",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 2697%(3.2→88.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2117,6 +4063,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 3247%(2.7→92.0 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2128,6 +4081,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 4885%(1.8→89.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2142,6 +4102,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 14211%(0.0→3.1 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 3237%(2.7→89.2 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2155,6 +4127,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 1362%(0.2→3.1 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 2663%(3.2→88.6 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2166,6 +4150,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 4227%(2.1→89.3 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2179,6 +4170,51 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 5382%(1.6→87.6 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-11",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 17083%(0.5→87.5 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2025-01-12",
+      "level": "yellow",
+      "rule_ids": [
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 3668%(2.3→85.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2190,6 +4226,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 2501%(3.4→88.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2203,6 +4246,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 3276%(2.6→87.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2214,6 +4264,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 718%(10.5→86.3 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": true
@@ -2227,6 +4284,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 507%(15.2→92.2 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": true
     },
@@ -2238,6 +4302,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 476%(16.2→93.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": true
@@ -2251,6 +4322,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 286%(23.7→91.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2262,6 +4340,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 167%(36.5→97.4 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2275,67 +4360,290 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 156%(40.1→102.8 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
+    },
+    {
+      "date": "2025-01-24",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "C-02",
+        "T-01"
+      ],
+      "rule_types": [
+        "combo",
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 294.5 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "C-02",
+          "level": "orange",
+          "message": "已有特征气体超注意值且 CO₂/CO=2.0(<国标参考 3),建议关注固体绝缘状态"
+        },
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 1129%(0.2→2.7 μL/L)"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-01-25",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 392.3 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 298.0 μL/L,超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 311%(0.7→2.7 μL/L)"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-01-26",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 747.7 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 386.9 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-01-27",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 288.8 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 814.3 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-01-30",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 187.9 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "orange",
+          "message": "总烃预测第 2 天达 190.8 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
     },
     {
       "date": "2025-01-31",
       "level": "red",
       "rule_ids": [
-        "H-05",
-        "T-02"
+        "S-03"
       ],
       "rule_types": [
-        "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 293.7 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
     },
     {
       "date": "2025-02-01",
-      "level": "red",
+      "level": "yellow",
       "rule_ids": [
-        "H-05"
+        "T-01"
       ],
       "rule_types": [
-        "hard"
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 133%(1.2→2.9 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-02",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "T-01"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 308.2 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 246%(0.9→3.2 μL/L)"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
     },
     {
-      "date": "2025-02-02",
-      "level": "yellow",
+      "date": "2025-02-03",
+      "level": "red",
       "rule_ids": [
-        "T-01"
+        "H-03",
+        "S-03"
       ],
       "rule_types": [
+        "hard",
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 337.5 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 246.4 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-04",
+      "level": "red",
+      "rule_ids": [
+        "H-03",
+        "S-03"
+      ],
+      "rule_types": [
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 154.5 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 362.8 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": true
     },
     {
       "date": "2025-02-05",
-      "level": "yellow",
-      "rule_ids": [
-        "T-01"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "加强监测",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-07",
       "level": "red",
       "rule_ids": [
-        "H-05"
+        "H-03"
       ],
       "rule_types": [
         "hard"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 221.3 μL/L 已超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -2344,12 +4652,24 @@
       "date": "2025-02-08",
       "level": "red",
       "rule_ids": [
-        "H-05",
-        "T-01"
+        "H-03",
+        "S-01"
       ],
       "rule_types": [
         "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 192.3 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-01",
+          "level": "red",
+          "message": "C₂H₂ 预测第 1 天达 5.5 μL/L,超国标注意值 5.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -2358,181 +4678,177 @@
       "date": "2025-02-09",
       "level": "red",
       "rule_ids": [
-        "H-05"
+        "H-03"
       ],
       "rule_types": [
         "hard"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 161.0 μL/L 已超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
     },
     {
       "date": "2025-02-10",
-      "level": "red",
-      "rule_ids": [
-        "H-05"
-      ],
-      "rule_types": [
-        "hard"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-11",
-      "level": "red",
-      "rule_ids": [
-        "H-04",
-        "T-01"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-12",
-      "level": "red",
-      "rule_ids": [
-        "H-04",
-        "S-04",
-        "T-01"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-13",
-      "level": "red",
-      "rule_ids": [
-        "H-04",
-        "T-01"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-14",
-      "level": "red",
-      "rule_ids": [
-        "H-05",
-        "T-01"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-15",
-      "level": "red",
-      "rule_ids": [
-        "H-05",
-        "T-01"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-16",
-      "level": "red",
-      "rule_ids": [
-        "H-05",
-        "T-01"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-17",
-      "level": "red",
-      "rule_ids": [
-        "H-05",
-        "T-02"
-      ],
-      "rule_types": [
-        "hard",
-        "soft"
-      ],
-      "response": "立即响应",
-      "true_abnormal": true
-    },
-    {
-      "date": "2025-02-18",
       "level": "yellow",
       "rule_ids": [
-        "T-02"
+        "T-01"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 91%(1.6→3.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": true
     },
     {
-      "date": "2025-02-19",
+      "date": "2025-02-13",
       "level": "yellow",
       "rule_ids": [
         "T-01"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 184%(1.4→3.9 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-14",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01",
+        "T-02"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 54%(2.1→3.3 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 208%(45.3→139.3 μL/L)"
+        }
+      ],
+      "response": "加强监测",
+      "true_abnormal": true
+    },
+    {
+      "date": "2025-02-15",
+      "level": "yellow",
+      "rule_ids": [
+        "T-01"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 70%(2.1→3.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": true
     },
     {
       "date": "2025-02-20",
-      "level": "yellow",
+      "level": "red",
       "rule_ids": [
+        "H-03",
         "T-01"
       ],
       "rule_types": [
+        "hard",
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 193.1 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 66%(2.1→3.5 μL/L)"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": true
     },
     {
       "date": "2025-02-21",
-      "level": "yellow",
+      "level": "red",
       "rule_ids": [
-        "T-01"
+        "H-03",
+        "S-03"
       ],
       "rule_types": [
+        "hard",
         "soft"
       ],
-      "response": "加强监测",
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 938.2 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 154.1 μL/L,超国标注意值 150.0 μL/L"
+        }
+      ],
+      "response": "立即响应",
       "true_abnormal": true
     },
     {
       "date": "2025-02-22",
       "level": "red",
       "rule_ids": [
-        "H-03"
+        "H-03",
+        "S-03"
       ],
       "rule_types": [
-        "hard"
+        "hard",
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 1357.7 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1148.4 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
       "true_abnormal": true
@@ -2541,24 +4857,26 @@
       "date": "2025-02-23",
       "level": "red",
       "rule_ids": [
+        "H-03",
         "S-03"
       ],
       "rule_types": [
+        "hard",
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "H-03",
+          "level": "red",
+          "message": "总烃当前值 196.2 μL/L 已超国标注意值 150.0 μL/L"
+        },
+        {
+          "rule_id": "S-03",
+          "level": "red",
+          "message": "总烃预测第 1 天达 1068.7 μL/L,超国标注意值 150.0 μL/L"
+        }
       ],
       "response": "立即响应",
-      "true_abnormal": false
-    },
-    {
-      "date": "2025-02-24",
-      "level": "yellow",
-      "rule_ids": [
-        "T-01"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "加强监测",
       "true_abnormal": false
     },
     {
@@ -2570,6 +4888,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 337%(0.7→3.2 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2577,34 +4902,17 @@
       "date": "2025-02-26",
       "level": "yellow",
       "rule_ids": [
-        "T-02"
+        "T-01"
       ],
       "rule_types": [
         "soft"
       ],
-      "response": "加强监测",
-      "true_abnormal": false
-    },
-    {
-      "date": "2025-02-27",
-      "level": "yellow",
-      "rule_ids": [
-        "T-02"
-      ],
-      "rule_types": [
-        "soft"
-      ],
-      "response": "加强监测",
-      "true_abnormal": false
-    },
-    {
-      "date": "2025-02-28",
-      "level": "yellow",
-      "rule_ids": [
-        "T-02"
-      ],
-      "rule_types": [
-        "soft"
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 4055%(0.1→3.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2613,10 +4921,17 @@
       "date": "2025-03-01",
       "level": "yellow",
       "rule_ids": [
-        "T-02"
+        "T-01"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 108%(1.2→2.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2625,11 +4940,17 @@
       "date": "2025-03-02",
       "level": "yellow",
       "rule_ids": [
-        "T-01",
-        "T-02"
+        "T-01"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 1238%(0.2→3.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2644,6 +4965,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 177%(1.0→2.7 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 4961%(2.7→135.8 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2656,6 +4989,18 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 495%(0.5→2.8 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 2780%(1.9→55.3 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2670,6 +5015,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 1608%(0.2→2.8 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 20482%(0.6→120.4 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2683,6 +5040,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 365%(0.5→2.5 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 2061%(3.0→65.6 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2690,10 +5059,23 @@
       "date": "2025-03-07",
       "level": "yellow",
       "rule_ids": [
+        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 10959%(0.0→2.7 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1820%(5.8→111.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2707,6 +5089,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1412%(5.1→76.9 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2718,6 +5107,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1120%(8.6→104.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2731,6 +5127,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 666%(10.8→83.0 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2742,6 +5145,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1698%(5.7→102.6 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2755,6 +5165,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1436%(5.4→82.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2766,6 +5183,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1512%(6.0→97.0 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2779,6 +5203,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1310%(6.0→85.1 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2790,6 +5221,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1710%(5.2→94.9 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2804,6 +5242,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 116%(1.1→2.4 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 750%(10.2→86.3 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2816,6 +5266,18 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 153%(1.1→2.8 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 672%(12.4→95.7 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2830,6 +5292,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 1582%(0.2→2.9 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 849%(9.5→90.2 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2842,6 +5316,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 574%(13.9→93.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2853,6 +5334,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 305%(23.0→93.1 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2867,6 +5355,18 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-01",
+          "level": "yellow",
+          "message": "C₂H₂ 3 天内预计上升 92%(1.4→2.7 μL/L)"
+        },
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 648%(13.6→101.6 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2874,11 +5374,17 @@
       "date": "2025-03-22",
       "level": "yellow",
       "rule_ids": [
-        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 856%(9.2→87.8 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2887,11 +5393,17 @@
       "date": "2025-03-23",
       "level": "yellow",
       "rule_ids": [
-        "T-01",
         "T-02"
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1456%(5.7→89.5 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
@@ -2905,6 +5417,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1263%(6.4→86.8 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2917,6 +5436,13 @@
       "rule_types": [
         "soft"
       ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 732%(10.6→88.5 μL/L)"
+        }
+      ],
       "response": "加强监测",
       "true_abnormal": false
     },
@@ -2928,6 +5454,13 @@
       ],
       "rule_types": [
         "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-02",
+          "level": "yellow",
+          "message": "总烃 3 天内预计上升 1303%(6.4→89.7 μL/L)"
+        }
       ],
       "response": "加强监测",
       "true_abnormal": false
