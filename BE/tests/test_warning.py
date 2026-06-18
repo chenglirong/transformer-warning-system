@@ -5,7 +5,8 @@
     - dedup.passes_persistence / is_duplicate / should_push —— 误报控制
 
 阈值口径(与 detect/threshold.ATTENTION_VALUES 一致):
-    h2>150 / c2h2>5 / 总烃>150 / co>300 / co2>10000。
+    h2>150 / c2h2>5 / 总烃>150(国标表3 三项)。
+    CO/CO₂ 不设绝对注意值,走 CO₂/CO<3 比值组合规则 C-02(D-044)。
 
 运行:cd BE && python -m pytest tests/test_warning.py -v
 """
@@ -98,6 +99,29 @@ class TestEngine:
         ids = [t["rule_id"] for t in res["triggered"]]
         assert "C-01" not in ids
 
+    def test_combo_c02_co2co_ratio_with_gas_exceed(self):
+        """C-02(D-044):已有气体超注意值 且 CO₂/CO<3 → 触发,提示关注固体绝缘。
+        c2h2=8(>5 超标)+ co=500/co2=1000(比值 2 <3)→ C-02 橙色。
+        """
+        res = engine.evaluate(_gases(c2h2=8, co=500, co2=1000))
+        ids = [t["rule_id"] for t in res["triggered"]]
+        assert "C-02" in ids
+        c02 = next(t for t in res["triggered"] if t["rule_id"] == "C-02")
+        assert c02["rule_type"] == "combo"
+        # 守边界 D-008:不出现具体故障类型词
+        assert "固体绝缘" in c02["message"]
+        assert all(w not in c02["message"] for w in ("老化故障", "过热", "放电"))
+
+    def test_combo_c02_not_triggered_without_gas_exceed(self):
+        """C-02 联立前提:无气体超注意值时,即便 CO₂/CO<3 也不触发(§10.2.4)。"""
+        res = engine.evaluate(_gases(c2h2=0.5, co=500, co2=1000))  # 比值 2<3 但无超标
+        assert "C-02" not in [t["rule_id"] for t in res["triggered"]]
+
+    def test_combo_c02_not_triggered_when_ratio_high(self):
+        """CO₂/CO≥3 → 不属固体绝缘判据,C-02 不触发(即便有气体超标)。"""
+        res = engine.evaluate(_gases(c2h2=8, co=500, co2=5000))    # 比值 10≥3
+        assert "C-02" not in [t["rule_id"] for t in res["triggered"]]
+
     def test_level_takes_highest(self):
         """同时触发 yellow(趋势)+ red(硬)→ 综合等级取最高 red。"""
         fc = _forecast([{"c2h2": 1}, {"c2h2": 1.5}, {"c2h2": 2}])
@@ -107,8 +131,11 @@ class TestEngine:
         assert "red" in levels and "yellow" in levels
 
     def test_no_forecast_skips_predictive_rules(self):
-        """不传 forecast → 只跑硬规则,软/趋势/组合跳过不报错。"""
-        res = engine.evaluate(_gases(c2h2=10))    # 硬规则 red
+        """不传 forecast → 软/趋势/依赖预测的组合(C-01)跳过不报错。
+        注:C-02(CO₂/CO 比值)是当前态规则、不依赖预测;此处 co2/co=10>3 故不触发,
+        触发的只有硬规则。
+        """
+        res = engine.evaluate(_gases(c2h2=10))    # 硬规则 red,co2/co=10 不触发 C-02
         assert res["level"] == "red"
         assert all(t["rule_type"] == "hard" for t in res["triggered"])
 

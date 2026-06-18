@@ -42,10 +42,18 @@ class TestThreshold:
         assert "total_hydrocarbon" in res.exceeded
 
     def test_missing_gases_treated_as_zero(self):
-        """缺失 co/co2 按 0 计,不误报。"""
+        """缺失 co/co2 不误报;阈值法判定项只含国标三项(D-044:CO/CO₂ 不参与)。"""
         res = threshold.detect_one(h2=40, ch4=2, c2h4=1, c2h6=1, c2h2=0.5)
         assert res.is_abnormal is False
-        assert res.values["co"] == 0.0
+        # CO/CO₂ 不在阈值法判定项内(国标表3 未设注意值,改走预警 C-02 比值法)
+        assert set(res.values.keys()) == {"h2", "c2h2", "total_hydrocarbon"}
+
+    def test_co_co2_not_in_threshold_judgement(self):
+        """D-044:CO/CO₂ 再高也不被阈值法判超标(国标表3 未设其注意值)。"""
+        res = threshold.detect_one(h2=40, ch4=2, c2h4=1, c2h6=1, c2h2=0.5,
+                                   co=9999, co2=99999)
+        assert res.is_abnormal is False
+        assert res.exceeded == []
 
     def test_detect_df_returns_int_series(self):
         """批量返回 0/1 int Series,长度与 df 一致。"""
@@ -68,10 +76,10 @@ class TestIEC:
         assert res.fault == iec.INSUFFICIENT_DATA
         assert res.is_abnormal is False
 
-    def test_all_below_threshold_normal(self):
-        """5 种气体都低于浓度阈值 → NORMAL(无故障特征气体)。"""
+    def test_all_below_threshold_insufficient(self):
+        """5 种气体都低于浓度阈值 → 数据不足(表7 无「正常」编码),is_abnormal=False。"""
         res = iec.diagnose(h2=5, ch4=5, c2h4=5, c2h6=5, c2h2=0.5)
-        assert res.fault == iec.NORMAL
+        assert res.fault == iec.INSUFFICIENT_DATA
         assert res.is_abnormal is False
 
     def test_divisor_too_small_undetermined(self):
@@ -82,14 +90,23 @@ class TestIEC:
         assert res.fault == iec.UNDETERMINED
         assert res.is_abnormal is False
 
-    def test_thermal_low_code_001(self):
-        """编码 (0,0,1) → 低温过热 THERMAL_LOW,is_abnormal=True。
-        构造:r1<0.1(c2h2 极小), 0.1<=r2<1, 1<=r3<3。
+    def test_code_000_thermal_low1(self):
+        """编码 (0,0,0) → DL/T 722 表7 判「低温过热<150℃」,is_abnormal=True。
+        这是表7 与 IEC 的关键差异:IEC 把 (0,0,0) 判正常,表7 判低温过热(D-044)。
+        构造:c2h2/c2h4<0.1→r1=0;ch4/h2 in [0.1,1)→r2=0;c2h4/c2h6<1→r3=0。
         """
-        # c2h2/c2h4 < 0.1 → r1=0;ch4/h2 in [0.1,1) → r2=0;c2h4/c2h6 in [1,3) → r3=1
-        res = iec.diagnose(h2=100, ch4=50, c2h4=40, c2h6=20, c2h2=1)
-        assert res.code == (0, 0, 1)
-        assert res.fault == iec.THERMAL_LOW
+        res = iec.diagnose(h2=100, ch4=50, c2h4=20, c2h6=40, c2h2=1)
+        assert res.code == (0, 0, 0)
+        assert res.fault == iec.THERMAL_LOW1
+        assert res.is_abnormal is True
+
+    def test_code_200_low_discharge(self):
+        """编码首位 2 → 表7 判「低能放电」(IEC 此处归 D1,归类不同但同为异常)。
+        构造:c2h2/c2h4>=3→r1=2;ch4/h2 in [0.1,1)→r2=0;c2h4/c2h6<1→r3=0。
+        """
+        res = iec.diagnose(h2=100, ch4=50, c2h4=10, c2h6=40, c2h2=40)
+        assert res.code[0] == 2
+        assert res.fault == iec.LOW_DISCHARGE
         assert res.is_abnormal is True
 
     def test_encode_ratio_2_special_order(self):
