@@ -4,10 +4,15 @@
 # ARIMA 未来 1-3 天预测」逐条匹配,输出触发的规则 + 综合预警等级。
 #
 # 三类规则(论文模块 5):
-#   hard  硬规则——基于国标阈值(当前已超标),阈值口径与 detect/threshold.py
-#         的 ATTENTION_VALUES 一致(H2=150 / C2H2=5 / 总烃=150 / CO=300 / CO2=10000)
+#   hard  硬规则——基于国标注意值(当前已超标),阈值口径与 detect/threshold.py
+#         的 ATTENTION_VALUES 一致(H2=150 / C2H2=5 / 总烃=150,均 DL/T 722-2014 表3)
 #   soft  软规则——基于 ARIMA 预测(未来 1-3 天内预测值超标;ARIMA 选型见 D-029)
-#   combo 组合规则——多指标关联(产气速率快 + 油温高)
+#   combo 组合规则——多指标关联(产气速率快 + 油温高;CO₂/CO 比值判固体绝缘)
+#
+# CO/CO₂ 说明(D-044):DL/T 722-2014 表3 对 CO/CO₂ 不设绝对注意值,固体绝缘判据是
+# §10.2.3.1 的 CO₂/CO 比值(<3 可能涉及固体绝缘 / >7 正常老化),且按 §10.2.4 仅在
+# 已疑似故障时比值才有意义。故本规则库不再对 CO/CO₂ 设绝对硬规则,改为「已疑似故障
+# 且 CO₂/CO<3」的组合判据(见 combo C-02)。
 #
 # 四级分级(红橙黄蓝),engine 取所有触发规则的最高级为综合等级:
 #   red    紧急——已超标 或 24h(预测第 1 天)内必超
@@ -30,75 +35,77 @@ dedup:
   consecutive_n: 2        # 异常需连续 N 次触发才报警(滤噪声尖峰)
   cooldown_hours: 24      # 同一(transformer, rule_id)24h 内不重复推送
 
-# 预警专用阈值(默认继承国标 ATTENTION_VALUES,此处仅列出需校准覆盖的项)
-# CO:国标注意值 300 对本设备合成数据偏低(正常态 38% 天数即超),按正常态
-# 95 分位(~900)校准。国标允许按设备历史基线调整注意值;此覆盖只作用于预警
-# 引擎,不改检测模块的国标口径(detect/threshold.ATTENTION_VALUES 不动)。
-warning_thresholds:
-  co: 900.0
-
 # 硬规则:当前实测已超国标注意值 → 红色(已超标,立即响应)
+# message 模板含数值占位符,engine 触发时 .format() 填入真实数值:
+#   {value} 当前实测值  {limit} 该项注意值(μL/L)
 hard_rules:
   - id: H-01
     item: c2h2            # 判定项,对应 threshold.ATTENTION_VALUES 的键
     level: red
-    message: "C₂H₂ 当前值已超国标注意值"
+    message: "C₂H₂ 当前值 {value} μL/L 已超国标注意值 {limit} μL/L"
   - id: H-02
     item: h2
     level: red
-    message: "H₂ 当前值已超国标注意值"
+    message: "H₂ 当前值 {value} μL/L 已超国标注意值 {limit} μL/L"
   - id: H-03
     item: total_hydrocarbon
     level: red
-    message: "总烃当前值已超国标注意值"
-  - id: H-04
-    item: co
-    level: red
-    message: "CO 当前值已超国标注意值"
-  - id: H-05
-    item: co2
-    level: red
-    message: "CO₂ 当前值已超国标注意值"
+    message: "总烃当前值 {value} μL/L 已超国标注意值 {limit} μL/L"
+  # 注:CO/CO₂ 不设绝对硬规则——DL/T 722-2014 表3 未给 CO/CO₂ 注意值,
+  #     固体绝缘判据走 CO₂/CO 比值(见 combo C-02 + 顶部 D-044 说明)。
 
 # 软规则:ARIMA 预测未来 1-3 天内超标 → 按最早超标日定级
 #   预测第 1 天(24h 内)超标 → red;第 2-3 天超标 → orange
+# message 模板占位符:{day} 第几天超标  {pred} 该天预测值  {limit} 注意值(μL/L)
 soft_rules:
   - id: S-01
     item: c2h2
     horizon_days: 3       # 看未来 3 天
-    message: "C₂H₂ 预测未来 {day} 天内将超国标注意值"
+    message: "C₂H₂ 预测第 {day} 天达 {pred} μL/L,超国标注意值 {limit} μL/L"
   - id: S-02
     item: h2
     horizon_days: 3
-    message: "H₂ 预测未来 {day} 天内将超国标注意值"
+    message: "H₂ 预测第 {day} 天达 {pred} μL/L,超国标注意值 {limit} μL/L"
   - id: S-03
     item: total_hydrocarbon
     horizon_days: 3
-    message: "总烃预测未来 {day} 天内将超国标注意值"
-  - id: S-04
-    item: co
-    horizon_days: 3
-    message: "CO 预测未来 {day} 天内将超国标注意值"
+    message: "总烃预测第 {day} 天达 {pred} μL/L,超国标注意值 {limit} μL/L"
 
 # 趋势规则:未到超标,但近期涨势明显 → 黄色(加强监测)
 # 以「相对当前值的涨幅比例」衡量,避免对不同气体写死绝对涨速
+# message 模板占位符:{rise_pct} 预测涨幅%  {cur} 当前值  {fut} 预测末日值(μL/L)
 trend_rules:
   - id: T-01
     item: c2h2
     rise_ratio: 0.5       # 预测 3 天涨幅 ≥ 当前值 50% → 趋势异常
     level: yellow
-    message: "C₂H₂ 呈明显上升趋势"
+    message: "C₂H₂ 3 天内预计上升 {rise_pct}%({cur}→{fut} μL/L)"
   - id: T-02
     item: total_hydrocarbon
     rise_ratio: 0.5
     level: yellow
-    message: "总烃呈明显上升趋势"
+    message: "总烃 3 天内预计上升 {rise_pct}%({cur}→{fut} μL/L)"
 
 # 组合规则:多指标关联 → 综合预警
+# message 模板占位符:{gas} 命中的气体名  {rise_pct} 该气体预测涨幅%  {oil_temp} 当前油温℃
 combo_rules:
   - id: C-01
     level: orange
-    message: "产气速率偏快且油温偏高,需综合关注"
+    message: "产气速率偏快({gas} 预计涨 {rise_pct}%)且油温偏高({oil_temp}℃),需综合关注"
     conditions:
       gas_rise_ratio: 0.3   # 任一关键气体预测 3 天涨幅 ≥ 30%
       oil_temp_min: 80.0    # 且当前油温 ≥ 80℃
+
+  # C-02 CO₂/CO 比值判固体绝缘(DL/T 722-2014 §10.2.3.1 + §10.2.4):
+  #   国标:故障涉及固体绝缘时一般 CO₂/CO<3;且比值仅在「已疑似故障」时才有意义,
+  #   故做成联立——「已有特征气体超注意值」且「CO₂/CO<3」才触发。守边界 D-008:
+  #   message 只提示「关注固体绝缘状态」,不输出「纸绝缘老化」等故障类型。
+  #   ⚠️ 数据局限(D-040/D-044):本合成数据未建模固体绝缘的 CO₂/CO 物理关系,
+  #   正常态比值反而更低,该判据在本数据集上判别力有限,如实保留、不调阈值迁就数据。
+  - id: C-02
+    level: orange
+    message: "已有特征气体超注意值且 CO₂/CO={ratio}(<国标参考 3),建议关注固体绝缘状态"
+    type: co2_co_ratio
+    conditions:
+      co2_co_ratio_max: 3.0   # CO₂/CO < 3 → 国标提示可能涉及固体绝缘
+      require_gas_exceed: true # 联立前提:当前已有任一气体超注意值(§10.2.4)

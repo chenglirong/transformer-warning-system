@@ -27,6 +27,29 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from app.algorithms.detect.iec import diagnose, IECDiagnosis  # noqa: E402
+from app.algorithms.detect import threshold  # noqa: E402
+
+# 组合打标的状态名(D-044):
+#   健康/异常二分 = DL/T 722-2014 表3 注意值(threshold);
+#   异常样本故障类型细分 = 表7 三比值法(diagnose);
+#   表7 判不出类型(无对应编码/数据不足)的异常 → 「异常-未明类」单独成池。
+# 健康状态名沿用 "Normal"(与 synthesis.NORMAL / 下游 != "Normal" 口径一致);
+# 其判定依据为表3 注意值(气体未超 = Normal),非三比值法。
+HEALTHY_STATE = "Normal"
+ABNORMAL_UNTYPED = "异常-未明类"
+
+
+def label_state(h2, ch4, c2h4, c2h6, c2h2):
+    """组合打标:返回 (state, is_abnormal)。
+
+    二分依据 DL/T 722-2014 表3 注意值(H₂/C₂H₂/总烃);异常再用表7 细分故障类型。
+    """
+    thr = threshold.detect_one(h2, ch4, c2h4, c2h6, c2h2)
+    if not thr.is_abnormal:
+        return HEALTHY_STATE, False
+    d = diagnose(h2, ch4, c2h4, c2h6, c2h2)
+    state = d.fault if d.is_abnormal else ABNORMAL_UNTYPED
+    return state, True
 
 
 DATA_XLSX = ROOT.parent / "data" / "raw" / "FinalDataSet_DGA.xlsx"
@@ -200,6 +223,12 @@ def save_labeled_csv(header, rows, diagnoses):
         w = csv.writer(f)
         w.writerow(out_header)
         for r, d in zip(rows, diagnoses):
+            # 组合打标(D-044):二分用表3、细分用表7,iec_fault 列存组合状态名
+            state, is_abn = label_state(
+                r[idx["Hydrogen (H2)"]], r[idx["Methane (CH4)"]],
+                r[idx["Ethylene (C2H4)"]], r[idx["Ethane (C2H6)"]],
+                r[idx["Acetylene (C2H2)"]],
+            )
             w.writerow([
                 r[idx["Transformer"]],
                 r[idx["Hydrogen (H2)"]],
@@ -212,12 +241,12 @@ def save_labeled_csv(header, rows, diagnoses):
                 r[idx["Oxygen (O2)"]],
                 r[idx["Nitrogen (N2)"]],
                 r[idx["Fault"]],
-                d.fault,
+                state,
                 "-".join(str(c) for c in d.code) if d.code else "",
                 round(d.ratios.get("C2H2/C2H4"), 4) if d.ratios.get("C2H2/C2H4") is not None else "",
                 round(d.ratios.get("CH4/H2"), 4) if d.ratios.get("CH4/H2") is not None else "",
                 round(d.ratios.get("C2H4/C2H6"), 4) if d.ratios.get("C2H4/C2H6") is not None else "",
-                int(d.is_abnormal),
+                int(is_abn),
             ])
     print(f"  ✅ 已保存: {OUT_CSV}")
     print(f"     行数: {len(diagnoses)}, 列数: {len(out_header)}")

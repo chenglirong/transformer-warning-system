@@ -14,7 +14,8 @@
           LSTM 更稳健,故预警的预测依据用 ARIMA)。对预测每天同样用
           threshold.detect_one 判,找最早超标日定级(第 1 天=24h 内→red,
           第 2-3 天→orange)
-    combo 组合规则——多指标关联(产气速率快 + 油温高)
+    combo 组合规则——多指标关联:① 产气速率快 + 油温高(依赖预测);
+          ② CO₂/CO<3 + 已有气体超注意值 → 关注固体绝缘(DL/T 722 §10.2.3.1,当前态)
 
 另有 trend(趋势)规则:未到超标但涨势明显 → yellow。
 
@@ -36,6 +37,18 @@ RULES_PATH = Path(__file__).resolve().parent / "rules.yaml"
 
 # 等级排序(取最高级用),数字越大越紧急
 LEVEL_ORDER: Dict[str, int] = {"blue": 1, "yellow": 2, "orange": 3, "red": 4}
+
+# 判定项 → 中文名(组合规则 message 的 {gas} 占位符用)
+_ITEM_LABEL: Dict[str, str] = {
+    "h2": "H₂", "ch4": "CH₄", "c2h4": "C₂H₄", "c2h6": "C₂H₆",
+    "c2h2": "C₂H₂", "co": "CO", "co2": "CO₂",
+    "total_hydrocarbon": "总烃",
+}
+
+
+def _fmt(x: float) -> float:
+    """message 数值统一保留 1 位小数(避免 8.199999 这类浮点尾巴)。"""
+    return round(float(x), 1)
 
 
 def load_rules(path: Optional[Path] = None) -> dict:
@@ -104,10 +117,34 @@ def evaluate(
 
     # ---------- 硬规则:当前已超标 ----------
     for r in rules.get("hard_rules", []):
-        if _exceeds(cur.values, r["item"], thresholds):
+        item = r["item"]
+        if _exceeds(cur.values, item, thresholds):
             triggered.append({
                 "rule_id": r["id"], "rule_type": "hard",
-                "level": r["level"], "message": r["message"],
+                "level": r["level"],
+                "message": r["message"].format(
+                    value=_fmt(_item_value(cur.values, item)),
+                    limit=_fmt(thresholds[item]),
+                ),
+            })
+
+    # ---------- 组合规则(当前态,不依赖预测):CO₂/CO 比值判固体绝缘 ----------
+    # DL/T 722-2014 §10.2.3.1+§10.2.4:故障涉及固体绝缘时一般 CO₂/CO<3,
+    # 且比值仅在「已疑似故障」(已有气体超注意值)时才有意义 → 联立判定。
+    # 守边界 D-008:message 只提示关注固体绝缘,不输出故障类型。
+    co = current_gases.get("co") or 0.0
+    co2 = current_gases.get("co2") or 0.0
+    for r in rules.get("combo_rules", []):
+        if r.get("type") != "co2_co_ratio":
+            continue
+        c = r["conditions"]
+        gas_exceeded = bool(cur.exceeded)         # 当前已有任一气体超注意值(§10.2.4 前提)
+        ratio_ok = co > 0 and (co2 / co) < c["co2_co_ratio_max"]
+        if (not c.get("require_gas_exceed", True) or gas_exceeded) and ratio_ok:
+            triggered.append({
+                "rule_id": r["id"], "rule_type": "combo",
+                "level": r["level"],
+                "message": r["message"].format(ratio=_fmt(co2 / co)),
             })
 
     # 预测相关规则需要 forecast_df
@@ -133,9 +170,14 @@ def evaluate(
             if first_day is not None:
                 # 第 1 天(24h 内)超 → red;第 2-3 天 → orange
                 level = "red" if first_day == 1 else "orange"
+                pred_v = _item_value(daily_values[first_day - 1], item)
                 triggered.append({
                     "rule_id": r["id"], "rule_type": "soft", "level": level,
-                    "message": r["message"].format(day=first_day),
+                    "message": r["message"].format(
+                        day=first_day,
+                        pred=_fmt(pred_v),
+                        limit=_fmt(thresholds[item]),
+                    ),
                 })
 
         # ---------- 趋势规则:涨幅明显但未超标 ----------
@@ -150,25 +192,39 @@ def evaluate(
                 if rise >= r["rise_ratio"]:
                     triggered.append({
                         "rule_id": r["id"], "rule_type": "soft",
-                        "level": r["level"], "message": r["message"],
+                        "level": r["level"],
+                        "message": r["message"].format(
+                            rise_pct=round(rise * 100),
+                            cur=_fmt(cur_v), fut=_fmt(fut_v),
+                        ),
                     })
 
-        # ---------- 组合规则:产气速率快 + 油温高 ----------
+        # ---------- 组合规则:产气速率快 + 油温高(依赖预测涨幅)----------
+        # 带 type 的组合规则(如 co2_co_ratio)已在上方当前态处理,这里跳过。
         for r in rules.get("combo_rules", []):
+            if r.get("type"):
+                continue
             c = r["conditions"]
-            # 任一关键判定项预测涨幅 ≥ 阈值
-            gas_rise_hit = False
+            # 任一关键判定项预测涨幅 ≥ 阈值,记下命中的气体名 + 涨幅(填 message)
+            hit_item = None
+            hit_rise = 0.0
             for item in ("c2h2", "total_hydrocarbon", "h2", "co"):
                 cur_v = _item_value(cur.values, item)
                 fut_v = _item_value(last_values, item)
                 if cur_v > 0 and (fut_v - cur_v) / cur_v >= c["gas_rise_ratio"]:
-                    gas_rise_hit = True
+                    hit_item = item
+                    hit_rise = (fut_v - cur_v) / cur_v
                     break
             temp_hit = oil_temp is not None and oil_temp >= c["oil_temp_min"]
-            if gas_rise_hit and temp_hit:
+            if hit_item is not None and temp_hit:
                 triggered.append({
                     "rule_id": r["id"], "rule_type": "combo",
-                    "level": r["level"], "message": r["message"],
+                    "level": r["level"],
+                    "message": r["message"].format(
+                        gas=_ITEM_LABEL.get(hit_item, hit_item),
+                        rise_pct=round(hit_rise * 100),
+                        oil_temp=_fmt(oil_temp),
+                    ),
                 })
 
     # ---------- 综合等级:取最高 ----------

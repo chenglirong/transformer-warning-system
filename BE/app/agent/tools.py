@@ -93,7 +93,7 @@ def _latest_gases(history: pd.DataFrame) -> dict:
 
 @tool
 def get_latest_gases(transformer_id: int) -> str:
-    """查询指定变压器最新一日的 7 种溶解气体浓度(ppm)与油温(℃)。
+    """查询指定变压器最新一日的 7 种溶解气体浓度(μL/L)与油温(℃)。
 
     输入:变压器编号(整数,如 1)。
     返回:最新监测日期 + H2/CH4/C2H4/C2H6/C2H2/CO/CO2 浓度 + 油温。
@@ -108,7 +108,7 @@ def get_latest_gases(transformer_id: int) -> str:
         f"变压器 {transformer_id} 最新监测日 {last['date']}:"
         f"H₂={g['h2']:.1f}, CH₄={g['ch4']:.1f}, C₂H₄={g['c2h4']:.1f}, "
         f"C₂H₆={g['c2h6']:.1f}, C₂H₂={g['c2h2']:.1f}, CO={g['co']:.1f}, "
-        f"CO₂={g['co2']:.1f}(单位 ppm);油温 {last['oil_temp']:.1f}℃。"
+        f"CO₂={g['co2']:.1f}(单位 μL/L);油温 {last['oil_temp']:.1f}℃。"
     )
 
 

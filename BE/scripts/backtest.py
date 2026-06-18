@@ -106,10 +106,14 @@ def main() -> None:
             level_dist[eff_level] += 1
             rule_ids = [x["rule_id"] for x in persisted]
             rule_types = sorted({x["rule_type"] for x in persisted})
+            # 触发明细(已填好确切数值的 message),供前端工单详情逐条展示
+            messages = [{"rule_id": x["rule_id"], "level": x["level"],
+                         "message": x["message"]} for x in persisted]
             records.append({
                 "date": str(row["date"]), "level": eff_level,
                 "rule_ids": rule_ids,
                 "rule_types": rule_types,
+                "messages": messages,
                 "response": LEVEL_RESPONSE[eff_level],
                 "true_abnormal": bool(true_abn),
             })
