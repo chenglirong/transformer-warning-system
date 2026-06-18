@@ -3,7 +3,7 @@
     <AppHeader
       title="异 常 检 测 三 方 法 对 比"
       icon="mdi:eye-check"
-      subtitle="阈值法 · IEC 三比值法 · Isolation Forest"
+      subtitle="阈值法 · 三比值法(DL/T 722) · Isolation Forest"
     />
 
     <!-- 3 方法对比卡 -->
@@ -34,9 +34,6 @@
               </div>
               <p class="text-[11px] text-gray-500 mt-0.5">{{ m.desc }}</p>
             </div>
-          </div>
-          <div v-if="m.best" class="best-badge">
-            <iconify-icon icon="mdi:trophy"></iconify-icon> 最优
           </div>
         </div>
         <div class="grid grid-cols-3 gap-2 mt-2">
@@ -85,32 +82,44 @@
 
         <div class="overflow-hidden" style="flex: 1">
           <div class="glass rounded-lg p-3 flex flex-col overflow-hidden h-full">
-            <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2">
-              <iconify-icon icon="mdi:gauge"></iconify-icon>
-              Isolation Forest 混淆矩阵（最优方法）
-            </h3>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="panel-title text-sm font-bold text-cyan-300">
+                <iconify-icon icon="mdi:gauge"></iconify-icon>
+                混淆矩阵
+              </h3>
+              <div class="flex gap-1">
+                <button
+                  v-for="cm in CONFUSION_METHODS"
+                  :key="cm.key"
+                  class="conf-tab"
+                  :class="{ active: confusionMethod === cm.key }"
+                  @click="confusionMethod = cm.key"
+                >{{ cm.label }}</button>
+              </div>
+            </div>
             <div class="flex-1 grid grid-cols-2 gap-2" style="min-height: 0">
               <div class="conf-cell ok">
                 <p class="text-[10px] text-gray-400">TP 真阳性</p>
-                <p class="text-3xl font-bold text-green-300">{{ iforestConfusion.tp }}</p>
+                <p class="text-3xl font-bold text-green-300">{{ selectedConfusion.tp }}</p>
                 <p class="text-[10px] text-gray-500">正确告警</p>
               </div>
               <div class="conf-cell warn">
                 <p class="text-[10px] text-gray-400">FP 假阳性</p>
-                <p class="text-3xl font-bold text-orange-300">{{ iforestConfusion.fp }}</p>
+                <p class="text-3xl font-bold text-orange-300">{{ selectedConfusion.fp }}</p>
                 <p class="text-[10px] text-gray-500">误报</p>
               </div>
               <div class="conf-cell bad">
                 <p class="text-[10px] text-gray-400">FN 假阴性</p>
-                <p class="text-3xl font-bold text-red-300">{{ iforestConfusion.fn }}</p>
+                <p class="text-3xl font-bold text-red-300">{{ selectedConfusion.fn }}</p>
                 <p class="text-[10px] text-gray-500">漏报</p>
               </div>
               <div class="conf-cell neutral">
                 <p class="text-[10px] text-gray-400">TN 真阴性</p>
-                <p class="text-3xl font-bold text-gray-300">{{ iforestConfusion.tn }}</p>
+                <p class="text-3xl font-bold text-gray-300">{{ selectedConfusion.tn }}</p>
                 <p class="text-[10px] text-gray-500">正常无误判</p>
               </div>
             </div>
+            <p class="text-[10px] text-gray-500 mt-1.5">{{ selectedConfusionNote }}</p>
           </div>
         </div>
       </div>
@@ -122,7 +131,7 @@
             <iconify-icon icon="mdi:timeline-check"></iconify-icon>
             近 7 日检测一致性（融合规则：3 方法 ≥2 异常 → 异常）
           </h3>
-          <table class="consistency-table flex-1">
+          <table class="consistency-table">
             <thead>
               <tr>
                 <th>日期</th>
@@ -154,20 +163,20 @@
             </tbody>
           </table>
           <p class="text-[10px] text-gray-500 mt-1.5">
-            ● 异常　○ 正常 · 阈值/IEC/iForest 三方逐日投票观察;实测等权融合未优于单一 iForest(弱方法拖累)
+            ● 异常　○ 正常 · 阈值/三比值/iForest 三方逐日投票观察;实测等权融合(≥2 票)F1 0.649,优于单一 iForest(0.608)
           </p>
         </div>
 
         <div class="glass rounded-lg p-3 overflow-hidden">
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
             <iconify-icon icon="mdi:tune-vertical"></iconify-icon>
-            阈值法参考国标 DL/T 722
+            阈值法参考值（国标 DL/T 722-2014 · 220kV 及以下）
           </h3>
           <table class="ref-table">
             <thead>
               <tr>
                 <th>气体</th>
-                <th>注意值</th>
+                <th>参考值</th>
                 <th>最新日值</th>
                 <th>判定</th>
               </tr>
@@ -185,6 +194,9 @@
               </tr>
             </tbody>
           </table>
+          <p class="text-[10px] text-gray-500 leading-snug mt-1.5">
+            <span class="src-badge src-std">国标</span> DL/T 722-2014 表3 运行设备注意值(220kV 及以下);CO/CO₂ 国标未设注意值,故不列
+          </p>
         </div>
 
         <div class="glass rounded-lg p-3 overflow-hidden">
@@ -224,7 +236,7 @@
               第 2 步(编码组合 → 具体故障类型)属<span class="font-semibold">诊断</span>范畴,本预警系统<span class="font-semibold">不对外输出</span>。
             </p>
             <p class="text-gray-400 mt-0.5">
-              本系统仅将三比值法用于<span class="text-gray-300">内部异常二分类</span>(实测召回约 40%,见左侧对比),对外只给 is_abnormal,不给故障结论 —— 这是预警系统与诊断系统的职责边界。
+              本系统仅将三比值法用于<span class="text-gray-300">内部异常二分类</span>(实测召回 0.81 但误报近半 0.49,见左侧对比),对外只给 is_abnormal,不给故障结论 —— 这是预警系统与诊断系统的职责边界。
             </p>
           </div>
           <!-- 系统边界:只展示第1步编码规则(方法论),禁止展示第2步的具体故障类型映射 -->
@@ -247,17 +259,17 @@ import { getDetectCompare, getLatest, getDetectRecent, getDetectMethods } from "
 
 // ============ 真值兜底常量(防 Demo 断网)============
 // 来源:scripts/compare_detection.py / GET /api/detect/_internal/compare
-// 基准=合成真值 fault_state,n=360,真值异常 91(D-020/D-021)。
+// 基准=合成真值 fault_state,n=360,真值异常 91(D-020/D-021;D-044 全链路重跑值)。
 // 单位为比率(0~1),展示时 ×100 转百分比。
 const FALLBACK = {
   n_samples: 360,
   n_abnormal_truth: 91,
   metrics: {
-    threshold: { accuracy: 0.6056, precision: 0.3679, recall: 0.7802, f1: 0.5, fpr: 0.4535,
-      confusion: { tp: 71, tn: 147, fp: 122, fn: 20 } },
-    iec: { accuracy: 0.675, precision: 0.37, recall: 0.4066, f1: 0.3874, fpr: 0.2342,
-      confusion: { tp: 37, tn: 206, fp: 63, fn: 54 } },
-    iforest: { accuracy: 0.8028, precision: 0.6111, recall: 0.6044, f1: 0.6077, fpr: 0.1301,
+    threshold: { accuracy: 0.825, precision: 0.649, recall: 0.670, f1: 0.659, fpr: 0.123,
+      confusion: { tp: 61, tn: 236, fp: 33, fn: 30 } },
+    iec: { accuracy: 0.583, precision: 0.357, recall: 0.813, f1: 0.497, fpr: 0.494,
+      confusion: { tp: 74, tn: 136, fp: 133, fn: 17 } },
+    iforest: { accuracy: 0.803, precision: 0.611, recall: 0.604, f1: 0.608, fpr: 0.130,
       confusion: { tp: 55, tn: 234, fp: 35, fn: 36 } },
   },
 };
@@ -308,7 +320,7 @@ const methods = computed(() => {
   return [
     {
       name: "阈值法",
-      desc: "国标 DL/T 722 注意值",
+      desc: "国标 DL/T 722-2014 表3 注意值(H₂/C₂H₂/总烃)",
       icon: "mdi:tune-vertical",
       iconClass: "text-blue-400",
       titleClass: "text-blue-300",
@@ -321,7 +333,7 @@ const methods = computed(() => {
       best: false,
     },
     {
-      name: "IEC 三比值法",
+      name: "三比值法(DL/T 722)",
       desc: "国标比值法 · 内部分组用",
       icon: "mdi:calculator-variant",
       iconClass: "text-orange-400",
@@ -342,11 +354,11 @@ const methods = computed(() => {
       titleClass: "text-green-300",
       type: "机器学习",
       tag: "tag-grn",
-      cls: "border-green-500/40 highlight",
+      cls: "border-green-500/40",
       acc: pct(m.iforest.accuracy),
       recall: pct(m.iforest.recall),
       fpr: pct(m.iforest.fpr),
-      best: true, // F1 最高、误报率最低(D-021)
+      best: false, // D-044:不再标「最优」——三方法互补(阈值法精准/三比值法高覆盖/iForest 均衡),非谁最优
     },
   ];
 });
@@ -388,7 +400,7 @@ const compareOption = computed(() => {
         barWidth: 14,
       },
       {
-        name: "IEC 三比值法",
+        name: "三比值法(DL/T 722)",
         type: "bar",
         data: metricRow(m.iec),
         itemStyle: { color: "#f97316", borderRadius: [3, 3, 0, 0] },
@@ -405,8 +417,20 @@ const compareOption = computed(() => {
   };
 });
 
-// ③ 混淆矩阵:展示最优方法 Isolation Forest 的真实四格(D-021)
-const iforestConfusion = computed(() => compare.value.metrics.iforest.confusion);
+// ③ 混淆矩阵:三方法可切换(D-044:不再钦定「最优」,看的人自行对比三方法四格)
+// 方法元信息:key 对应 metrics 键,label 展示名,note 旁注(讲清各方法判别取向)
+const CONFUSION_METHODS = [
+  { key: "threshold", label: "阈值法", note: "国标表3 注意值:精准、误报低,但对早期故障覆盖不足" },
+  { key: "iec", label: "三比值法", note: "DL/T 722 表6/表7:覆盖广、召回高,但判据宽松、误报偏高" },
+  { key: "iforest", label: "孤立森林", note: "无监督、口径中立(不与打标同源),反映数据本身的可分难度" },
+];
+const confusionMethod = ref("iforest");
+const selectedConfusion = computed(
+  () => compare.value.metrics[confusionMethod.value].confusion
+);
+const selectedConfusionNote = computed(
+  () => CONFUSION_METHODS.find((m) => m.key === confusionMethod.value)?.note ?? ""
+);
 
 // 近 7 日三方法逐日一致性 + 投票(接真 /detect/recent,非杜撰)
 // dot class:异常→"bad"(红点) / 正常→"ok"(灰点),复用既有 .dot-result 样式
@@ -427,9 +451,11 @@ const recentDaily = computed(() =>
   })
 );
 
-// 阈值参考表:接 latest.gases 真实气体值,阈值口径与后端 ATTENTION_VALUES 一致
-// (threshold.py:h2=150 / c2h2=5 / 总烃=150 / co=300 / co2=10000;烃类不单设,按总烃合并判)
-const ATTENTION = { h2: 150, c2h2: 5, total_hydrocarbon: 150, co: 300, co2: 10000 };
+// 阈值参考表:接 latest.gases 真实气体值,阈值口径与后端 ATTENTION_VALUES 一致。
+// 只列 DL/T 722-2014 表3 真正设了注意值的三项(220kV 及以下):H₂/C₂H₂/总烃。
+// 烃类不单设,按总烃合并判。CO/CO₂ 国标表3 未设注意值(走 CO₂/CO 比值判固体绝缘老化),
+// 故本参考表不列;检测/预警内部对 CO 的处理见 threshold.py / rules.yaml。
+const ATTENTION = { h2: 150, c2h2: 5, total_hydrocarbon: 150 };
 
 // 「超标」判定权威取后端(exceeded_gases),前端不复刻;未超标时再按占比
 // 细分 趋近/关注/正常 —— 纯 UI 渐进提示,不改变"是否超标"的权威结论。
@@ -447,11 +473,9 @@ const thresholds = computed(() => {
   if (!g) {
     // 未加载:显示占位(横线),不杜撰数值
     return [
-      { gas: "H₂", threshold: "150 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
-      { gas: "C₂H₂", threshold: "5 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
-      { gas: "总烃", threshold: "150 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
-      { gas: "CO", threshold: "300 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
-      { gas: "CO₂", threshold: "10000 ppm", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "H₂", threshold: "150 μL/L", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "C₂H₂", threshold: "5 μL/L", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
+      { gas: "总烃", threshold: "150 μL/L", latestVal: "—", currClass: "text-gray-500", result: "—", tag: "tag-gry" },
     ];
   }
   const totalHc = g.ch4 + g.c2h4 + g.c2h6 + g.c2h2; // 总烃合成项(同后端口径)
@@ -459,8 +483,6 @@ const thresholds = computed(() => {
     { gas: "H₂", key: "h2", val: g.h2, limit: ATTENTION.h2 },
     { gas: "C₂H₂", key: "c2h2", val: g.c2h2, limit: ATTENTION.c2h2 },
     { gas: "总烃", key: "total_hydrocarbon", val: totalHc, limit: ATTENTION.total_hydrocarbon },
-    { gas: "CO", key: "co", val: g.co, limit: ATTENTION.co },
-    { gas: "CO₂", key: "co2", val: g.co2, limit: ATTENTION.co2 },
   ];
   // 「超标」判定权威取后端 exceeded_gases(判定项 key 与本表对齐);
   // 后端未就绪则用前端兜底。未超标时按占比细分 趋近/关注/正常(纯 UI 提示)。
@@ -473,7 +495,7 @@ const thresholds = computed(() => {
       : subVerdict(r.val, r.limit);
     return {
       gas: r.gas,
-      threshold: `${r.limit} ppm`,
+      threshold: `${r.limit} μL/L`,
       latestVal: r.val.toFixed(2),
       ...verdict,
     };
@@ -494,18 +516,6 @@ const thresholds = computed(() => {
     inset 0 0 20px rgba(16, 185, 129, 0.08);
 }
 
-.best-badge {
-  font-size: 10px;
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
 
 /* 示意数据标签:右侧明细本周未接真实接口(Y2),待第 8 周联调 */
 .demo-badge {
@@ -576,6 +586,16 @@ const thresholds = computed(() => {
   padding: 4px 6px;
   border-bottom: 1px solid rgba(55, 65, 81, 0.25);
 }
+.src-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+.src-std { color: #67e8f9; background: rgba(103, 232, 249, 0.12); }
 
 .code-cell {
   background: rgba(31, 41, 55, 0.6);
@@ -586,6 +606,26 @@ const thresholds = computed(() => {
   line-height: 1.55;
 }
 
+.conf-tab {
+  font-size: 10px;
+  color: #94a3b8;
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(107, 114, 128, 0.25);
+  border-radius: 6px;
+  padding: 1px 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.conf-tab:hover {
+  color: #cbd5e1;
+  border-color: rgba(34, 211, 238, 0.4);
+}
+.conf-tab.active {
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.5);
+  font-weight: 600;
+}
 .conf-cell {
   border: 1px solid;
   border-radius: 6px;

@@ -947,7 +947,7 @@ const allAlerts = [
     tag: "tag-org",
     border: "border-orange-500",
     time: "09:30",
-    msg: "三比值法判定 → 低温过热 (<300℃)",
+    msg: "多方法投票判定为异常(三比值法 + 阈值法)",
   },
   {
     level: "🟡 黄",

@@ -6,7 +6,7 @@
       subtitle="7 气体单步预测 · 验证段 walk-forward · 多方法对比研究"
     />
 
-    <!-- 顶部对比 KPI(据实:ARIMA 全面更优)-->
+    <!-- 顶部对比 KPI(据实:ARIMA 略优,胜 6/7)-->
     <section class="px-3 pt-3 grid grid-cols-4 gap-3">
       <div class="compare-kpi">
         <p class="text-[11px] text-gray-400">平均 MAE</p>
@@ -50,7 +50,7 @@
             <span class="text-[10px] text-gray-500">LSTM 胜</span>
             <p class="text-base font-bold text-gray-400">{{ 7 - kpi.arimaWins }}<span class="text-[10px]">/7</span></p>
           </div>
-          <span class="ml-auto winner-badge">全胜</span>
+          <span class="ml-auto winner-badge">{{ kpi.arimaWins === 7 ? "全胜" : "领先" }}</span>
         </div>
       </div>
       <div class="compare-kpi note">
@@ -214,18 +214,19 @@ import { getPredictCompare } from "@/service/api";
 
 // ============ 真值兜底常量(防 Demo 断网)============
 // 来源:GET /api/predict/compare(读 data/predict_eval.json,scripts/compare_predict.py 落盘)。
-// 实测结论:7 气体全部 ARIMA 误差更低(D-029),如实呈现不粉饰。
+// 实测结论(D-044 全链路重跑):总体 ARIMA 略优(MAE 148.3 vs 160.4),逐气体 ARIMA 胜 6/7
+// (仅 CO 一项 LSTM 略优),如实呈现不粉饰。
 const FALLBACK = {
   gases: ["h2", "ch4", "c2h4", "c2h6", "c2h2", "co", "co2"],
-  overall: { winner: "ARIMA", lstm_mean_mae: 1287.423, arima_mean_mae: 301.227 },
+  overall: { winner: "ARIMA", lstm_mean_mae: 160.439, arima_mean_mae: 148.322 },
   per_gas: {
-    h2: { lstm: { mae: 21.118, rmse: 36.486 }, arima: { mae: 18.832, rmse: 33.357 }, winner: "ARIMA" },
-    ch4: { lstm: { mae: 27.066, rmse: 35.124 }, arima: { mae: 0.773, rmse: 0.971 }, winner: "ARIMA" },
-    c2h4: { lstm: { mae: 126.074, rmse: 144.443 }, arima: { mae: 5.485, rmse: 12.582 }, winner: "ARIMA" },
-    c2h6: { lstm: { mae: 97.245, rmse: 121.908 }, arima: { mae: 22.096, rmse: 36.165 }, winner: "ARIMA" },
-    c2h2: { lstm: { mae: 19.11, rmse: 26.962 }, arima: { mae: 1.273, rmse: 1.454 }, winner: "ARIMA" },
-    co: { lstm: { mae: 594.724, rmse: 723.836 }, arima: { mae: 190.781, rmse: 344.535 }, winner: "ARIMA" },
-    co2: { lstm: { mae: 8126.628, rmse: 8641.573 }, arima: { mae: 1869.345, rmse: 3557.201 }, winner: "ARIMA" },
+    h2: { lstm: { mae: 28.563, rmse: 34.233 }, arima: { mae: 22.23, rmse: 30.9 }, winner: "ARIMA" },
+    ch4: { lstm: { mae: 8.046, rmse: 10.159 }, arima: { mae: 1.89, rmse: 2.116 }, winner: "ARIMA" },
+    c2h4: { lstm: { mae: 19.765, rmse: 29.057 }, arima: { mae: 5.617, rmse: 6.058 }, winner: "ARIMA" },
+    c2h6: { lstm: { mae: 97.966, rmse: 215.688 }, arima: { mae: 91.158, rmse: 200.191 }, winner: "ARIMA" },
+    c2h2: { lstm: { mae: 4.987, rmse: 6.05 }, arima: { mae: 1.33, rmse: 1.605 }, winner: "ARIMA" },
+    co: { lstm: { mae: 91.088, rmse: 134.328 }, arima: { mae: 96.351, rmse: 140.843 }, winner: "LSTM" },
+    co2: { lstm: { mae: 872.659, rmse: 1419.56 }, arima: { mae: 819.677, rmse: 1524.836 }, winner: "ARIMA" },
   },
   series: {},          // 断网时曲线留空(不杜撰),仅靠 per_gas 指标撑住对比叙事
   loss_history: { loss: [], val_loss: [], epochs: 0 },

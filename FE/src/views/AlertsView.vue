@@ -40,7 +40,7 @@
           </span>
         </h3>
 
-        <!-- 工具条:搜索 + 规则类型 + 排序 -->
+        <!-- 工具条:搜索 + 规则类型 + 排序 + 规则库 -->
         <div class="flex items-center gap-2 mb-2">
           <input
             v-model="search"
@@ -57,37 +57,47 @@
             <iconify-icon :icon="sortBy === 'time' ? 'mdi:clock-outline' : 'mdi:fire'"></iconify-icon>
             {{ sortBy === 'time' ? '按时间' : '按紧急度' }}
           </button>
+          <button class="toolbar-btn" @click="showRules = true" title="查看预警规则库全貌">
+            <iconify-icon icon="mdi:book-open-variant"></iconify-icon>
+            规则库
+          </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto space-y-2 pr-1" style="min-height: 0">
-          <div
-            v-for="t in paged"
-            :key="t.id"
-            class="ticket-card"
-            :class="[t.borderClass, selected && selected.id === t.id ? 'selected' : '']"
-            @click="selected = t"
-          >
-            <div class="flex items-center justify-between mb-1">
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="t.tag">{{ t.level }}</span>
-                <span class="text-[10px] text-cyan-300 font-mono">{{ t.id }}</span>
-                <span
-                  v-if="agentDates.has(t.date)"
-                  class="agent-traceable"
-                  title="该工单有 Agent 预跑推理轨迹,可点单追溯"
-                >
-                  <iconify-icon icon="mdi:robot-outline"></iconify-icon>
-                  可追溯
-                </span>
-              </div>
-              <span class="text-[10px] text-gray-500">{{ t.date }}</span>
-            </div>
-            <p class="text-[12px] text-gray-100 leading-snug">{{ t.title }}</p>
-            <div class="flex items-center justify-between mt-1.5">
-              <span class="text-[10px] text-gray-500">{{ t.ruleTypeLabel }}</span>
-              <span class="text-[10px] text-gray-500 font-mono">{{ t.ruleIds }}</span>
-            </div>
-          </div>
+        <!-- 工单表格 -->
+        <div class="flex-1 overflow-y-auto pr-1" style="min-height: 0">
+          <table class="wo-table">
+            <thead>
+              <tr>
+                <th class="w-14">等级</th>
+                <th class="w-16">工单号</th>
+                <th>日期</th>
+                <th>触发规则</th>
+                <th class="w-10 text-center" title="有 Agent 推理轨迹">🤖</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="t in paged"
+                :key="t.id"
+                class="wo-row"
+                :class="selected && selected.id === t.id ? 'selected' : ''"
+                @click="selected = t"
+              >
+                <td><span class="lv-pill" :class="t.tag">{{ t.levelShort }}</span></td>
+                <td class="font-mono text-cyan-300 text-[10px]">{{ t.id }}</td>
+                <td class="text-gray-400 text-[10px]">{{ t.date }}</td>
+                <td class="font-mono text-gray-200 text-[10px]">{{ t.ruleIds }}</td>
+                <td class="text-center">
+                  <iconify-icon
+                    v-if="agentDates.has(t.date)"
+                    icon="mdi:robot-outline"
+                    class="text-purple-300"
+                    title="可点单追溯 Agent 推理"
+                  ></iconify-icon>
+                </td>
+              </tr>
+            </tbody>
+          </table>
           <p v-if="!filtered.length" class="text-[12px] text-gray-500 text-center mt-4">无匹配工单</p>
         </div>
 
@@ -126,6 +136,19 @@
               <p class="text-[11px] text-gray-200 mt-0.5">{{ selected.response }}</p>
             </div>
           </div>
+          <!-- 触发明细:逐条展示带确切数值的 message(实测值/注意值/预测值/涨幅)-->
+          <div v-if="selected.messages && selected.messages.length" class="mt-2 flex flex-col gap-1">
+            <p class="text-[10px] text-gray-400">触发明细</p>
+            <div
+              v-for="m in selected.messages"
+              :key="m.rule_id"
+              class="trigger-msg"
+              :class="'tmsg-' + m.level"
+            >
+              <span class="font-mono text-[10px] opacity-70">{{ m.rule_id }}</span>
+              <span>{{ m.message }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- 中:Agent 推理追溯(接真 /api/agent/run,LangChain ReAct)-->
@@ -135,7 +158,7 @@
             Agent 推理追溯（该预警如何被推导）
           </h3>
           <div class="flex-1 overflow-hidden" style="min-height: 0">
-            <AgentTrace v-if="selected && agentReady" :steps="agentSteps" :run-status="agentRunStatus" :duration-ms="agentDurationMs" />
+            <AgentTrace v-if="selected && agentReady" :steps="agentSteps" :run-status="agentRunStatus" :duration-ms="agentDurationMs" :conclusion="agentConclusion" />
             <p v-else-if="selected && agentLoading" class="text-xs text-gray-500 p-2">加载 Agent 轨迹…</p>
             <p v-else-if="selected" class="text-xs text-gray-500 p-2 leading-relaxed">
               该工单未预跑 Agent 轨迹。<br />
@@ -157,6 +180,38 @@
     </main>
 
     <AppFooter />
+
+    <!-- 规则库总览(右侧抽屉)-->
+    <el-drawer
+      v-model="showRules"
+      title="预警规则库"
+      direction="rtl"
+      size="520px"
+      class="rules-drawer"
+    >
+      <p class="rules-intro">
+        规则引擎共 <b>{{ rulesData.n_rules || 0 }}</b> 条,分四类。综合等级取所有触发规则的最高级(红 &gt; 橙 &gt; 黄 &gt; 蓝)。规则只判定「哪个气体 / 什么条件 / 什么等级」,不输出故障类型。
+      </p>
+      <div v-for="g in rulesData.groups" :key="g.type" class="rule-group">
+        <div class="rule-group-head">
+          <span class="rule-group-label">{{ g.label }}</span>
+          <span class="rule-group-count">{{ g.rules.length }} 条</span>
+          <span class="rule-group-desc">{{ g.desc }}</span>
+        </div>
+        <div
+          v-for="r in g.rules"
+          :key="r.id"
+          class="rule-row"
+          :class="'lvl-' + r.level.split('/')[0]"
+        >
+          <div class="rule-row-head">
+            <span class="rule-id">{{ r.id }}</span>
+            <span class="rule-lv">{{ levelText(r.level) }}</span>
+          </div>
+          <p class="rule-cond">{{ r.condition }}</p>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -165,7 +220,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import AgentTrace from "@/components/AgentTrace.vue";
-import { getWarningBacktest, getAgentRun, getAgentDates } from "@/service/api";
+import { getWarningBacktest, getAgentRun, getAgentDates, getWarningRules } from "@/service/api";
 
 // ============ 真值兜底(防 Demo 断网)============
 // 来源:GET /api/warning/backtest(scripts/backtest.py 落盘的全量告警)。
@@ -179,6 +234,24 @@ const data = ref(FALLBACK);
 // 已预跑 Agent 轨迹的工单日期(给「可追溯」工单卡片打标;预跑仅覆盖代表性工单)
 const agentDates = ref(new Set());
 
+// 规则库抽屉
+const showRules = ref(false);
+const rulesData = ref({ groups: [], n_rules: 0 });
+
+// 等级 key → 「中文-响应紧迫」标签(规则库抽屉显示用)。软规则 level 为 'red/orange'
+const LEVEL_TEXT = {
+  red: "红色-紧急",
+  orange: "橙色-重要",
+  yellow: "黄色-一般",
+  blue: "蓝色-提示",
+};
+function levelText(level) {
+  return (level || "")
+    .split("/")
+    .map((k) => LEVEL_TEXT[k] || k)
+    .join(" / ");
+}
+
 onMounted(async () => {
   try {
     const r = await getWarningBacktest();
@@ -191,6 +264,11 @@ onMounted(async () => {
     agentDates.value = new Set(d?.dates || []);
   } catch (e) {
     console.warn("[AlertsView] Agent 预跑日期拉取失败", e);
+  }
+  try {
+    rulesData.value = await getWarningRules();
+  } catch (e) {
+    console.warn("[AlertsView] 规则库拉取失败", e);
   }
 });
 
@@ -218,6 +296,7 @@ const allTickets = computed(() =>
       date: a.date,
       levelKey: a.level,
       level: meta.label,
+      levelShort: meta.label.replace(/^\S+\s*/, ""),   // 去 emoji,表格等级列用「红/橙/黄/蓝」
       tag: meta.tag,
       borderClass: meta.border,
       rank: meta.rank,
@@ -226,6 +305,7 @@ const allTickets = computed(() =>
       ruleTypes: a.rule_types || [],
       ruleTypeLabel: ruleTypeLabelOf(a.rule_types),
       title: `触发 ${a.rule_ids.join("、")}`,
+      messages: a.messages || [],   // 触发明细(含确切数值),详情面板逐条展示
     };
   })
 );
@@ -270,6 +350,18 @@ watch(filtered, (list) => {
   else if (!list.length) selected.value = null;
 });
 
+// Agent 决策结论(传给 AgentTrace 结论卡;取选中工单的权威等级/规则/响应)
+const agentConclusion = computed(() => {
+  const t = selected.value;
+  if (!t) return {};
+  return {
+    level: t.levelShort,
+    levelKey: t.levelKey,
+    ruleIds: t.ruleIds,
+    response: t.response,
+  };
+});
+
 // ============ Agent ReAct 轨迹(接真 /api/agent/run,模块6)============
 // 选中工单时按工单日期拉该工单的 Agent 预跑轨迹(scripts/run_agent_demo.py 离线
 // 落盘,D-027 在线轻量)。预跑只覆盖代表性工单,未覆盖的工单据实显「未预跑」占位
@@ -306,6 +398,102 @@ watch(selected, (t) => loadAgentTrace(t));
 </script>
 
 <style scoped>
+/* 工单表格 */
+.wo-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.wo-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: rgba(17, 24, 39, 0.95);
+  color: #9ca3af; font-size: 10px; font-weight: 600;
+  text-align: left; padding: 6px 8px;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.4);
+}
+.wo-table .w-14 { width: 48px; }
+.wo-table .w-16 { width: 64px; }
+.wo-table .w-10 { width: 36px; }
+.wo-row { cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(75, 85, 99, 0.18); }
+.wo-row td { padding: 6px 8px; }
+.wo-row:hover { background: rgba(59, 130, 246, 0.08); }
+.wo-row.selected { background: rgba(6, 182, 212, 0.12); box-shadow: inset 2px 0 0 #06b6d4; }
+.lv-pill { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
+
+/* 规则库抽屉 */
+/* el-drawer 深色主题覆盖:干掉默认灰 header / 配深色 body */
+:deep(.rules-drawer) {
+  background: #0f172a;
+}
+:deep(.rules-drawer .el-drawer__header) {
+  margin-bottom: 0;
+  padding: 18px 22px;
+  background: transparent;
+  border-bottom: 1px solid rgba(103, 232, 249, 0.25);
+  color: #67e8f9;
+  font-size: 18px;
+  font-weight: 800;
+}
+:deep(.rules-drawer .el-drawer__title) {
+  color: #67e8f9; font-size: 18px; font-weight: 800;
+}
+:deep(.rules-drawer .el-drawer__close-btn) { color: #94a3b8; }
+:deep(.rules-drawer .el-drawer__close-btn:hover) { color: #67e8f9; }
+:deep(.rules-drawer .el-drawer__body) {
+  padding: 20px 22px;
+  background: #0f172a;
+}
+
+.rules-intro {
+  font-size: 12px; line-height: 1.7; color: #94a3b8;
+  margin-bottom: 22px;
+}
+.rules-intro b { color: #67e8f9; font-size: 14px; }
+.rule-group { margin-bottom: 26px; }
+.rule-group-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.rule-group-label { font-size: 17px; font-weight: 800; color: #e5e7eb; }
+.rule-group-count { font-size: 12px; color: #67e8f9; font-weight: 700; }
+.rule-group-desc { font-size: 12px; color: #94a3b8; }
+
+/* 每条规则:左侧等级色条 + 颜色身份,无灰底无灰线,靠间距分隔 */
+.rule-row {
+  padding: 12px 0 12px 16px;
+  border-left: 4px solid;
+  margin-bottom: 14px;
+}
+.rule-row-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 7px;
+}
+.rule-id {
+  font-size: 17px; font-weight: 800;
+  font-family: monospace; letter-spacing: 1px;
+}
+.rule-lv {
+  font-size: 13px; font-weight: 700;
+  padding: 3px 12px; border-radius: 20px;
+}
+.rule-cond { font-size: 14px; color: #f1f5f9; line-height: 1.55; font-weight: 600; }
+.rule-msg { font-size: 13px; color: #94a3b8; line-height: 1.55; margin-top: 4px; }
+.trigger-msg { font-size: 12px; color: #cbd5e1; line-height: 1.5; padding: 4px 8px;
+  border-radius: 4px; background: rgba(148,163,184,0.08); display: flex; gap: 6px;
+  align-items: baseline; border-left: 2px solid #64748b; }
+.trigger-msg.tmsg-red { border-left-color: #f87171; }
+.trigger-msg.tmsg-orange { border-left-color: #fb923c; }
+.trigger-msg.tmsg-yellow { border-left-color: #facc15; }
+.trigger-msg.tmsg-blue { border-left-color: #60a5fa; }
+
+/* 等级配色:色条 / 编号 / 徽章统一用该等级色 */
+.rule-row.lvl-red { border-left-color: #ef4444; }
+.rule-row.lvl-red .rule-id { color: #f87171; }
+.rule-row.lvl-red .rule-lv { color: #fecaca; background: rgba(239, 68, 68, 0.22); }
+.rule-row.lvl-orange { border-left-color: #f97316; }
+.rule-row.lvl-orange .rule-id { color: #fb923c; }
+.rule-row.lvl-orange .rule-lv { color: #fed7aa; background: rgba(249, 115, 22, 0.22); }
+.rule-row.lvl-yellow { border-left-color: #eab308; }
+.rule-row.lvl-yellow .rule-id { color: #facc15; }
+.rule-row.lvl-yellow .rule-lv { color: #fef08a; background: rgba(234, 179, 8, 0.22); }
+.rule-row.lvl-blue { border-left-color: #3b82f6; }
+.rule-row.lvl-blue .rule-id { color: #60a5fa; }
+.rule-row.lvl-blue .rule-lv { color: #bfdbfe; background: rgba(59, 130, 246, 0.22); }
+
 .kpi-mini {
   background: rgba(17, 24, 39, 0.7);
   border: 1px solid rgba(75, 85, 99, 0.4);

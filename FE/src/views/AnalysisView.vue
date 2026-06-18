@@ -63,7 +63,7 @@
             </div>
             <p class="text-[10px] text-gray-500">{{ g.zh }}</p>
             <p class="text-2xl font-bold mt-1" :class="g.valueClass">
-              {{ g.value }}<span class="text-[10px] ml-0.5 text-gray-500">ppm</span>
+              {{ g.value }}<span class="text-[10px] ml-0.5 text-gray-500">μL/L</span>
             </p>
             <div class="flex items-center justify-between text-[10px]">
               <span class="text-gray-500">{{ g.thresholdLabel }}</span>
@@ -94,7 +94,7 @@
             <div class="derived-card highlight flex-1">
               <p class="text-[11px] text-gray-400">总烃 = ΣCH₄+C₂H₄+C₂H₆+C₂H₂</p>
               <p class="text-3xl font-bold text-cyan-300 mt-1">
-                {{ totalHC.value }}<span class="text-xs ml-1 text-gray-400">ppm</span>
+                {{ totalHC.value }}<span class="text-xs ml-1 text-gray-400">μL/L</span>
               </p>
               <p class="text-[10px]" :class="totalHC.rateClass">
                 7d {{ totalHC.rate }} · 注意值 150
@@ -263,7 +263,8 @@ watch(pickedDate, (v) => {
 });
 
 // ============ 第 1 层:DGA 七气体 ============
-// 国标 DL/T 722 注意值(与 DetectionView 阈值表口径一致)
+// 阈值(与后端 threshold.ATTENTION_VALUES 同口径):H₂/C₂H₂/总烃为国标 DL/T 722-2014
+// 注意值(220kV 及以下);CO 为工程经验辅助阈值(国标表1未设 CO 注意值);CO₂ 不标警
 const GAS_META = [
   { key: "h2", sym: "H₂", zh: "氢气", color: "#10b981", attn: 150 },
   { key: "ch4", sym: "CH₄", zh: "甲烷", color: "#06b6d4", attn: null },

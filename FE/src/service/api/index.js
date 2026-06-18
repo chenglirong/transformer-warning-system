@@ -67,6 +67,13 @@ export const getPredictCompare = () => http.get('/predict/compare')
  */
 export const getWarningBacktest = () => http.get('/warning/backtest')
 
+/**
+ * 预警规则库全貌(规则库抽屉用)。读后端 rules.yaml(engine.load_rules)。
+ * 守边界:只回 编号/判定项/等级/触发条件/message,不含故障类型。
+ * 返回 { levels, groups:[{type,label,desc,rules:[{id,item,level,condition,message}]}], n_rules }。
+ */
+export const getWarningRules = () => http.get('/warning/rules')
+
 // ============ Agent 接口(模块 6)============
 
 /**
