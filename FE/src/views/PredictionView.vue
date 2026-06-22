@@ -193,7 +193,7 @@
           </h3>
           <ul class="reason-list">
             <li>样本量受限:滑窗后训练样本约 258 个,LSTM 难以充分泛化</li>
-            <li>归一化分辨率:7 气体跨度极大(CO₂ 最高约 6 万 ppm),MinMax 全域归一压缩了正常变化</li>
+            <li>归一化分辨率:7 气体跨度极大(CO₂ 最高约 6 万 μL/L),MinMax 全域归一压缩了正常变化</li>
             <li>序列特性:DGA 呈均值回复 + 强噪声,ARIMA 一阶差分 + 全量重拟合更稳健</li>
           </ul>
         </div>
@@ -334,7 +334,7 @@ const rollingOption = computed(() => {
     legend: { textStyle: { color: "#9ca3af", fontSize: 10 }, top: 0, right: 0, itemWidth: 10, itemHeight: 6 },
     grid: { top: 25, bottom: 25, left: 48, right: 16 },
     xAxis: { type: "category", data: [...xHist, ...xFut], ...AXIS, axisLabel: { ...AXIS.axisLabel, fontSize: 9 } },
-    yAxis: { type: "value", ...AXIS, name: "ppm" },
+    yAxis: { type: "value", ...AXIS, name: "μL/L" },
     series: [
       { name: "历史真值", type: "line", data: [...hist, ...Array(fut.length).fill(null)],
         color: "#e5e7eb", symbol: "circle", symbolSize: 4, lineStyle: { width: 2 } },
@@ -361,7 +361,7 @@ const seriesOption = computed(() => {
       name: "验证段目标日", nameTextStyle: { color: "#9ca3af", fontSize: 9 },
       axisLabel: { ...AXIS.axisLabel, fontSize: 9 },
     },
-    yAxis: { type: "value", ...AXIS, name: "ppm" },
+    yAxis: { type: "value", ...AXIS, name: "μL/L" },
     series: [
       {
         name: "真值", type: "line", smooth: true,

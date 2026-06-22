@@ -263,15 +263,16 @@ watch(pickedDate, (v) => {
 });
 
 // ============ 第 1 层:DGA 七气体 ============
-// 阈值(与后端 threshold.ATTENTION_VALUES 同口径):H₂/C₂H₂/总烃为国标 DL/T 722-2014
-// 注意值(220kV 及以下);CO 为工程经验辅助阈值(国标表1未设 CO 注意值);CO₂ 不标警
+// 阈值(与后端 threshold.ATTENTION_VALUES 同口径):仅 H₂/C₂H₂/总烃为国标 DL/T 722-2014
+// 表3 注意值(220kV 及以下)。CO/CO₂ 表3 未设绝对注意值(D-044),固体绝缘走 §10.2.3.1
+// 的 CO₂/CO 比值法,故不在此标单气体阈值线(attn=null,同烃类分量)。
 const GAS_META = [
   { key: "h2", sym: "H₂", zh: "氢气", color: "#10b981", attn: 150 },
   { key: "ch4", sym: "CH₄", zh: "甲烷", color: "#06b6d4", attn: null },
   { key: "c2h6", sym: "C₂H₆", zh: "乙烷", color: "#8b5cf6", attn: null },
   { key: "c2h4", sym: "C₂H₄", zh: "乙烯", color: "#f59e0b", attn: null },
   { key: "c2h2", sym: "C₂H₂", zh: "乙炔", color: "#ef4444", attn: 5 },
-  { key: "co", sym: "CO", zh: "一氧化碳", color: "#a3e635", attn: 300 },
+  { key: "co", sym: "CO", zh: "一氧化碳", color: "#a3e635", attn: null },
   { key: "co2", sym: "CO₂", zh: "二氧化碳", color: "#f472b6", attn: null },
 ];
 
