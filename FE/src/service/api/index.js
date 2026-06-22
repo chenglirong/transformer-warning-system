@@ -56,6 +56,13 @@ export const getDetectRecent = (transformerId, days = 7) =>
  */
 export const getPredictCompare = () => http.get('/predict/compare')
 
+/**
+ * 大屏趋势快照:最近 30 天历史 + 未来 1-3 天 ARIMA 预测(7 气体浓度)。
+ * 数据源 scripts/forecast_dashboard.py 离线预跑落盘(承 D-027 在线轻量)。
+ * 守边界:只回浓度历史/预测趋势,不涉 fault_state/故障类型。
+ */
+export const getDashboardForecast = () => http.get('/predict/forecast')
+
 // ============ 预警决策接口 ============
 
 /**
