@@ -53,6 +53,23 @@
     </div>
   </header>
 
+  <!-- 全局导航:5 大页面互通,高亮当前页 -->
+  <nav
+    class="flex items-center justify-center gap-1 h-9 border-b border-blue-900/40"
+    style="background: rgba(3, 7, 18, 0.6)"
+  >
+    <RouterLink
+      v-for="n in navItems"
+      :key="n.to"
+      :to="n.to"
+      class="nav-tab"
+      :class="{ active: route.path === n.to }"
+    >
+      <iconify-icon :icon="n.icon"></iconify-icon>
+      <span>{{ n.label }}</span>
+    </RouterLink>
+  </nav>
+
   <!-- 规划中横幅:标注该页依赖尚未开发的模块(LSTM/预警/Agent),展示为交互设计稿 -->
   <div
     v-if="planning"
@@ -70,8 +87,18 @@
 
 <script setup>
 import { computed } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import { useClock } from "@/composables/useClock";
+
+const route = useRoute();
+// 全局导航项:5 大页面
+const navItems = [
+  { to: "/dashboard", label: "总览大屏", icon: "mdi:view-dashboard" },
+  { to: "/detection", label: "异常检测", icon: "mdi:eye-check" },
+  { to: "/prediction", label: "趋势预测", icon: "mdi:chart-line" },
+  { to: "/analysis", label: "数据分析", icon: "mdi:layers-triple" },
+  { to: "/alerts", label: "预警处置", icon: "mdi:bell-alert" },
+];
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -92,3 +119,25 @@ const titleSize = computed(() =>
   props.large ? "text-xl tracking-[0.3em]" : "text-lg",
 );
 </script>
+
+<style scoped>
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 14px;
+  font-size: 12px;
+  border-radius: 6px;
+  color: #9ca3af;
+  transition: all 0.15s;
+}
+.nav-tab:hover {
+  color: #e5e7eb;
+  background: rgba(59, 130, 246, 0.12);
+}
+.nav-tab.active {
+  color: #67e8f9;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+</style>
