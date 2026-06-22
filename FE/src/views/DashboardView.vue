@@ -8,7 +8,7 @@
     />
 
     <!-- KPI Row -->
-    <section class="px-3 pt-3 grid grid-cols-5 gap-3">
+    <section class="px-3 pt-3 grid grid-cols-4 gap-3">
       <KpiCard v-for="k in kpis" :key="k.label">
         <div class="flex items-center justify-between">
           <div>
@@ -34,42 +34,99 @@
       class="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden"
       style="min-height: 0"
     >
-      <!-- LEFT col-3: 3 charts stacked -->
+      <!-- ========== 左栏:状态概览(此刻这台设备什么状态)========== -->
+      <!-- 雷达(当前气体)→ 检测融合(当前判定)→ 工况(实时)→ 健康带(全周期)-->
       <div class="col-span-3 flex flex-col gap-3 overflow-hidden">
-        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
-          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-1">
-            <iconify-icon icon="mdi:chart-donut"></iconify-icon>
-            4 级预警分布
-            <span class="plan-badge">规划中</span>
+        <!-- 异常检测(三方法融合)-->
+        <div class="glass rounded-lg p-3 flex flex-col overflow-hidden" style="flex: 1">
+          <h3
+            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
+          >
+            <span class="flex items-center gap-2">
+              <iconify-icon icon="mdi:eye-check"></iconify-icon>
+              异常检测
+            </span>
+            <RouterLink
+              to="/detection"
+              class="text-[10px] text-gray-500 hover:text-cyan-400"
+              >对比 →</RouterLink
+            >
           </h3>
-          <div class="w-full" style="height: calc(100% - 24px)">
-            <EChart :option="levelDonutOption" />
+          <div class="flex-1 grid grid-cols-3 gap-2" style="min-height: 0">
+            <div
+              v-for="m in detection"
+              :key="m.name"
+              class="detect-cell"
+              :class="m.cls"
+            >
+              <iconify-icon
+                class="text-2xl"
+                :class="m.iconClass"
+                :icon="m.icon"
+              ></iconify-icon>
+              <p class="text-[10px] text-gray-400 mt-1">{{ m.name }}</p>
+              <p class="text-[11px] font-bold mt-0.5" :class="m.resultClass">
+                {{ m.result }}
+              </p>
+            </div>
+          </div>
+          <div
+            class="mt-2 px-2 py-1.5 rounded text-[11px] flex items-center justify-between"
+            :class="fusionConclusion.cls"
+          >
+            <span class="text-gray-400">融合结论</span>
+            <span class="font-bold" :class="fusionConclusion.textClass">
+              {{ fusionConclusion.text }}
+            </span>
           </div>
         </div>
 
-        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1.3">
-          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-1">
-            <iconify-icon icon="mdi:radar"></iconify-icon>
-            DGA 7 气体异常雷达（vs 阈值）
+        <!-- 运行工况(3 gauge)-->
+        <div class="glass rounded-lg p-3 flex flex-col overflow-hidden" style="flex: 0.9">
+          <h3
+            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
+          >
+            <span class="flex items-center gap-2">
+              <iconify-icon icon="mdi:gauge"></iconify-icon>
+              运行工况
+            </span>
+            <RouterLink
+              to="/analysis"
+              class="text-[10px] text-gray-500 hover:text-cyan-400"
+              >详情 →</RouterLink
+            >
           </h3>
-          <div class="w-full" style="height: calc(100% - 24px)">
-            <EChart :option="gasRadarOption" />
+          <div class="flex-1 grid grid-cols-3 gap-1" style="min-height: 0">
+            <div
+              v-for="(g, i) in conditionGauges"
+              :key="i"
+              class="flex flex-col"
+              style="min-height: 0"
+            >
+              <div class="flex-1" style="min-height: 0">
+                <EChart :option="g.option" />
+              </div>
+              <p class="text-[10px] text-gray-500 text-center -mt-1">
+                {{ g.label }}
+              </p>
+            </div>
           </div>
         </div>
 
+        <!-- 全周期健康/异常分布 -->
         <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-1">
             <iconify-icon icon="mdi:chart-bar-stacked"></iconify-icon>
-            24h 预警时段分布
-            <span class="plan-badge">规划中</span>
+            全周期健康/异常分布（按月）
           </h3>
           <div class="w-full" style="height: calc(100% - 24px)">
-            <EChart :option="hourBarOption" />
+            <EChart :option="healthBandOption" />
           </div>
         </div>
       </div>
 
-      <!-- CENTER col-6: prediction (large) + detection + conditions gauges -->
+      <!-- ========== 中栏:核心趋势(走势与预测)========== -->
+      <!-- ARIMA 趋势预测大图(主角)+ DGA 气体指标卡 -->
       <div class="col-span-6 flex flex-col gap-3 overflow-hidden">
         <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1.7">
           <h3
@@ -79,8 +136,7 @@
               <iconify-icon
                 icon="mdi:chart-timeline-variant-shimmer"
               ></iconify-icon>
-              DGA 7 气体LSTM 预测曲线（30 天历史 + 3 天预测）
-              <span class="plan-badge">规划中</span>
+              DGA 7 气体 ARIMA 趋势预测(30 天历史 + 未来 3 天)
             </span>
             <span class="flex items-center gap-3 text-[10px]">
               <span class="flex items-center gap-1">
@@ -104,126 +160,14 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 overflow-hidden" style="flex: 1">
-          <!-- Detection consistency (3 methods) -->
-          <div class="glass rounded-lg p-3 flex flex-col overflow-hidden">
-            <h3
-              class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-            >
-              <span class="flex items-center gap-2">
-                <iconify-icon icon="mdi:eye-check"></iconify-icon>
-                异常检测
-              </span>
-              <RouterLink
-                to="/detection"
-                class="text-[10px] text-gray-500 hover:text-cyan-400"
-                >对比 →</RouterLink
-              >
-            </h3>
-            <div class="flex-1 grid grid-cols-3 gap-2" style="min-height: 0">
-              <div
-                v-for="m in detection"
-                :key="m.name"
-                class="detect-cell"
-                :class="m.cls"
-              >
-                <iconify-icon
-                  class="text-2xl"
-                  :class="m.iconClass"
-                  :icon="m.icon"
-                ></iconify-icon>
-                <p class="text-[10px] text-gray-400 mt-1">{{ m.name }}</p>
-                <p class="text-[11px] font-bold mt-0.5" :class="m.resultClass">
-                  {{ m.result }}
-                </p>
-              </div>
-            </div>
-            <div
-              class="mt-2 px-2 py-1.5 rounded text-[11px] flex items-center justify-between"
-              :class="fusionConclusion.cls"
-            >
-              <span class="text-gray-400">融合结论</span>
-              <span class="font-bold" :class="fusionConclusion.textClass">
-                {{ fusionConclusion.text }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Operating conditions gauges -->
-          <div class="glass rounded-lg p-3 flex flex-col overflow-hidden">
-            <h3
-              class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-            >
-              <span class="flex items-center gap-2">
-                <iconify-icon icon="mdi:gauge"></iconify-icon>
-                数据检测
-              </span>
-              <RouterLink
-                to="/analysis"
-                class="text-[10px] text-gray-500 hover:text-cyan-400"
-                >详情 →</RouterLink
-              >
-            </h3>
-            <div class="flex-1 grid grid-cols-3 gap-1" style="min-height: 0">
-              <div
-                v-for="(g, i) in conditionGauges"
-                :key="i"
-                class="flex flex-col"
-                style="min-height: 0"
-              >
-                <div class="flex-1" style="min-height: 0">
-                  <EChart :option="g.option" />
-                </div>
-                <p class="text-[10px] text-gray-500 text-center -mt-1">
-                  {{ g.label }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT col-3: Agent + C2H2 focus + scrollable alerts -->
-      <div class="col-span-3 flex flex-col gap-3 overflow-hidden">
+        <!-- DGA 气体指标卡(当前值 + ARIMA 预测)移入中栏「核心趋势」 -->
         <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
           <h3
             class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
           >
-            <span class="flex items-center gap-2">
-              <iconify-icon icon="mdi:robot-outline"></iconify-icon>
-              Agent 流水线（5 步）
-              <span class="plan-badge">规划中</span>
-            </span>
-            <span class="text-[10px] text-green-400 flex items-center gap-1">
-              <span class="live-dot"></span> 09:00 完成
-            </span>
-          </h3>
-          <div class="agent-pipe" style="height: calc(100% - 28px)">
-            <div
-              v-for="(s, i) in agentSteps"
-              :key="i"
-              class="agent-step"
-              :class="s.cls"
-            >
-              <div class="agent-step-num">{{ i + 1 }}</div>
-              <div class="agent-step-title">{{ s.title }}</div>
-              <div
-                v-if="i < agentSteps.length - 1"
-                class="agent-step-connector"
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Key metric focus (switchable gas tabs) -->
-        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 0.9">
-          <h3
-            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-          >
-            <span class="flex items-center gap-2">
+            <span class="flex items-center gap-2 whitespace-nowrap">
               <iconify-icon icon="mdi:flash-alert"></iconify-icon>
-              DGA 7 气体指标（距阈值）
-              <span class="plan-badge">含预测·规划中</span>
+              DGA 气体指标
             </span>
             <div class="metric-tabs">
               <button
@@ -242,44 +186,44 @@
               <span
                 class="text-5xl font-bold leading-none"
                 :class="currentMetric.valueClass"
-                >{{ currentMetric.value }}</span
+                >{{ currentMetric.value ?? "—" }}</span
               >
-              <span class="text-sm text-gray-400">ppm</span>
-              <span
-                class="text-[11px] ml-auto flex items-center gap-1"
-                :class="currentMetric.trendClass"
-              >
-                <iconify-icon :icon="currentMetric.trendIcon"></iconify-icon>
-                {{ currentMetric.trend }}
-              </span>
+              <span class="text-sm text-gray-400">μL/L</span>
             </div>
             <div class="mt-3">
-              <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                <span>当前 {{ currentMetric.value }}</span>
-                <span>报警阈值 {{ currentMetric.threshold }} ppm</span>
-              </div>
-              <div class="threshold-bar">
-                <div
-                  class="threshold-fill"
-                  :style="{
-                    width:
-                      Math.min(
-                        (currentMetric.value / currentMetric.threshold) * 100,
-                        100,
-                      ) + '%',
-                  }"
-                ></div>
-                <div class="threshold-marker" style="left: 100%">
-                  <iconify-icon
-                    icon="mdi:flag"
-                    class="text-red-400"
-                  ></iconify-icon>
+              <!-- 有国标注意值(H₂/C₂H₂/总烃):显距阈值进度条 -->
+              <template v-if="currentMetric.threshold != null">
+                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                  <span>当前 {{ currentMetric.value ?? "—" }}</span>
+                  <span>注意值 {{ currentMetric.threshold }} μL/L</span>
                 </div>
-              </div>
+                <div class="threshold-bar">
+                  <div
+                    class="threshold-fill"
+                    :style="{
+                      width:
+                        Math.min(
+                          ((currentMetric.value || 0) / currentMetric.threshold) * 100,
+                          100,
+                        ) + '%',
+                    }"
+                  ></div>
+                  <div class="threshold-marker" style="left: 100%">
+                    <iconify-icon
+                      icon="mdi:flag"
+                      class="text-red-400"
+                    ></iconify-icon>
+                  </div>
+                </div>
+              </template>
+              <!-- CO/CO₂/单个烃类:国标表3 未设绝对注意值(D-044)-->
+              <p v-else class="text-[10px] text-gray-500">
+                国标 DL/T 722-2014 表3 未设单气体注意值
+              </p>
               <p class="text-[10px] text-gray-500 mt-1.5">
-                LSTM 预测 D+3 →
+                ARIMA 预测 D+3 →
                 <span class="font-bold" :class="currentMetric.predictClass">
-                  {{ currentMetric.predict }} ppm
+                  {{ currentMetric.predict ?? "—" }} μL/L
                 </span>
                 {{ currentMetric.predictHint }}
               </p>
@@ -287,7 +231,23 @@
           </div>
         </div>
 
-        <!-- Active alerts (scrollable) -->
+      </div>
+
+      <!-- ========== 右栏:预警处置(预警 → 处置动作)========== -->
+      <!-- 4级等级构成 → 活跃预警工单 → LangChain Agent 自动处置 -->
+      <div class="col-span-3 flex flex-col gap-3 overflow-hidden">
+        <!-- 4 级预警分布(等级构成)-->
+        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
+          <h3 class="panel-title text-sm font-bold text-cyan-300 mb-1">
+            <iconify-icon icon="mdi:chart-donut"></iconify-icon>
+            4 级预警分布（回测）
+          </h3>
+          <div class="w-full" style="height: calc(100% - 24px)">
+            <EChart :option="levelDonutOption" />
+          </div>
+        </div>
+
+        <!-- 活跃预警工单(滚动)-->
         <div
           class="glass rounded-lg p-3 flex flex-col overflow-hidden"
           style="flex: 1.2"
@@ -297,8 +257,7 @@
           >
             <span class="flex items-center gap-2">
               <iconify-icon icon="mdi:fire"></iconify-icon>
-              活跃预警（{{ allAlerts.length }} 条）
-              <span class="plan-badge">规划中</span>
+              活跃预警(近 {{ allAlerts.length }} 条)
             </span>
             <RouterLink
               to="/alerts"
@@ -334,6 +293,40 @@
             </div>
           </div>
         </div>
+
+        <!-- LangChain Agent 流水线(自动处置)-->
+        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
+          <h3
+            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
+          >
+            <span class="flex items-center gap-2">
+              <iconify-icon icon="mdi:robot-outline"></iconify-icon>
+              LangChain Agent 流水线
+            </span>
+            <span
+              v-if="agentRun"
+              class="text-[10px] text-green-400 flex items-center gap-1"
+            >
+              <span class="live-dot"></span>
+              {{ agentRun.as_of }} · {{ (agentRun.duration_ms / 1000).toFixed(1) }}s
+            </span>
+          </h3>
+          <div class="agent-pipe" style="height: calc(100% - 28px)">
+            <div
+              v-for="(s, i) in agentSteps"
+              :key="i"
+              class="agent-step"
+              :class="s.cls"
+            >
+              <div class="agent-step-num">{{ i + 1 }}</div>
+              <div class="agent-step-title">{{ s.title }}</div>
+              <div
+                v-if="i < agentSteps.length - 1"
+                class="agent-step-connector"
+              ></div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 
@@ -344,7 +337,15 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
-import { getOverview, getLatest, getDetectMethods } from "@/service/api";
+import {
+  getOverview,
+  getLatest,
+  getDetectMethods,
+  getDashboardForecast,
+  getWarningBacktest,
+  getDates,
+  getAgentRun,
+} from "@/service/api";
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
 import KpiCard from "@/components/KpiCard.vue";
@@ -357,6 +358,10 @@ import { AXIS, TT } from "@/utils/chartDefaults";
 const overview = ref(null);
 const latest = ref(null);
 const detectResult = ref(null);
+const forecast = ref(null);   // /predict/forecast:30 天历史 + 未来 3 天 ARIMA
+const backtest = ref(null);   // /warning/backtest:真实预警工单 + 四级分布
+const agentRun = ref(null);   // /agent/run:最新一条 Agent ReAct 预跑轨迹
+const series360 = ref([]);    // /data/dates 全周期 date+is_abnormal:健康/异常时间带用
 const TRANSFORMER_ID = 1; // 单设备方案(CLAUDE.md 数据事实)
 
 onMounted(async () => {
@@ -376,33 +381,62 @@ onMounted(async () => {
   } catch (e) {
     console.warn("[Dashboard] detect 拉取失败", e);
   }
+  try {
+    forecast.value = await getDashboardForecast();
+  } catch (e) {
+    console.warn("[Dashboard] forecast 拉取失败(未跑预跑脚本?)", e);
+  }
+  try {
+    backtest.value = await getWarningBacktest();
+  } catch (e) {
+    console.warn("[Dashboard] warning backtest 拉取失败", e);
+  }
+  try {
+    agentRun.value = await getAgentRun(TRANSFORMER_ID);
+  } catch (e) {
+    console.warn("[Dashboard] agent run 拉取失败(未预跑?)", e);
+  }
+  try {
+    // 全周期健康带:/data/dates 返回全 360 天 date+is_abnormal(无 days 上限)
+    const ds = await getDates(TRANSFORMER_ID);
+    series360.value = ds.days || [];
+  } catch (e) {
+    console.warn("[Dashboard] dates(全周期) 拉取失败", e);
+  }
 });
 
-// ① KPI 行:接 overview 真值。前 4 格真实,第 5 格(Agent)标规划中。
-// 原「4 级预警条数」依赖第 11-12 周预警模块,改为 overview 能提供的真实指标。
+// ① KPI 行:4 张核心卡片,按权重排序,全部接真。
+//   1 设备总览(合并设备数+记录数+跨度)2 历史健康率 3 当前实时状态 4 历史预警累计
+//   去掉原「Agent 预警分析」格(与右侧流水线模块重复);
+//   当前预警等级(最新日红橙黄蓝)与历史预警累计(360天回测)分列,口径与预警体系一致。
 const kpis = computed(() => {
   const o = overview.value;
   const healthPct = o ? +(o.history_health_ratio * 100).toFixed(1) : 0;
-  const latestAbn = o ? o.latest_snapshot.abnormal : 0;
+  const nAlerts = backtest.value ? backtest.value.n_alerts : 0;
+  const span = o ? `${o.date_range.start} ~ ${o.date_range.end}` : "加载中";
+  // 当前(最新日)预警等级:取 backtest 最新一天 alert 的 level(红橙黄蓝四级)。
+  // 无 alert = 该日未触发任何规则 → 蓝(日常关注)。与预警体系/右下工单同口径。
+  const KPI_LEVEL = {
+    red: { zh: "红色", cls: "text-red-400", icon: "mdi:alert-octagon", resp: "立即响应" },
+    orange: { zh: "橙色", cls: "text-orange-400", icon: "mdi:alert", resp: "24 小时内处理" },
+    yellow: { zh: "黄色", cls: "text-yellow-400", icon: "mdi:alert-outline", resp: "加强监测" },
+    blue: { zh: "蓝色", cls: "text-blue-400", icon: "mdi:information-outline", resp: "日常关注" },
+  };
+  const alerts = backtest.value ? backtest.value.alerts : [];
+  const lastAlert = alerts.length
+    ? [...alerts].sort((a, b) => (a.date < b.date ? 1 : -1))[0]
+    : null;
+  const curLevel = lastAlert ? lastAlert.level : "blue";
+  const lv = KPI_LEVEL[curLevel] || KPI_LEVEL.blue;
   return [
     {
-      label: "监测设备",
+      label: "设备总览",
       value: o ? o.total_transformers : 0,
-      unit: "台",
+      unit: "台设备",
       icon: "mdi:transmission-tower",
       iconClass: "text-cyan-400",
       valueClass: "text-cyan-300",
-      hint: "单台虚拟变压器 · 360 天时序",
-      pulse: false,
-    },
-    {
-      label: "监测记录",
-      value: o ? o.total_records : 0,
-      unit: "条",
-      icon: "mdi:database",
-      iconClass: "text-blue-400",
-      valueClass: "text-blue-300",
-      hint: o ? `${o.date_range.start} ~ ${o.date_range.end}` : "加载中",
+      hint: o ? `${o.total_records} 条时序 · ${span}` : "加载中",
       pulse: false,
     },
     {
@@ -412,164 +446,119 @@ const kpis = computed(() => {
       icon: "mdi:heart-pulse",
       iconClass: "text-green-400",
       valueClass: "text-green-300",
-      hint: "健康天数占比(二分类口径)",
+      hint: "360 天健康天数占比(二分类)",
       pulse: false,
     },
     {
-      label: "最新状态",
-      value: latestAbn,
-      unit: "异常",
-      icon: latestAbn ? "mdi:alert" : "mdi:check-circle",
-      iconClass: latestAbn ? "text-red-400" : "text-green-400",
-      valueClass: latestAbn ? "text-red-400" : "text-green-300",
-      hint: "最新快照 is_abnormal 二分类",
-      pulse: !!latestAbn,
+      label: "当前预警等级",
+      value: lv.zh,
+      unit: "",
+      icon: lv.icon,
+      iconClass: lv.cls,
+      valueClass: lv.cls,
+      hint: lastAlert
+        ? `${lastAlert.date} · ${lv.resp}`
+        : `${o ? o.date_range.end : ""} · 无触发`,
+      pulse: curLevel === "red",
     },
     {
-      label: "Agent 今日执行",
-      value: 0,
-      unit: "次",
-      icon: "mdi:robot",
-      iconClass: "text-purple-400/50",
-      valueClass: "text-purple-400/50",
-      hint: "⏳ 规划中 · 第 13 周",
+      label: "历史预警累计",
+      value: nAlerts,
+      unit: "条",
+      icon: "mdi:bell-alert",
+      iconClass: "text-orange-400",
+      valueClass: "text-orange-300",
+      hint: "360 天回测触发工单(非实时)",
       pulse: false,
     },
   ];
 });
 
-// === 4 级饼图 ===
-const levelDonutOption = {
-  tooltip: { trigger: "item", ...TT },
-  legend: {
-    bottom: 0,
-    textStyle: { color: "#9ca3af", fontSize: 10 },
-    itemWidth: 8,
-    itemHeight: 8,
-  },
-  series: [
-    {
-      type: "pie",
-      radius: ["48%", "72%"],
-      center: ["50%", "44%"],
-      avoidLabelOverlap: true,
-      label: {
-        color: "#cbd5e1",
-        fontSize: 10,
-        formatter: "{b}\n{c}",
+// === ④ 4 级预警分布饼图:接 /warning/backtest 的 level_distribution 真值 ===
+// 回测(360 天合成时序)各等级触发条数;数据源同 AlertsView / backtest.py。
+const levelDonutOption = computed(() => {
+  const dist = backtest.value ? backtest.value.level_distribution : null;
+  return {
+    tooltip: { trigger: "item", ...TT },
+    legend: {
+      bottom: 0,
+      textStyle: { color: "#9ca3af", fontSize: 10 },
+      itemWidth: 8,
+      itemHeight: 8,
+    },
+    series: [
+      {
+        type: "pie",
+        radius: ["48%", "72%"],
+        center: ["50%", "44%"],
+        avoidLabelOverlap: true,
+        label: { color: "#cbd5e1", fontSize: 10, formatter: "{b}\n{c}" },
+        data: [
+          { value: dist ? dist.red : 0, name: "红", itemStyle: { color: "#ef4444" } },
+          { value: dist ? dist.orange : 0, name: "橙", itemStyle: { color: "#f97316" } },
+          { value: dist ? dist.yellow : 0, name: "黄", itemStyle: { color: "#eab308" } },
+          { value: dist ? dist.blue : 0, name: "蓝", itemStyle: { color: "#3b82f6" } },
+        ],
       },
-      data: [
-        { value: 1, name: "红", itemStyle: { color: "#ef4444" } },
-        { value: 3, name: "橙", itemStyle: { color: "#f97316" } },
-        { value: 4, name: "黄", itemStyle: { color: "#eab308" } },
-        { value: 2, name: "蓝", itemStyle: { color: "#3b82f6" } },
-      ],
-    },
-  ],
-};
-
-// === ② 气体雷达:当前值接 latest.gases 真值,阈值线为国标固定值 ===
-const GAS_KEYS = ["h2", "ch4", "c2h6", "c2h4", "c2h2", "co", "co2"]; // 对应雷达 7 维顺序
-const gasRadarOption = computed(() => ({
-  tooltip: { ...TT },
-  radar: {
-    indicator: [
-      { name: "H₂", max: 150 },
-      { name: "CH₄", max: 100 },
-      { name: "C₂H₆", max: 50 },
-      { name: "C₂H₄", max: 100 },
-      { name: "C₂H₂", max: 5 },
-      { name: "CO", max: 500 },
-      { name: "CO₂", max: 2000 },
     ],
-    splitNumber: 3,
-    center: ["50%", "52%"],
-    radius: "62%",
-    name: { textStyle: { color: "#cbd5e1", fontSize: 10 } },
-    splitLine: { lineStyle: { color: "rgba(107,114,128,.25)" } },
-    splitArea: {
-      areaStyle: { color: ["rgba(59,130,246,.02)", "rgba(59,130,246,.06)"] },
-    },
-    axisLine: { lineStyle: { color: "rgba(59,130,246,.25)" } },
-  },
-  series: [
-    {
-      type: "radar",
-      data: [
-        {
-          value: [150, 100, 50, 100, 5, 500, 2000],
-          name: "阈值",
-          areaStyle: { color: "rgba(239,68,68,.08)" },
-          lineStyle: { type: "dashed", color: "#ef4444" },
-          itemStyle: { color: "#ef4444" },
-        },
-        {
-          value: latest.value
-            ? GAS_KEYS.map((k) => latest.value.gases[k])
-            : [0, 0, 0, 0, 0, 0, 0],
-          name: "当前",
-          areaStyle: { color: "rgba(6,182,212,.25)" },
-          lineStyle: { color: "#06b6d4" },
-          itemStyle: { color: "#06b6d4" },
-        },
-      ],
-    },
-  ],
-}));
+  };
+});
 
-// === 24h 预警时段分布（4级堆叠条）===
-const hourBarOption = {
-  tooltip: { trigger: "axis", ...TT },
-  legend: {
-    textStyle: { color: "#9ca3af", fontSize: 9 },
-    top: 0,
-    right: 0,
-    itemWidth: 8,
-    itemHeight: 6,
-  },
-  grid: { top: 22, bottom: 18, left: 22, right: 6 },
-  xAxis: {
-    type: "category",
-    data: ["0", "3", "6", "9", "12", "15", "18", "21"],
-    ...AXIS,
-    axisLabel: { ...AXIS.axisLabel, fontSize: 9 },
-  },
-  yAxis: {
-    type: "value",
-    ...AXIS,
-    axisLabel: { ...AXIS.axisLabel, fontSize: 9 },
-  },
-  series: [
-    {
-      name: "红",
-      type: "bar",
-      stack: "x",
-      data: [0, 0, 1, 0, 0, 0, 0, 0],
-      itemStyle: { color: "#ef4444" },
+
+// === ④ 全周期健康/异常分布:按月聚合 /data/timeseries 的 is_abnormal(360 天)===
+// 把顶部 KPI「健康率」可视化展开为时间维度——逐月健康天 vs 异常天堆叠,
+// 一眼看出全周期(2024-04~2025-03)哪些月份异常集中。与左上「等级构成饼图」
+// 视角互补(一个看等级构成,一个看时间分布),不重复。数据源 series360。
+const healthBandOption = computed(() => {
+  const s = series360.value || [];
+  // 按月聚合健康/异常天数
+  const byMonth = {};
+  for (const d of s) {
+    const m = d.date.slice(0, 7);
+    byMonth[m] = byMonth[m] || { healthy: 0, abnormal: 0 };
+    if (d.is_abnormal) byMonth[m].abnormal += 1;
+    else byMonth[m].healthy += 1;
+  }
+  const months = Object.keys(byMonth).sort();
+  return {
+    tooltip: { trigger: "axis", ...TT },
+    legend: {
+      textStyle: { color: "#9ca3af", fontSize: 9 },
+      top: 0,
+      right: 0,
+      itemWidth: 8,
+      itemHeight: 6,
     },
-    {
-      name: "橙",
-      type: "bar",
-      stack: "x",
-      data: [0, 0, 1, 1, 1, 0, 0, 0],
-      itemStyle: { color: "#f97316" },
+    grid: { top: 22, bottom: 18, left: 22, right: 6 },
+    xAxis: {
+      type: "category",
+      data: months.map((m) => m.slice(2)), // YY-MM 省位
+      ...AXIS,
+      axisLabel: { ...AXIS.axisLabel, fontSize: 9 },
     },
-    {
-      name: "黄",
-      type: "bar",
-      stack: "x",
-      data: [0, 0, 0, 1, 1, 1, 1, 0],
-      itemStyle: { color: "#eab308" },
+    yAxis: {
+      type: "value",
+      ...AXIS,
+      axisLabel: { ...AXIS.axisLabel, fontSize: 9 },
     },
-    {
-      name: "蓝",
-      type: "bar",
-      stack: "x",
-      data: [1, 0, 1, 0, 0, 0, 0, 0],
-      itemStyle: { color: "#3b82f6" },
-    },
-  ],
-};
+    series: [
+      {
+        name: "健康",
+        type: "bar",
+        stack: "d",
+        data: months.map((m) => byMonth[m].healthy),
+        itemStyle: { color: "#10b981" },
+      },
+      {
+        name: "异常",
+        type: "bar",
+        stack: "d",
+        data: months.map((m) => byMonth[m].abnormal),
+        itemStyle: { color: "#ef4444" },
+      },
+    ],
+  };
+});
 
 // === ③ 检测:接 /detect/methods/1 真值(规则法:阈值 + 三比值)===
 // 后端单点只跑规则类两法(阈值/IEC),孤立森林是批量无监督方法不适合单点,
@@ -657,105 +646,67 @@ const conditionGauges = computed(() => {
   ];
 });
 
-// === LSTM 预测大图 ===
-const historyDays = Array.from({ length: 30 }, (_, i) => `D-${29 - i}`);
-const futureDays = ["D+1", "D+2", "D+3"];
-const xAxisData = [...historyDays, ...futureDays];
-
-const genSeries = (history, forecast) => {
-  const realPart = [...history, ...Array(3).fill(null)];
-  const connectForecast = [...Array(29).fill(null), history[29], ...forecast];
-  return { realPart, connectForecast };
-};
-
-const genHistory = (start, end, wave = 0.05) =>
-  Array.from({ length: 30 }, (_, i) => {
-    const t = i / 29;
-    const v = start + (end - start) * t;
-    return +(
-      v *
-      (1 + (Math.sin(i * 0.7) + (Math.random() - 0.5) * 0.5) * wave)
-    ).toFixed(2);
-  });
-
-const hC2H2 = [
-  0.8, 0.9, 1.0, 1.1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1,
-  2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.05, 3.1, 3.15, 3.2, 3.22, 3.24,
+// === ⑤ ARIMA 趋势预测大图:接 /predict/forecast 真值(30 天历史 + 未来 3 天)===
+// 预测源 ARIMA(D-029:实测较 LSTM 更稳健,大屏不主打 LSTM 误导);数据离线预跑
+// (scripts/forecast_dashboard.py)。C₂H₂ 量纲远小于其它气体,单列右轴 + 国标注意值线。
+const GAS_VIZ = [
+  { key: "h2", sym: "H₂", color: "#10b981", axis: 0 },
+  { key: "ch4", sym: "CH₄", color: "#06b6d4", axis: 0 },
+  { key: "c2h6", sym: "C₂H₆", color: "#8b5cf6", axis: 0 },
+  { key: "c2h4", sym: "C₂H₄", color: "#f59e0b", axis: 0 },
+  { key: "co", sym: "CO", color: "#a3e635", axis: 0 },
+  { key: "co2", sym: "CO₂", color: "#f472b6", axis: 0 },
+  { key: "c2h2", sym: "C₂H₂", color: "#ef4444", axis: 1 },
 ];
 
-const gasConfig = [
-  {
-    sym: "H₂",
-    color: "#10b981",
-    history: genHistory(25, 42.5),
-    forecast: [43.8, 45.2, 46.5],
-  },
-  {
-    sym: "CH₄",
-    color: "#06b6d4",
-    history: genHistory(35, 58.2),
-    forecast: [59.4, 60.9, 62.5],
-  },
-  {
-    sym: "C₂H₆",
-    color: "#8b5cf6",
-    history: genHistory(15, 22.8),
-    forecast: [23.2, 23.8, 24.1],
-  },
-  {
-    sym: "C₂H₄",
-    color: "#f59e0b",
-    history: genHistory(22, 45.1),
-    forecast: [46.2, 47.8, 49.5],
-  },
-  {
-    sym: "CO",
-    color: "#a3e635",
-    history: genHistory(260, 312),
-    forecast: [316, 321, 325],
-  },
-  {
-    sym: "CO₂",
-    color: "#f472b6",
-    history: genHistory(1500, 1840),
-    forecast: [1860, 1885, 1910],
-  },
-  {
-    sym: "C₂H₂",
-    color: "#ef4444",
-    history: hC2H2,
-    forecast: [3.42, 3.68, 4.05],
-    axis: 1,
-  },
-];
+// x 轴:历史日期(尾部取短标 MM-DD)+ D+1..D+n
+const predictXAxis = computed(() => {
+  const f = forecast.value;
+  if (!f) return [];
+  const hist = f.history.map((r) => r.date.slice(5)); // MM-DD
+  const fut = f.forecast.map((r) => `D+${r.step}`);
+  return [...hist, ...fut];
+});
 
 const buildSeries = () => {
+  const f = forecast.value;
+  if (!f) return [];
+  const nHist = f.history.length;
   const series = [];
-  gasConfig.forEach((g) => {
-    const split = genSeries(g.history, g.forecast);
-    const axisIdx = g.axis || 0;
+  GAS_VIZ.forEach((g) => {
+    const hist = f.history.map((r) => r[g.key]);
+    const fut = f.forecast.map((r) => r[g.key]);
+    // 历史实线:历史段有值,预测段 null
+    const realPart = [...hist, ...Array(fut.length).fill(null)];
+    // 预测虚线:用历史末点接上,视觉连续
+    const connectForecast = [
+      ...Array(nHist - 1).fill(null),
+      hist[nHist - 1],
+      ...fut,
+    ];
     series.push({
-      name: `${g.sym}（真）`,
+      name: `${g.sym}(真)`,
       type: "line",
       smooth: true,
-      data: split.realPart,
+      data: realPart,
       color: g.color,
-      yAxisIndex: axisIdx,
+      yAxisIndex: g.axis,
       symbol: "none",
-      lineStyle: { width: g.sym === "C₂H₂" ? 2.2 : 1.6 },
+      lineStyle: { width: g.key === "c2h2" ? 2.2 : 1.6 },
     });
     series.push({
-      name: `${g.sym}（预）`,
+      name: `${g.sym}(预)`,
       type: "line",
       smooth: true,
-      data: split.connectForecast,
+      data: connectForecast,
       color: g.color,
-      yAxisIndex: axisIdx,
+      yAxisIndex: g.axis,
       symbol: "circle",
       symbolSize: 4,
-      lineStyle: { type: "dashed", width: g.sym === "C₂H₂" ? 2 : 1.6 },
-      ...(g.sym === "C₂H₂"
+      lineStyle: { type: "dashed", width: g.key === "c2h2" ? 2 : 1.6 },
+      ...(g.key === "c2h2"
         ? {
+            // C₂H₂ 国标注意值线(DL/T 722-2014 表3,220kV 及以下 = 5 μL/L)
             markLine: {
               symbol: "none",
               data: [
@@ -763,16 +714,22 @@ const buildSeries = () => {
                   yAxis: 5,
                   lineStyle: { color: "#dc2626", type: "dashed" },
                   label: {
-                    formatter: "C₂H₂ 报警 5 ppm",
+                    formatter: "C₂H₂ 注意值 5 μL/L",
                     color: "#fca5a5",
                     fontSize: 10,
                   },
                 },
               ],
             },
+            // 预测区阴影:从历史末点到 D+n
             markArea: {
               itemStyle: { color: "rgba(251,146,60,.1)" },
-              data: [[{ xAxis: "D-0" }, { xAxis: "D+3" }]],
+              data: [
+                [
+                  { xAxis: predictXAxis.value[nHist - 1] },
+                  { xAxis: predictXAxis.value[predictXAxis.value.length - 1] },
+                ],
+              ],
             },
           }
         : {}),
@@ -781,7 +738,7 @@ const buildSeries = () => {
   return series;
 };
 
-const predictOption = {
+const predictOption = computed(() => ({
   tooltip: { trigger: "axis", ...TT },
   legend: {
     textStyle: { color: "#9ca3af", fontSize: 9 },
@@ -794,14 +751,14 @@ const predictOption = {
   grid: { top: 35, bottom: 30, left: 40, right: 60 },
   xAxis: {
     type: "category",
-    data: xAxisData,
+    data: predictXAxis.value,
     ...AXIS,
     axisLabel: { ...AXIS.axisLabel, interval: 3 },
   },
   yAxis: [
     {
       type: "value",
-      name: "ppm",
+      name: "μL/L",
       nameTextStyle: { color: "#9ca3af", fontSize: 10 },
       ...AXIS,
     },
@@ -814,186 +771,110 @@ const predictOption = {
     },
   ],
   series: buildSeries(),
-};
+}));
 
 // === Agent 5 步流水线 ===
-const agentSteps = [
-  { title: "获取数据", cls: "done" },
-  { title: "异常检测", cls: "done" },
-  { title: "LSTM 预测", cls: "done" },
-  { title: "规则判级", cls: "done" },
-  { title: "生成通知", cls: "done" },
-];
+// === ③ Agent 流水线:接 /agent/run 真实预跑轨迹(模块6,D-041 已完成)===
+// Agent ReAct 4 工具步(取数→检测→预测→规则)+ 第5步生成通知(notice 字段)。
+// 守边界:只显步骤名 + 完成态,不显 notice 细节文本(notice 已过黑名单校验)。
+const AGENT_STEP_NAMES = ["获取数据", "异常检测", "趋势预测", "规则判级", "生成通知"];
+const agentSteps = computed(() => {
+  const r = agentRun.value;
+  // 未预跑:5 步占位(灰)
+  if (!r || !r.steps) {
+    return AGENT_STEP_NAMES.map((title) => ({ title, cls: "pending" }));
+  }
+  // 真实 4 工具步按 status 着色 + 第5步「生成通知」据 notice 是否产出
+  const toolSteps = r.steps.map((s, i) => ({
+    title: AGENT_STEP_NAMES[i] || s.tool,
+    cls: s.status === "success" ? "done" : "failed",
+  }));
+  toolSteps.push({
+    title: "生成通知",
+    cls: r.notice ? "done" : "pending",
+  });
+  return toolSteps;
+});
 
 // === 关键指标聚焦（7 气体可切换）===
-const metricGases = [
-  {
-    sym: "C₂H₂",
-    value: 3.24,
-    threshold: 5,
-    trend: "7d ↑ 18%",
-    trendIcon: "mdi:trending-up",
-    trendClass: "text-red-300",
-    valueClass: "text-red-400",
-    predict: 4.05,
-    predictClass: "text-red-300",
-    predictHint: "（已逼近阈值）",
-  },
-  {
-    sym: "H₂",
-    value: 42.5,
-    threshold: 150,
-    trend: "7d ↑ 5%",
-    trendIcon: "mdi:trending-up",
-    trendClass: "text-yellow-300",
-    valueClass: "text-yellow-400",
-    predict: 46.5,
-    predictClass: "text-yellow-300",
-    predictHint: "",
-  },
-  {
-    sym: "CH₄",
-    value: 58.2,
-    threshold: 100,
-    trend: "7d ↑ 38%",
-    trendIcon: "mdi:trending-up",
-    trendClass: "text-orange-300",
-    valueClass: "text-orange-400",
-    predict: 62.5,
-    predictClass: "text-orange-300",
-    predictHint: "",
-  },
-  {
-    sym: "C₂H₆",
-    value: 22.8,
-    threshold: 50,
-    trend: "7d ↑ 27%",
-    trendIcon: "mdi:trending-up",
-    trendClass: "text-yellow-300",
-    valueClass: "text-yellow-400",
-    predict: 24.1,
-    predictClass: "text-yellow-300",
-    predictHint: "",
-  },
-  {
-    sym: "C₂H₄",
-    value: 45.1,
-    threshold: 100,
-    trend: "7d ↑ 23%",
-    trendIcon: "mdi:trending-up",
-    trendClass: "text-orange-300",
-    valueClass: "text-orange-400",
-    predict: 49.5,
-    predictClass: "text-orange-300",
-    predictHint: "（趋势异常）",
-  },
-  {
-    sym: "CO",
-    value: 312,
-    threshold: 500,
-    trend: "7d ↑ 3%",
-    trendIcon: "mdi:trending-up",
-    trendClass: "text-green-300",
-    valueClass: "text-green-400",
-    predict: 325,
-    predictClass: "text-green-300",
-    predictHint: "",
-  },
-  {
-    sym: "CO₂",
-    value: 1840,
-    threshold: 2000,
-    trend: "7d ↑ 2%",
-    trendIcon: "mdi:trending-up",
-    trendClass: "text-yellow-300",
-    valueClass: "text-yellow-400",
-    predict: 1910,
-    predictClass: "text-yellow-300",
-    predictHint: "",
-  },
+// === ② 7 气体指标卡:接 latest.gases 当前值 + forecast 预测末日(D+n)===
+// 阈值口径同 AnalysisView / 后端 ATTENTION_VALUES:仅 H₂/C₂H₂/总烃有国标注意值
+// (DL/T 722-2014 表3,220kV 及以下);CO/CO₂/单个烃类不设绝对阈值(D-044),
+// threshold=null,卡片显「无注意值」不画进度条。预测源 ARIMA(同预测大图)。
+const METRIC_DEFS = [
+  { key: "c2h2", sym: "C₂H₂", threshold: 5 },
+  { key: "h2", sym: "H₂", threshold: 150 },
+  { key: "ch4", sym: "CH₄", threshold: null },
+  { key: "c2h6", sym: "C₂H₆", threshold: null },
+  { key: "c2h4", sym: "C₂H₄", threshold: null },
+  { key: "co", sym: "CO", threshold: null },
+  { key: "co2", sym: "CO₂", threshold: null },
 ];
+
+const metricGases = computed(() => {
+  const g = latest.value ? latest.value.gases : null;
+  const fcLast = forecast.value
+    ? forecast.value.forecast[forecast.value.forecast.length - 1]
+    : null;
+  return METRIC_DEFS.map((m) => {
+    const value = g && g[m.key] != null ? +g[m.key].toFixed(2) : null;
+    const predict = fcLast && fcLast[m.key] != null ? +fcLast[m.key].toFixed(2) : null;
+    // 超注意值标红(仅有阈值的气体);预测超标给提示
+    const over = m.threshold != null && value != null && value > m.threshold;
+    const predOver = m.threshold != null && predict != null && predict > m.threshold;
+    return {
+      sym: m.sym,
+      value,
+      threshold: m.threshold,
+      valueClass: over ? "text-red-400" : "text-cyan-300",
+      predict,
+      predictClass: predOver ? "text-red-300" : "text-gray-300",
+      predictHint: predOver ? "(预测超注意值)" : "",
+    };
+  });
+});
 
 const selectedMetric = ref("C₂H₂");
 const currentMetric = computed(
   () =>
-    metricGases.find((g) => g.sym === selectedMetric.value) || metricGases[0],
+    metricGases.value.find((g) => g.sym === selectedMetric.value) ||
+    metricGases.value[0],
 );
 
-// === 活跃预警列表（滚动，含所有 10 条）===
-const allAlerts = [
-  {
-    level: "🔴 红",
-    tag: "tag-red",
-    border: "border-red-500",
-    time: "10:42",
-    msg: "C₂H₂ 预测 D+3 达 4.05 ppm，逼近阈值 5 ppm",
-  },
-  {
-    level: "🟠 橙",
-    tag: "tag-org",
-    border: "border-orange-500",
-    time: "10:15",
-    msg: "C₂H₄ 72h 上升 23%，1-3 天内可能超标",
-  },
-  {
-    level: "🟠 橙",
-    tag: "tag-org",
-    border: "border-orange-500",
-    time: "09:58",
-    msg: "顶层油温 84℃ + 负载 1.05 倍，组合规则触发",
-  },
-  {
-    level: "🟠 橙",
-    tag: "tag-org",
-    border: "border-orange-500",
-    time: "09:30",
-    msg: "多方法投票判定为异常(三比值法 + 阈值法)",
-  },
-  {
-    level: "🟡 黄",
-    tag: "tag-yel",
-    border: "border-yellow-500",
-    time: "08:50",
-    msg: "H₂ 产气速率 8.2 ppm/72h，趋势异常",
-  },
-  {
-    level: "🟡 黄",
-    tag: "tag-yel",
-    border: "border-yellow-500",
-    time: "07:22",
-    msg: "负载电流 1.05 倍额定（长期）",
-  },
-  {
-    level: "🟡 黄",
-    tag: "tag-yel",
-    border: "border-yellow-500",
-    time: "06:45",
-    msg: "C₂H₆ 7 日上升 27%",
-  },
-  {
-    level: "🟡 黄",
-    tag: "tag-yel",
-    border: "border-yellow-500",
-    time: "05:30",
-    msg: "总烃 7 日 ↑ 18%",
-  },
-  {
-    level: "🔵 蓝",
-    tag: "tag-blu",
-    border: "border-blue-500",
-    time: "04:10",
-    msg: "环境温度 38℃ 接近 40℃ 阈值",
-  },
-  {
-    level: "🔵 蓝",
-    tag: "tag-blu",
-    border: "border-blue-500",
-    time: "02:30",
-    msg: "CO 轻微波动 +5%",
-  },
-];
+// === ③ 活跃预警列表:接 /warning/backtest 真实触发工单(最近 12 条)===
+// 数据源同 AlertsView(scripts/backtest.py 落盘);取最近触发日,显真实等级 +
+// 日期 + 首条触发明细(message 已是 μL/L 真值,守边界 D-008 无故障类型)。
+const LEVEL_VIZ = {
+  red: { label: "🔴 红", tag: "tag-red", border: "border-red-500" },
+  orange: { label: "🟠 橙", tag: "tag-org", border: "border-orange-500" },
+  yellow: { label: "🟡 黄", tag: "tag-yel", border: "border-yellow-500" },
+  blue: { label: "🔵 蓝", tag: "tag-blu", border: "border-blue-500" },
+};
 
-const marqueeAlerts = computed(() => [...allAlerts, ...allAlerts]);
+const allAlerts = computed(() => {
+  const src = backtest.value ? backtest.value.alerts : [];
+  // 按日期倒序取最近 12 条触发工单
+  return [...src]
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 12)
+    .map((a) => {
+      const viz = LEVEL_VIZ[a.level] || LEVEL_VIZ.blue;
+      const firstMsg =
+        a.messages && a.messages.length ? a.messages[0].message : "";
+      return {
+        level: viz.label,
+        tag: viz.tag,
+        border: viz.border,
+        time: a.date,
+        msg: firstMsg,
+      };
+    });
+});
+
+// 滚动展示:列表非空才复制一份接成无缝滚动
+const marqueeAlerts = computed(() =>
+  allAlerts.value.length ? [...allAlerts.value, ...allAlerts.value] : [],
+);
 </script>
 
 <style scoped>
@@ -1054,59 +935,79 @@ const marqueeAlerts = computed(() => [...allAlerts, ...allAlerts]);
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  padding: 4px 0;
+  padding: 6px 2px;
+  gap: 4px;
 }
 .agent-step {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   position: relative;
 }
+/* num 圆基础态(中性灰,默认)*/
 .agent-step-num {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 10px;
   flex-shrink: 0;
-  background: rgba(16, 185, 129, 0.18);
-  color: #6ee7b7;
-  border: 2px solid #10b981;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+  background: rgba(75, 85, 99, 0.35);
+  color: #9ca3af;
+  border: 1.5px solid rgba(107, 114, 128, 0.6);
   position: relative;
   z-index: 2;
 }
-.agent-step.done .agent-step-num::after {
-  content: "✓";
-  position: absolute;
-  bottom: -2px;
-  right: -4px;
-  background: #10b981;
-  color: white;
-  font-size: 9px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ✅ 通过 done:绿 */
+.agent-step.done .agent-step-num {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.35);
+}
+/* ❌ 异常 failed:红 */
+.agent-step.failed .agent-step-num {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+/* ⏳ 默认/未执行 pending:灰(显式声明,同基础)*/
+.agent-step.pending .agent-step-num {
+  background: rgba(75, 85, 99, 0.35);
+  color: #9ca3af;
+  border-color: rgba(107, 114, 128, 0.6);
+  box-shadow: none;
 }
 .agent-step-title {
-  flex: 1;
   font-size: 12px;
   color: #d1d5db;
   font-weight: 500;
 }
+.agent-step.failed .agent-step-title {
+  color: #fca5a5;
+}
+.agent-step.pending .agent-step-title {
+  color: #6b7280;
+}
+/* 连接线:默认灰,done 绿 / failed 红;接到下一圆圈 */
 .agent-step-connector {
   position: absolute;
-  left: 13px;
-  top: 28px;
-  bottom: -100%;
+  left: 9px;
+  top: 20px;
+  bottom: -12px;
   width: 2px;
-  background: linear-gradient(180deg, #10b981 0%, rgba(16, 185, 129, 0.3) 100%);
+  background: rgba(75, 85, 99, 0.4);
+  z-index: 1;
+}
+.agent-step.done .agent-step-connector {
+  background: linear-gradient(180deg, #10b981 0%, rgba(16, 185, 129, 0.4) 100%);
+}
+.agent-step.failed .agent-step-connector {
+  background: rgba(239, 68, 68, 0.5);
 }
 
 /* C2H2 关键指标条 */
@@ -1141,6 +1042,8 @@ const marqueeAlerts = computed(() => [...allAlerts, ...allAlerts]);
 /* 指标 tab 切换 */
 .metric-tabs {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 2px;
   background: rgba(31, 41, 55, 0.5);
   border-radius: 4px;
