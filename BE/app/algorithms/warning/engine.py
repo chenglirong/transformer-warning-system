@@ -66,8 +66,9 @@ def _item_value(detect_values: Dict[str, float], item: str) -> float:
 def _effective_thresholds(rules: dict) -> Dict[str, float]:
     """预警有效阈值 = 国标 ATTENTION_VALUES 叠加 rules.yaml 的 warning_thresholds 覆盖。
 
-    国标值是通用注意值;部分项(如 CO)对具体设备基线偏低,按设备历史校准覆盖
-    (见 rules.yaml warning_thresholds 注释 + D-033)。不改检测模块的国标口径。
+    国标值是通用注意值;rules.yaml 可选 warning_thresholds 节按设备历史校准覆盖。
+    D-044 删 CO/CO₂ 绝对阈值后该节已空(CO/CO₂ 改走 §10.2.3.1 比值法,见 C-02),
+    此处恒等于国标口径;保留 update 兜底以便将来按设备校准。不改检测模块的国标口径。
     """
     eff = dict(ATTENTION_VALUES)
     eff.update(rules.get("warning_thresholds", {}))
@@ -208,7 +209,8 @@ def evaluate(
             # 任一关键判定项预测涨幅 ≥ 阈值,记下命中的气体名 + 涨幅(填 message)
             hit_item = None
             hit_rise = 0.0
-            for item in ("c2h2", "total_hydrocarbon", "h2", "co"):
+            # CO 不在阈值法判定项内(D-044:cur.values 只含 h2/c2h2/总烃),故不遍历
+            for item in ("c2h2", "total_hydrocarbon", "h2"):
                 cur_v = _item_value(cur.values, item)
                 fut_v = _item_value(last_values, item)
                 if cur_v > 0 and (fut_v - cur_v) / cur_v >= c["gas_rise_ratio"]:
