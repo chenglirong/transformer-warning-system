@@ -81,38 +81,6 @@
           </div>
         </div>
 
-        <!-- 运行工况(3 gauge)-->
-        <div class="glass rounded-lg p-3 flex flex-col overflow-hidden" style="flex: 0.9">
-          <h3
-            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-          >
-            <span class="flex items-center gap-2">
-              <iconify-icon icon="mdi:gauge"></iconify-icon>
-              运行工况
-            </span>
-            <RouterLink
-              to="/analysis"
-              class="text-[10px] text-gray-500 hover:text-cyan-400"
-              >详情 →</RouterLink
-            >
-          </h3>
-          <div class="flex-1 grid grid-cols-3 gap-1" style="min-height: 0">
-            <div
-              v-for="(g, i) in conditionGauges"
-              :key="i"
-              class="flex flex-col"
-              style="min-height: 0"
-            >
-              <div class="flex-1" style="min-height: 0">
-                <EChart :option="g.option" />
-              </div>
-              <p class="text-[10px] text-gray-500 text-center -mt-1">
-                {{ g.label }}
-              </p>
-            </div>
-          </div>
-        </div>
-
         <!-- 全周期健康/异常分布 -->
         <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-1">
@@ -126,7 +94,7 @@
       </div>
 
       <!-- ========== 中栏:核心趋势(走势与预测)========== -->
-      <!-- ARIMA 趋势预测大图(主角)+ DGA 气体指标卡 -->
+      <!-- ARIMA 趋势预测大图(独占,聚焦趋势)-->
       <div class="col-span-6 flex flex-col gap-3 overflow-hidden">
         <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1.7">
           <h3
@@ -157,77 +125,6 @@
           </h3>
           <div class="w-full" style="height: calc(100% - 28px)">
             <EChart :option="predictOption" />
-          </div>
-        </div>
-
-        <!-- DGA 气体指标卡(当前值 + ARIMA 预测)移入中栏「核心趋势」 -->
-        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
-          <h3
-            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
-          >
-            <span class="flex items-center gap-2 whitespace-nowrap">
-              <iconify-icon icon="mdi:flash-alert"></iconify-icon>
-              DGA 气体指标
-            </span>
-            <div class="metric-tabs">
-              <button
-                v-for="g in metricGases"
-                :key="g.sym"
-                class="metric-tab"
-                :class="{ active: selectedMetric === g.sym }"
-                @click="selectedMetric = g.sym"
-              >
-                {{ g.sym }}
-              </button>
-            </div>
-          </h3>
-          <div class="key-metric-box">
-            <div class="flex items-baseline gap-2">
-              <span
-                class="text-5xl font-bold leading-none"
-                :class="currentMetric.valueClass"
-                >{{ currentMetric.value ?? "—" }}</span
-              >
-              <span class="text-sm text-gray-400">μL/L</span>
-            </div>
-            <div class="mt-3">
-              <!-- 有国标注意值(H₂/C₂H₂/总烃):显距阈值进度条 -->
-              <template v-if="currentMetric.threshold != null">
-                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                  <span>当前 {{ currentMetric.value ?? "—" }}</span>
-                  <span>注意值 {{ currentMetric.threshold }} μL/L</span>
-                </div>
-                <div class="threshold-bar">
-                  <div
-                    class="threshold-fill"
-                    :style="{
-                      width:
-                        Math.min(
-                          ((currentMetric.value || 0) / currentMetric.threshold) * 100,
-                          100,
-                        ) + '%',
-                    }"
-                  ></div>
-                  <div class="threshold-marker" style="left: 100%">
-                    <iconify-icon
-                      icon="mdi:flag"
-                      class="text-red-400"
-                    ></iconify-icon>
-                  </div>
-                </div>
-              </template>
-              <!-- CO/CO₂/单个烃类:国标表3 未设绝对注意值(D-044)-->
-              <p v-else class="text-[10px] text-gray-500">
-                国标 DL/T 722-2014 表3 未设单气体注意值
-              </p>
-              <p class="text-[10px] text-gray-500 mt-1.5">
-                ARIMA 预测 D+3 →
-                <span class="font-bold" :class="currentMetric.predictClass">
-                  {{ currentMetric.predict ?? "—" }} μL/L
-                </span>
-                {{ currentMetric.predictHint }}
-              </p>
-            </div>
           </div>
         </div>
 
@@ -341,6 +238,7 @@ import {
   getOverview,
   getLatest,
   getDetectMethods,
+  getDetectRecent,
   getDashboardForecast,
   getWarningBacktest,
   getDates,
@@ -358,6 +256,7 @@ import { AXIS, TT } from "@/utils/chartDefaults";
 const overview = ref(null);
 const latest = ref(null);
 const detectResult = ref(null);
+const detectRecent = ref(null); // /detect/recent:近N日三方法逐日(孤立森林最新日判定)
 const forecast = ref(null);   // /predict/forecast:30 天历史 + 未来 3 天 ARIMA
 const backtest = ref(null);   // /warning/backtest:真实预警工单 + 四级分布
 const agentRun = ref(null);   // /agent/run:最新一条 Agent ReAct 预跑轨迹
@@ -380,6 +279,11 @@ onMounted(async () => {
     detectResult.value = await getDetectMethods(TRANSFORMER_ID);
   } catch (e) {
     console.warn("[Dashboard] detect 拉取失败", e);
+  }
+  try {
+    detectRecent.value = await getDetectRecent(TRANSFORMER_ID);
+  } catch (e) {
+    console.warn("[Dashboard] detect recent 拉取失败", e);
   }
   try {
     forecast.value = await getDashboardForecast();
@@ -573,77 +477,35 @@ const detection = computed(() => {
   const r = detectResult.value;
   const th = r ? r.methods.threshold.is_abnormal : false;
   const ie = r ? r.methods.iec.is_abnormal : false;
+  // 孤立森林是批量无监督法,单点接口不跑;取 /detect/recent 全量 fit 后最新一日的判定
+  const daily = detectRecent.value ? detectRecent.value.daily : null;
+  const isf = daily && daily.length ? daily[daily.length - 1].iforest : false;
   return [
     { name: "阈值法", icon: "mdi:tune-vertical", ...abnTag(th) },
     { name: "三比值法", icon: "mdi:calculator-variant", ...abnTag(ie) },
-    {
-      name: "孤立森林",
-      icon: "mdi:pine-tree",
-      result: "批量法",
-      resultClass: "text-gray-500",
-      iconClass: "text-gray-500",
-      cls: "neutral",
-    },
+    { name: "孤立森林", icon: "mdi:pine-tree", ...abnTag(isf) },
   ];
 });
 
 const fusionConclusion = computed(() => {
-  const r = detectResult.value;
-  if (!r) return { text: "加载中…", textClass: "text-gray-400", cls: "bg-gray-500/10 border border-gray-500/30" };
-  const { abnormal_count, total, is_abnormal } = r.vote;
-  return is_abnormal
+  // 与检测块同口径:用 /detect/recent 最新日三方法投票(≥2 方法判异常→异常,majority)
+  const daily = detectRecent.value ? detectRecent.value.daily : null;
+  if (!daily || !daily.length)
+    return { text: "加载中…", textClass: "text-gray-400", cls: "bg-gray-500/10 border border-gray-500/30" };
+  const last = daily[daily.length - 1];
+  const n = last.vote_abnormal;        // 0~3 方法判异常
+  const isAbn = last.is_abnormal;      // ≥2 票为异常
+  return isAbn
     ? {
-        text: `异常（${abnormal_count}/${total} 规则触发）`,
+        text: `异常（${n}/3 方法判异常）`,
         textClass: "text-red-300",
         cls: "bg-red-500/10 border border-red-500/30",
       }
     : {
-        text: `正常（${abnormal_count}/${total} 规则触发）`,
+        text: `正常（${n}/3 方法判异常）`,
         textClass: "text-green-300",
         cls: "bg-green-500/10 border border-green-500/30",
       };
-});
-
-// === 工况 4 mini gauge ===
-const buildGauge = (value, max, unit, color) => ({
-  series: [
-    {
-      type: "gauge",
-      center: ["50%", "55%"],
-      radius: "82%",
-      min: 0,
-      max,
-      splitNumber: 4,
-      progress: { show: true, width: 6, itemStyle: { color } },
-      axisLine: { lineStyle: { width: 6, color: [[1, "rgba(75,85,99,.4)"]] } },
-      pointer: { show: false },
-      axisTick: { show: false },
-      splitLine: { show: false },
-      axisLabel: { show: false },
-      title: { show: false },
-      detail: {
-        valueAnimation: true,
-        offsetCenter: [0, "5%"],
-        fontSize: 16,
-        fontWeight: "bold",
-        color,
-        formatter: `{value}${unit}`,
-      },
-      data: [{ value, name: unit }],
-    },
-  ],
-});
-
-// === ④ 工况仪表:接 latest.conditions 真值(油温/负载电流/环温)===
-// 后端只有这 3 个工况字段;原「温升 ℃/h」无数据来源,去掉。
-const conditionGauges = computed(() => {
-  const c = latest.value ? latest.value.conditions : null;
-  const r1 = (x) => (x == null ? 0 : +x.toFixed(1));
-  return [
-    { label: "油温 / 95℃", option: buildGauge(r1(c?.oil_temp), 95, "℃", "#10b981") },
-    { label: "负载电流 / 250A", option: buildGauge(r1(c?.load_current), 250, "A", "#f97316") },
-    { label: "环温 / 45℃", option: buildGauge(r1(c?.ambient_temp), 45, "℃", "#eab308") },
-  ];
 });
 
 // === ⑤ ARIMA 趋势预测大图:接 /predict/forecast 真值(30 天历史 + 未来 3 天)===
@@ -739,16 +601,40 @@ const buildSeries = () => {
 };
 
 const predictOption = computed(() => ({
-  tooltip: { trigger: "axis", ...TT },
+  // tooltip:每个气体只显有值的一行(历史段真实 / 预测段预测;另一半为 null 过滤掉),
+  // 去「(真)/(预)」后缀,避免 14 行里一半是「—」的空行。
+  tooltip: {
+    trigger: "axis",
+    ...TT,
+    formatter: (params) => {
+      if (!params.length) return "";
+      const day = params[0].axisValue;
+      const seen = new Set();
+      const rows = [];
+      for (const p of params) {
+        if (p.value == null) continue;
+        // 接缝日(历史末点 = 预测起点)真实/预测两 series 同值,按气体名去重
+        const gas = p.seriesName.replace(/（[真预]）|\([真预]\)/g, "");
+        if (seen.has(gas)) continue;
+        seen.add(gas);
+        rows.push(`${p.marker}${gas} <b>${(+p.value).toFixed(2)}</b>`);
+      }
+      return `${day}<br/>${rows.join("<br/>")}`;
+    },
+  },
+  // 图例:仅列 7 个气体的「真实」系列(预测系列同色虚线,标题已注明真/预/预测区),
+  // 避免 14 项盖图;底部横排滚动。
   legend: {
+    data: GAS_VIZ.map((g) => `${g.sym}(真)`),
+    formatter: (n) => n.replace("(真)", ""), // 图例去「(真)」后缀,只显气体名
     textStyle: { color: "#9ca3af", fontSize: 9 },
-    top: 0,
-    right: 90,
+    bottom: 0,
     type: "scroll",
-    itemWidth: 10,
+    itemWidth: 12,
     itemHeight: 6,
   },
-  grid: { top: 35, bottom: 30, left: 40, right: 60 },
+  // 上留白容纳双 y 轴顶部数字(不被标题压);下留白让 x 轴日期与图例分两行不重叠
+  grid: { top: 34, bottom: 50, left: 40, right: 60 },
   xAxis: {
     type: "category",
     data: predictXAxis.value,
