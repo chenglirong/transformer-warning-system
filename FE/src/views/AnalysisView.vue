@@ -42,7 +42,7 @@
             <span class="tier-desc">核心地位 · LSTM 预测目标 + 预警核心依据</span>
           </div>
           <span class="text-[10px] text-gray-400">
-            数据采样：每日 1 次 · 当前值取最新一日（{{ latestDate }}）
+            数据采样：每日 1 次 · 当前值取所选日期（{{ latestDate }}）
           </span>
         </div>
         <div class="grid grid-cols-7 gap-2 flex-1" style="min-height: 0">
@@ -146,7 +146,7 @@
           </div>
           <span class="text-[10px] text-yellow-300/70">
             <iconify-icon icon="mdi:information"></iconify-icon>
-            示例规则：油温 &gt; 80 AND 负载 &gt; 1.0 → 橙色预警
+            组合规则 C-01：油温偏高（≥80℃）叠加产气涨幅 ≥ 30% → 橙色预警
           </span>
         </div>
         <div class="grid grid-cols-4 gap-2 flex-1" style="min-height: 0">
@@ -177,6 +177,9 @@
             <div class="flex-1" style="min-height: 0">
               <EChart :option="c.option" />
             </div>
+            <p v-if="c.note" class="text-[9px] text-gray-500 leading-tight mt-0.5">
+              {{ c.note }}
+            </p>
           </div>
         </div>
       </section>
@@ -418,7 +421,7 @@ const rateOption = computed(() => {
         data: vals,
         itemStyle: {
           color: (p) =>
-            p.value >= 20 ? "#ef4444" : p.value >= 15 ? "#f59e0b"
+            p.value >= 20 ? "#ef4444" : p.value >= 8 ? "#f59e0b"
               : p.value >= 0 ? "#10b981" : "#3b82f6",
           borderRadius: [0, 4, 4, 0],
         },
@@ -511,6 +514,9 @@ const conditions = computed(() => {
       alert: oil != null && oil > 95,
       alertClass: "text-red-400",
       option: buildCondTrend(oilHist, "#10b981", 95),
+      // 95℃=油温单指标告警线;C-01 组合规则用 80℃ 协同阈值(不必到告警线,
+      // 偏高即可,叠加产气快才触发)—— 两个数角色不同,故脚注点明,免同屏歧义
+      note: "95℃ 为油温告警线;组合规则 C-01 取 80℃ 协同阈值",
     },
     {
       label: "温升速率(油温日变化)",
