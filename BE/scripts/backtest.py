@@ -163,6 +163,8 @@ def _plot(report: dict) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from scripts._plot_style import apply_chinese_font
+    apply_chinese_font()
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))

@@ -97,6 +97,8 @@ def _plot_confusion(y_true: pd.Series, preds: dict, results: dict) -> None:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        from scripts._plot_style import apply_chinese_font
+        apply_chinese_font()
     except ImportError:
         print("\n  ⚠️  matplotlib 未安装,跳过混淆矩阵图")
         return

@@ -198,6 +198,8 @@ def _plot(target_idx, truth, lstm_pred, arima_pred) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from scripts._plot_style import apply_chinese_font
+    apply_chinese_font()
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(4, 2, figsize=(14, 14))

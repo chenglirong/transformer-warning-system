@@ -258,6 +258,8 @@ def try_plot(header, rows, diagnoses):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        from scripts._plot_style import apply_chinese_font
+        apply_chinese_font()                 # 中文字体,否则标题/标签显示为豆腐块
     except ImportError:
         print("\n  ⚠️  matplotlib 未安装,跳过可视化(装好后重跑此脚本即可生成图)")
         return
@@ -265,12 +267,12 @@ def try_plot(header, rows, diagnoses):
     section("8. 生成可视化")
     FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 8.1 IEC 诊断分布饼图
+    # 8.1 三比值法故障分布饼图(原始 743 行快照的探索性分布)
     counter = Counter(d.fault for d in diagnoses)
     labels, sizes = zip(*counter.most_common())
     fig, ax = plt.subplots(figsize=(10, 7))
     ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=140)
-    ax.set_title("IEC 60599 三比值法自动诊断分布(n=743)")
+    ax.set_title("三比值法(DL/T 722-2014 表7)故障归类分布(原始样本 n=743)")
     plt.tight_layout()
     plt.savefig(FIG_DIR / "iec_distribution.png", dpi=120)
     plt.close()
@@ -285,10 +287,10 @@ def try_plot(header, rows, diagnoses):
         log_vals = [math.log10(v) for v in vals]
         ax.hist(log_vals, bins=40)
         ax.set_title(gas)
-        ax.set_xlabel("log10(ppm)")
+        ax.set_xlabel("log10(μL/L)")
     axes.flatten()[-1].axis("off")
     plt.suptitle("7 种 DGA 气体的对数分布(展示长尾特征)")
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.96])   # 顶部留白,避免 suptitle 被裁
     plt.savefig(FIG_DIR / "gas_log_distribution.png", dpi=120)
     plt.close()
     print(f"  ✅ {FIG_DIR / 'gas_log_distribution.png'}")
