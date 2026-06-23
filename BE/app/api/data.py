@@ -390,6 +390,4 @@ def _load_features(transformer_id: int, on_date: date) -> Optional[dict]:
             "c2h2": num("c2h2_rate_pct"), "co": num("co_rate_pct"),
             "co2": num("co2_rate_pct"),
         },
-        # 温升速率(油温日变化 ℃/d,features.py 已算),前端第3层直接用,不自算
-        "oil_temp_rate": num("oil_temp_rate"),
     }

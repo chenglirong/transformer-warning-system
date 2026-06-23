@@ -38,11 +38,11 @@
         <div class="tier-header tier-1">
           <div class="tier-label">
             <span class="tier-num">第 1 层</span>
-            <span class="tier-title">DGA 七气体（直接检测）</span>
-            <span class="tier-desc">核心地位 · LSTM 预测目标 + 预警核心依据</span>
+            <span class="tier-title">DGA 七气体</span>
+            <span class="tier-desc">系统数据源头</span>
           </div>
           <span class="text-[10px] text-gray-400">
-            数据采样：每日 1 次 · 当前值取所选日期（{{ latestDate }}）
+            当前值取所选日期（{{ latestDate }}）
           </span>
         </div>
         <div class="grid grid-cols-7 gap-2 flex-1" style="min-height: 0">
@@ -80,11 +80,11 @@
         <div class="tier-header tier-2">
           <div class="tier-label">
             <span class="tier-num">第 2 层</span>
-            <span class="tier-title">衍生指标（特征工程计算）</span>
-            <span class="tier-desc">从 DGA 计算得到 · 喂入预警规则</span>
+            <span class="tier-title">衍生指标</span>
+            <span class="tier-desc">特征工程衍生 · 供预警规则使用</span>
           </div>
           <span class="text-[10px] text-gray-400">
-            预测涨幅是预警关键 — 涨得快比当前值高更危险(规则看的就是这个)
+            涨得快比当前值高更危险
           </span>
         </div>
         <div class="grid grid-cols-12 gap-2 flex-1" style="min-height: 0">
@@ -105,7 +105,7 @@
           <div class="col-span-4 flex flex-col gap-2 overflow-hidden">
             <div class="derived-card flex-1 flex flex-col">
               <p class="text-[11px] text-gray-400 mb-1.5">
-                气体特征比值(衍生指标)
+                三比值(衍生指标)
               </p>
               <div class="grid grid-cols-3 gap-1.5 text-center">
                 <div
@@ -118,7 +118,7 @@
                 </div>
               </div>
               <p class="mt-auto text-[9px] text-gray-500 leading-tight">
-                比值为特征工程衍生数值,供模型/规则使用;具体故障判别属诊断范畴,不在本预警系统输出
+                仅数值,供规则使用;故障判别属诊断,不在本系统输出
               </p>
             </div>
           </div>
@@ -126,7 +126,7 @@
           <!-- 7 气体「当前→ARIMA预测第3天」涨幅(预警引擎吃的口径,接 forecast_rate)-->
           <div class="col-span-5 derived-card flex flex-col overflow-hidden">
             <p class="text-[11px] text-gray-400 mb-1">
-              7 气体预测涨幅（当前→未来3天 %）· 红色 ≥ 20% 触发预警
+              7 气体预测涨幅（当前→未来3天 %）· ≥50% 黄 / ≥20% 蓝（预警档)
             </p>
             <div class="flex-1" style="min-height: 0">
               <EChart v-if="rateApplicable" :option="rateOption" />
@@ -150,15 +150,15 @@
         <div class="tier-header tier-3">
           <div class="tier-label">
             <span class="tier-num">第 3 层</span>
-            <span class="tier-title">运行工况（辅助判断）</span>
-            <span class="tier-desc">辅助地位 · 为规则引擎提供上下文,不直接参与 LSTM 预测</span>
+            <span class="tier-title">运行工况</span>
+            <span class="tier-desc">辅助判断 · 为预警规则提供工况上下文</span>
           </div>
           <span class="text-[10px] text-yellow-300/70">
             <iconify-icon icon="mdi:information"></iconify-icon>
             组合规则 C-01：油温偏高（≥80℃）叠加产气涨幅 ≥ 30% → 橙色预警
           </span>
         </div>
-        <div class="grid grid-cols-4 gap-2 flex-1" style="min-height: 0">
+        <div class="grid grid-cols-3 gap-2 flex-1" style="min-height: 0">
           <div
             v-for="c in conditions"
             :key="c.label"
@@ -424,9 +424,10 @@ const rateOption = computed(() => {
         type: "bar",
         data: vals,
         itemStyle: {
+          // 对齐预警引擎档位(rules.yaml 趋势规则):≥50% 黄(yellow级)、
+          // ≥20% 蓝(blue级)、<20% 不触发(中性灰)
           color: (p) =>
-            p.value >= 20 ? "#ef4444" : p.value >= 8 ? "#f59e0b"
-              : p.value >= 0 ? "#10b981" : "#3b82f6",
+            p.value >= 50 ? "#eab308" : p.value >= 20 ? "#3b82f6" : "#6b7280",
           borderRadius: [0, 4, 4, 0],
         },
         label: {
@@ -439,21 +440,15 @@ const rateOption = computed(() => {
         barWidth: 12,
         markLine: {
           symbol: "none",
+          label: {
+            fontSize: 9, position: "end", distance: [0, 2],
+            padding: [1, 3], backgroundColor: "rgba(17,24,39,0.85)", borderRadius: 2,
+          },
           data: [
-            {
-              xAxis: 20,
-              lineStyle: { color: "#ef4444", type: "dashed" },
-              label: {
-                formatter: "20% 预警",
-                color: "#fca5a5",
-                fontSize: 9,
-                position: "end",
-                distance: [0, 2],
-                padding: [1, 3],
-                backgroundColor: "rgba(17,24,39,0.85)",
-                borderRadius: 2,
-              },
-            },
+            { xAxis: 20, lineStyle: { color: "#3b82f6", type: "dashed" },
+              label: { formatter: "20% 蓝", color: "#93c5fd" } },
+            { xAxis: 50, lineStyle: { color: "#eab308", type: "dashed" },
+              label: { formatter: "50% 黄", color: "#fde047" } },
           ],
         },
       },
@@ -513,7 +508,6 @@ const conditions = computed(() => {
   const oil = c?.oil_temp;
   const load = c?.load_current;
   const amb = c?.ambient_temp;
-  const oilRate = snapshot.value?.features?.oil_temp_rate;   // 温升速率取后端(features 已算),不前端自算
   return [
     {
       label: "顶层油温",
@@ -528,22 +522,6 @@ const conditions = computed(() => {
       // 95℃=油温单指标告警线;C-01 组合规则用 80℃ 协同阈值(不必到告警线,
       // 偏高即可,叠加产气快才触发)—— 两个数角色不同,故脚注点明,免同屏歧义
       note: "95℃ 为油温告警线;组合规则 C-01 取 80℃ 协同阈值",
-    },
-    {
-      label: "温升速率(油温日变化)",
-      // 取后端 features.oil_temp_rate(features.py 已算),不前端自算
-      value: fmt(oilRate, 1),
-      unit: "℃/d",
-      threshold: "参考",
-      valueClass: "text-green-400",
-      cls: "ok",
-      alert: false,
-      // 曲线为辅助可视化:整段日差分序列后端未提供,前端按相邻日算(仅趋势,非展示数值)
-      option: buildCondTrend(
-        oilHist.slice(1).map((v, i) => +(v - oilHist[i]).toFixed(2)),
-        "#10b981",
-        null
-      ),
     },
     {
       label: "负载电流",
