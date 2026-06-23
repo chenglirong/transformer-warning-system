@@ -56,9 +56,9 @@ cd FE && npm run dev               # → http://localhost:5173
 
 ## 关键技术约束
 
-- **Python 3.9.6**(macOS 系统自带,第 9 周做 LSTM 时才升级 3.11)。3.9 兼容陷阱见 `docs/06-python-cheatsheet.md`:
-  - 不能用 `str | None`(PEP 604)→ 用 `Optional[str]`
-  - 不能用 `list[str]` 作注解 → 用 `List[str]`
+- **Python 3.11.12**(当前 venv,模块 4 做 LSTM 时由 3.9.6 升级,D-027)。早期代码按 3.9 写、仍兼容,故仍保留下列旧式写法约定(早期文件别为统一去改;新代码可直接用 `str | None` / `list[str]`)。3.9 兼容陷阱见 `docs/06-python-cheatsheet.md`:
+  - 早期用 `Optional[str]` 而非 `str | None`(PEP 604)
+  - 早期用 `List[str]` 而非 `list[str]` 作注解(新代码两者皆可,均靠 `from __future__ import annotations` 兜底)
   - SQLAlchemy `Mapped[date]` 与字段名 `date` 冲突 → `from datetime import date as DateType`
 - **依赖分批装**,别一次性 `pip install -r requirements.txt`(3.9 下慢/易卡)。requirements.txt 内有注释标记延后的包。zsh 下 `'uvicorn[standard]'` 要加引号。
 - **数据库 SQLite**(替代论文写的 MySQL),通过 SQLAlchemy ORM,语法兼容。

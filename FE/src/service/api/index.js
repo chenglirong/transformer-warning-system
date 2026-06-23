@@ -68,9 +68,10 @@ export const getDashboardForecast = () => http.get('/predict/forecast')
 /**
  * 预警引擎历史回测(混淆矩阵 + 指标 + 四级分布 + 全量告警)。
  * 读后端 warning_backtest.json 快照(scripts/backtest.py 落盘)。
- * 守边界:只回 等级/规则编号/规则类型/响应级别/日期,不回故障类型/运维建议/置信度。
+ * 守边界:只回 等级/规则编号/规则类型/响应级别/日期/触发明细,不回故障类型/运维建议/置信度。
  * 返回 { baseline, n_days, confusion, metrics, level_distribution, n_alerts,
- *        alerts:[{date, level, rule_ids, rule_types, response, true_abnormal}] }。
+ *        alerts:[{date, level, rule_ids, rule_types, response, messages, true_abnormal}] }。
+ *        messages:已填入实测/预测数值的逐条触发明细(D-042),工单详情渲染用。
  */
 export const getWarningBacktest = () => http.get('/warning/backtest')
 
