@@ -94,9 +94,9 @@ const route = useRoute();
 // 全局导航项:5 大页面
 const navItems = [
   { to: "/dashboard", label: "总览大屏", icon: "mdi:view-dashboard" },
+  { to: "/analysis", label: "数据分析", icon: "mdi:layers-triple" },
   { to: "/detection", label: "异常检测", icon: "mdi:eye-check" },
   { to: "/prediction", label: "趋势预测", icon: "mdi:chart-line" },
-  { to: "/analysis", label: "数据分析", icon: "mdi:layers-triple" },
   { to: "/alerts", label: "预警处置", icon: "mdi:bell-alert" },
 ];
 

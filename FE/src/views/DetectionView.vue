@@ -444,7 +444,6 @@ const recentDaily = computed(() =>
       threshold: dot(d.threshold),
       ratio: dot(d.iec),
       forest: dot(d.iforest),
-      votes: d.vote_abnormal,
       final: d.is_abnormal ? "异常" : "正常",
       finalTag: d.is_abnormal ? "tag-org" : "tag-grn",
     };
@@ -510,22 +509,6 @@ const thresholds = computed(() => {
   border-radius: 8px;
   padding: 12px;
   position: relative;
-}
-.method-card.highlight {
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.15),
-    inset 0 0 20px rgba(16, 185, 129, 0.08);
-}
-
-
-/* 示意数据标签:右侧明细本周未接真实接口(Y2),待第 8 周联调 */
-.demo-badge {
-  font-size: 9px;
-  font-weight: 500;
-  color: #fcd34d;
-  background: rgba(234, 179, 8, 0.12);
-  border: 1px solid rgba(234, 179, 8, 0.35);
-  padding: 1px 6px;
-  border-radius: 10px;
 }
 
 .metric-mini {

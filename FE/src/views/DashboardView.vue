@@ -128,6 +128,77 @@
           </div>
         </div>
 
+        <!-- DGA 气体指标卡(当前值 + ARIMA 预测),7 气体可切换 -->
+        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1">
+          <h3
+            class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
+          >
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <iconify-icon icon="mdi:flash-alert"></iconify-icon>
+              DGA 气体指标
+            </span>
+            <div class="metric-tabs">
+              <button
+                v-for="g in metricGases"
+                :key="g.sym"
+                class="metric-tab"
+                :class="{ active: selectedMetric === g.sym }"
+                @click="selectedMetric = g.sym"
+              >
+                {{ g.sym }}
+              </button>
+            </div>
+          </h3>
+          <div class="key-metric-box">
+            <div class="flex items-baseline gap-2">
+              <span
+                class="text-5xl font-bold leading-none"
+                :class="currentMetric.valueClass"
+                >{{ currentMetric.value ?? "—" }}</span
+              >
+              <span class="text-sm text-gray-400">μL/L</span>
+            </div>
+            <div class="mt-3">
+              <!-- 有国标注意值(H₂/C₂H₂/总烃):显距阈值进度条 -->
+              <template v-if="currentMetric.threshold != null">
+                <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                  <span>当前 {{ currentMetric.value ?? "—" }}</span>
+                  <span>注意值 {{ currentMetric.threshold }} μL/L</span>
+                </div>
+                <div class="threshold-bar">
+                  <div
+                    class="threshold-fill"
+                    :style="{
+                      width:
+                        Math.min(
+                          ((currentMetric.value || 0) / currentMetric.threshold) * 100,
+                          100,
+                        ) + '%',
+                    }"
+                  ></div>
+                  <div class="threshold-marker" style="left: 100%">
+                    <iconify-icon
+                      icon="mdi:flag"
+                      class="text-red-400"
+                    ></iconify-icon>
+                  </div>
+                </div>
+              </template>
+              <!-- CO/CO₂/单个烃类:国标表3 未设绝对注意值(D-044)-->
+              <p v-else class="text-[10px] text-gray-500">
+                国标 DL/T 722-2014 表3 未设单气体注意值
+              </p>
+              <p class="text-[10px] text-gray-500 mt-1.5">
+                ARIMA 预测 D+3 →
+                <span class="font-bold" :class="currentMetric.predictClass">
+                  {{ currentMetric.predict ?? "—" }} μL/L
+                </span>
+                {{ currentMetric.predictHint }}
+              </p>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- ========== 右栏:预警处置(预警 → 处置动作)========== -->
