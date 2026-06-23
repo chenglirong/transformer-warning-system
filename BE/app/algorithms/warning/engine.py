@@ -190,7 +190,10 @@ def evaluate(
             # 已超标的交给硬/软规则,这里只管「未超标但涨势明显」
             if cur_v > 0 and not _exceeds(last_values, item, thresholds):
                 rise = (fut_v - cur_v) / cur_v
-                if rise >= r["rise_ratio"]:
+                # 半开区间 [rise_ratio, rise_ratio_max):同一气体只命中其所在档
+                # (blue 20~50% / yellow ≥50%),避免一个气体既报 blue 又报 yellow
+                rise_max = r.get("rise_ratio_max")
+                if rise >= r["rise_ratio"] and (rise_max is None or rise < rise_max):
                     triggered.append({
                         "rule_id": r["id"], "rule_type": "soft",
                         "level": r["level"],

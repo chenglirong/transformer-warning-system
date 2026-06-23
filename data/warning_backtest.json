@@ -3,24 +3,24 @@
   "n_days": 330,
   "confusion": {
     "tp": 52,
-    "tn": 67,
-    "fp": 183,
+    "tn": 64,
+    "fp": 186,
     "fn": 28
   },
   "metrics": {
-    "accuracy": 0.3606,
-    "precision": 0.2213,
+    "accuracy": 0.3515,
+    "precision": 0.2185,
     "recall": 0.65,
-    "f1": 0.3302,
-    "fpr": 0.732
+    "f1": 0.327,
+    "fpr": 0.744
   },
   "level_distribution": {
     "red": 77,
     "orange": 15,
     "yellow": 143,
-    "blue": 0
+    "blue": 3
   },
-  "n_alerts": 235,
+  "n_alerts": 238,
   "alerts": [
     {
       "date": "2024-05-02",
@@ -663,6 +663,25 @@
       "true_abnormal": true
     },
     {
+      "date": "2024-07-01",
+      "level": "blue",
+      "rule_ids": [
+        "T-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-04",
+          "level": "blue",
+          "message": "总烃 3 天内预计轻微上升 32%(52.8→69.7 μL/L),建议日常关注"
+        }
+      ],
+      "response": "日常关注",
+      "true_abnormal": false
+    },
+    {
       "date": "2024-07-05",
       "level": "yellow",
       "rule_ids": [
@@ -680,6 +699,25 @@
       ],
       "response": "加强监测",
       "true_abnormal": true
+    },
+    {
+      "date": "2024-07-20",
+      "level": "blue",
+      "rule_ids": [
+        "T-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-04",
+          "level": "blue",
+          "message": "总烃 3 天内预计轻微上升 31%(72.4→94.7 μL/L),建议日常关注"
+        }
+      ],
+      "response": "日常关注",
+      "true_abnormal": false
     },
     {
       "date": "2024-07-22",
@@ -1027,6 +1065,25 @@
         }
       ],
       "response": "加强监测",
+      "true_abnormal": false
+    },
+    {
+      "date": "2024-08-14",
+      "level": "blue",
+      "rule_ids": [
+        "T-04"
+      ],
+      "rule_types": [
+        "soft"
+      ],
+      "messages": [
+        {
+          "rule_id": "T-04",
+          "level": "blue",
+          "message": "总烃 3 天内预计轻微上升 39%(53.9→75.2 μL/L),建议日常关注"
+        }
+      ],
+      "response": "日常关注",
       "true_abnormal": false
     },
     {

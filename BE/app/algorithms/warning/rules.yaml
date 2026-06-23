@@ -71,20 +71,38 @@ soft_rules:
     horizon_days: 3
     message: "总烃预测第 {day} 天达 {pred} μL/L,超国标注意值 {limit} μL/L"
 
-# 趋势规则:未到超标,但近期涨势明显 → 黄色(加强监测)
-# 以「相对当前值的涨幅比例」衡量,避免对不同气体写死绝对涨速
+# 趋势规则:未到超标,但近期涨势明显 → 按涨幅分档(蓝/黄)
+# 以「相对当前值的涨幅比例」衡量,避免对不同气体写死绝对涨速。
+# 分两档,同一气体只命中其所在区间(engine 用 [rise_ratio, rise_ratio_max) 半开区间):
+#   涨幅 [20%, 50%) → blue 提示「轻微波动」;涨幅 ≥ 50% → yellow「加强监测」
 # message 模板占位符:{rise_pct} 预测涨幅%  {cur} 当前值  {fut} 预测末日值(μL/L)
 trend_rules:
+  # 黄色档:涨幅 ≥ 50%(无上限)
   - id: T-01
     item: c2h2
     rise_ratio: 0.5       # 预测 3 天涨幅 ≥ 当前值 50% → 趋势异常
+    rise_ratio_max: null  # 无上限
     level: yellow
     message: "C₂H₂ 3 天内预计上升 {rise_pct}%({cur}→{fut} μL/L)"
   - id: T-02
     item: total_hydrocarbon
     rise_ratio: 0.5
+    rise_ratio_max: null
     level: yellow
     message: "总烃 3 天内预计上升 {rise_pct}%({cur}→{fut} μL/L)"
+  # 蓝色档:涨幅 [20%, 50%)——轻微上升趋势,仅日常关注(最低预警级)
+  - id: T-03
+    item: c2h2
+    rise_ratio: 0.2       # 涨幅 ≥ 20% 且 < 50% → 轻微波动
+    rise_ratio_max: 0.5
+    level: blue
+    message: "C₂H₂ 3 天内预计轻微上升 {rise_pct}%({cur}→{fut} μL/L),建议日常关注"
+  - id: T-04
+    item: total_hydrocarbon
+    rise_ratio: 0.2
+    rise_ratio_max: 0.5
+    level: blue
+    message: "总烃 3 天内预计轻微上升 {rise_pct}%({cur}→{fut} μL/L),建议日常关注"
 
 # 组合规则:多指标关联 → 综合预警
 # message 模板占位符:{gas} 命中的气体名  {rise_pct} 该气体预测涨幅%  {oil_temp} 当前油温℃

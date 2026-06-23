@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-06-23 预警四级补齐蓝色档(blue 原恒空)+ EDA 图字体/口径修复(D-045)
+
+### D-045:趋势规则拆「蓝/黄」两档让 blue 可触发;统一脚本中文字体 + EDA 图正名 DL/T 722/μL/L
+
+- **触发**:全栈巡检暴露两类产物层遗留——① 预警四级分布里 blue 恒为 0(评委会问「为什么蓝色没数据」);② notebooks/figures 的 EDA 图中文全渲染成豆腐块,且标题/轴残留 D-044 前旧口径(IEC 60599 / ppm)。D-044 全栈对齐时漏了绘图脚本这一层。
+- **blue 恒空根因**:rules.yaml 三类规则产出 red/orange/yellow,**无任何规则的 level 是 blue**——blue 只在 levels 元信息里定义、却没有判据实现它,故设计上就触发不了(非数据巧合)。
+- **决策(用户选 A:让 blue 真正可触发,而非据实保留空档)**:趋势规则按涨幅拆两档,补上原先无人覆盖的「轻微上升」区间——
+  1. T-01/T-02 保持「涨幅 ≥ 50% → yellow」,加 `rise_ratio_max: null`(无上限);
+  2. 新增 T-03/T-04「涨幅 [20%, 50%) → blue 轻微波动,日常关注」;
+  3. engine 趋势循环改用半开区间 `[rise_ratio, rise_ratio_max)`,保证同一气体只命中其所在档(涨 60% 只报 yellow 不重复报 blue)。
+- **指标影响(选 A 的预期代价,如实记)**:重跑 backtest 后 **误报率 73.2%→74.4%**(blue 的 3 条全落 FP:轻微波动非真异常),召回 0.65 不变、F1 0.330→0.327;混淆 TP52/FP183/FN28/TN67 → TP52/**FP186**/FN28/**TN64**(原 3 个 TN 转为 blue 的 FP),自洽可解释;level_distribution red77/orange15/yellow143/**blue3**;n_alerts 235→238。blue 3 条均为 T-04(总烃轻微上升 31~39%),message 据实带数值、守边界无故障类型。
+- **EDA 图修复(产物层,与 D-044 口径对齐)**:新建 `BE/scripts/_plot_style.py` 共享中文字体配置(Arial Unicode MS 首选 + 备选链 + 关 unicode_minus),4 个绘图脚本统一调用;`eda.py` 图标题「IEC 60599 三比值法」→「三比值法(DL/T 722-2014 表7)故障归类分布」、轴 `log10(ppm)`→`log10(μL/L)`、suptitle 加顶部留白(原被裁)。n=743 保留(原始数据探索,非过期)。5 张图全部重生成。
+- **核验**:engine 冒烟「涨30%→blue/涨60%→yellow」分档正确;`pytest tests/test_warning.py` 20 passed 无回归;backtest 指标读 json 亲核(level_distribution blue=3、fpr=0.744);`labeled_iec.csv` 重跑后 md5 与备份一致(ground truth 未变);FE build 通过(blue 自动显示无需改码)。
+- **守边界 D-008**:blue 规则 message 只讲「哪个气体/涨多少/前后值/日常关注」,零故障类型词。
+- **待同步**:`docs/07`/`论文梳理`/`dev-plan` 误报率 73.2%→74.4%(连带混淆矩阵 FP/TN、n_alerts);四级分级叙事补「blue 可触发」。
+
+---
+
 ## 2026-06-18 三比值法对齐 DL/T 722-2014(表6编码+表7判断) + CO/CO₂ 改比值法 + 打标改表3二分 + 全链路重跑(D-044)
 
 ### D-044:三比值法故障归类 IEC→DL/T 722-2014 表7(方法整体为表6编码+表7判断)全栈对齐;CO/CO₂ 改 §10.2.3.1 比值判据;ground truth 打标改「表3二分+表7细分」;全数据重新合成+全模块重跑
