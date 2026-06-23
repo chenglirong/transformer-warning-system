@@ -14,7 +14,7 @@
 | 前端联调 | ✅ | vite proxy + `api/data.py`(已守系统边界,只回 is_abnormal) |
 | 模块 3 检测 | ✅ | 三方法齐全 + `compare_detection.py` + 混淆矩阵图 + 后端 `/api/detect/*`(D-020/021);DetectionView 全接真(D-039:三方法投票表/删PCA/补CO₂/判定取后端/三比值方法论说明)|
 | 模块 4 预测 | ✅ | `predict/` + `train_lstm.py`/`compare_predict.py` + `test_predict.py`(14 用例)+ `/api/predict/compare` + PredictionView 接真。实测 ARIMA 优于 LSTM(D-027~031;D-044 新数据重跑:ARIMA 胜 6/7,MAE 148 vs 160)|
-| 模块 5 决策 | ✅ | `warning/`(rules.yaml/engine/dedup)+ `test_warning.py`(20 用例)+ `backtest.py` + `/api/warning/backtest` + AlertsView 工单工作台(D-032~035)。误报率 74.4%(D-045 补 blue 档;D-044 全链路重跑为 73.2%;CO/CO₂ 改 §10.2.3.1 比值法 C-02);残余误判为早期/轻微异常边界样本(D-044);四级分级 blue 档由趋势规则 T-03/T-04 触发(D-045)|
+| 模块 5 决策 | ✅ | `warning/`(rules.yaml/engine/dedup)+ `test_warning.py`(20 用例)+ `backtest.py` + `/api/warning/backtest` + AlertsView 工单工作台(D-032~035)。误报率 52.0%(D-046 产气速率门槛锚定国标§9.3.2总烃判据;演进 D-044 73.2%→D-045 补blue档 74.4%→D-046 52.0%;CO/CO₂ 改 §10.2.3.1 比值法 C-02);四级分级 blue 档由趋势规则 T-03/T-04 触发(D-045);第2层产气速率展示预警预测涨幅口径(D-046)|
 | 模块 6 Agent | ✅ | `agent/`(tools 4工具/prompt ReAct 5步/runner 执行+降级)+ `/api/agent/run` + `run_agent_demo.py` 预跑落盘 7 条 + AlertsView 工单轨迹/通知接真(D-041,提前至第7周)。ReAct 跑通约13s;边界双保险(Prompt+黑名单)实测捕获过 LLM 越界 |
 | 模块 7 大屏 | ✅ | Dashboard/Detection 接真(D-022/023/025);Prediction 据实改形接真(D-031:ARIMA 胜);Alerts 预警工单工作台(D-035:全量228条+分页+筛选/排序/搜索;详情拆预警信息+`AgentTrace.vue`[ReAct三要素,模块6接真]+AI通知示意块D-037);**Analysis 据实重做「三层数据体系」(D-038:回归原始意图非评测页;删 IEC 故障码越界块;第1层七气体+第2层特征工程(总烃/产气速率/三比值,补展示缺口)+第3层工况全接真;后端F1扩 `/data/latest` 加 features;摘规划中横幅)**;**模块7 全页接真闭环,无规划中横幅**(仅 Agent 轨迹/AI通知挂示意标待模块6) |
 
@@ -112,7 +112,7 @@
 | 四级分级(红橙黄蓝) | 同上(LEVEL_ORDER 取最高) | ✅ B1(D-032) |
 | 误报控制:连续 N 次触发 + 24h 去重 | `algorithms/warning/dedup.py` | ✅ B1(D-032) |
 | 算法层单元测试 | `tests/test_warning.py`(17 用例) | ✅ B1(D-032) |
-| 历史回测(360 天合成时序) | `scripts/backtest.py` + `warning_backtest.json` + 图 | ✅ B2(D-033;D-044 重跑误报率 73.2%/召回 0.65,残余为早期异常边界样本;D-045 补 blue 档后 74.4%)|
+| 历史回测(360 天合成时序) | `scripts/backtest.py` + `warning_backtest.json` + 图 | ✅ B2(D-033;误报率演进 D-044 73.2%→D-045 补blue档 74.4%→**D-046 产气速率门槛锚定国标§9.3.2后 52.0%**/召回0.64/F1 0.39,挡掉低浓度涨幅伪触发)|
 | AlertsView 对接 | `/api/warning/backtest` + 接真 + 摘横幅 | ✅ C(D-034,工单接真+清越界+Agent标规划中)|
 
 **🎯 回测基准**(D-033 修订):原始快照无时间维,无法回测时序预警。改用 **360 天合成时序**,以**合成真值 `fault_state`** 算 TP/FP/FN(与检测模块 D-020 同一基准)→ 论文素材。当日对齐口径;软规则预测源 ARIMA(D-032)。CO/CO₂ 不再设绝对硬规则,改 §10.2.3.1 CO₂/CO 比值组合判据(D-044)。
