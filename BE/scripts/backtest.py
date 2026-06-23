@@ -65,6 +65,9 @@ def main() -> None:
     tp = tn = fp = fn = 0
     level_dist = {"red": 0, "orange": 0, "yellow": 0, "blue": 0}
     records = []
+    # 逐日「当前→预测第3天」7 气体涨幅%(预警引擎吃的口径,见 engine 趋势/组合规则),
+    # 供 AnalysisView 第2层据实展示「预警输入」而非历史环比。当前已在算 fc,顺手落盘。
+    daily_forecast_rate: Dict[str, dict] = {}
     for k, t in enumerate(target_idx):
         row = df.iloc[t]
         current = {c: float(row[c]) for c in FEATURE_COLS}
@@ -72,6 +75,19 @@ def main() -> None:
         hist = df.iloc[:t]                                 # 截至 t-1 全量真值
         fc = forecast_arima(hist, steps=FORECAST_STEPS)    # ARIMA 未来 3 天
         res = engine.evaluate(current, oil_temp=oil_temp, forecast_df=fc, rules=rules)
+
+        # 「当前→预测第3天」涨幅%(与 engine 趋势规则同口径 (fut-cur)/cur)。
+        # 适用门槛:当日总烃 ≥ 10 μL/L(§9.3.2「总烃起始含量低不宜用相对产气速率」,
+        # 见 engine._rate_applicable);不达标则整天所有气体涨幅记 None(低基数下
+        # 百分比爆表失真,如 C₂H₄ 0.86→18=+2106%),与引擎判定口径一致。
+        fut = fc.iloc[-1]
+        total_hc = current["ch4"] + current["c2h4"] + current["c2h6"] + current["c2h2"]
+        rate_ok = engine._rate_applicable(total_hc)
+        daily_forecast_rate[str(row["date"])] = {
+            c: (round((float(fut[c]) - current[c]) / current[c] * 100, 1)
+                if rate_ok and current[c] > 0 else None)
+            for c in FEATURE_COLS
+        }
 
         # 持续性过滤:更新每条规则命中历史,只保留「连续 N 次」通过的规则
         hit_ids = {x["rule_id"] for x in res["triggered"]}
@@ -145,6 +161,8 @@ def main() -> None:
         "level_distribution": level_dist,
         "n_alerts": len(records),
         "alerts": records,                  # 全量触发记录(前端分页),时间升序
+        # 逐日「当前→预测第3天」7气体涨幅%(AnalysisView 第2层预警输入口径)
+        "daily_forecast_rate": daily_forecast_rate,
     }
     REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
     with open(REPORT_JSON, "w", encoding="utf-8") as f:

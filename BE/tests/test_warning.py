@@ -75,18 +75,18 @@ class TestEngine:
         assert soft[0]["level"] == "orange"   # 第 3 天超 → orange
 
     def test_trend_rule_yellow(self):
-        """C₂H₂ 0.5→2(涨 3 倍 ≥ 50%)但未超标 5 → 趋势规则 T-01 黄色。"""
-        fc = _forecast([{"c2h2": 1}, {"c2h2": 1.5}, {"c2h2": 2}])
-        res = engine.evaluate(_gases(c2h2=0.5), forecast_df=fc)
+        """C₂H₂ 2→3.5(涨 75% ≥ 50%)、达门槛(≥1)、未超标 5 → 趋势规则 T-01 黄色。"""
+        fc = _forecast([{"c2h2": 2.5}, {"c2h2": 3}, {"c2h2": 3.5}])
+        res = engine.evaluate(_gases(c2h2=2), forecast_df=fc)
         ids = [t["rule_id"] for t in res["triggered"]]
         assert "T-01" in ids
         t01 = next(t for t in res["triggered"] if t["rule_id"] == "T-01")
         assert t01["level"] == "yellow"
 
     def test_combo_rule_gas_rise_and_hot_oil(self):
-        """C₂H₂ 涨 ≥30% + 油温 85 ≥ 80 → 组合规则 C-01 橙色。"""
-        fc = _forecast([{"c2h2": 0.6}, {"c2h2": 0.7}, {"c2h2": 0.8}])
-        res = engine.evaluate(_gases(c2h2=0.5), oil_temp=85, forecast_df=fc)
+        """C₂H₂ 2→2.7(涨 35% ≥ 30%)、达门槛(≥1)+ 油温 85 ≥ 80 → 组合规则 C-01 橙色。"""
+        fc = _forecast([{"c2h2": 2.3}, {"c2h2": 2.5}, {"c2h2": 2.7}])
+        res = engine.evaluate(_gases(c2h2=2), oil_temp=85, forecast_df=fc)
         ids = [t["rule_id"] for t in res["triggered"]]
         assert "C-01" in ids
         c01 = next(t for t in res["triggered"] if t["rule_id"] == "C-01")
@@ -124,8 +124,8 @@ class TestEngine:
 
     def test_level_takes_highest(self):
         """同时触发 yellow(趋势)+ red(硬)→ 综合等级取最高 red。"""
-        fc = _forecast([{"c2h2": 1}, {"c2h2": 1.5}, {"c2h2": 2}])
-        res = engine.evaluate(_gases(h2=200), forecast_df=fc)   # h2 超标 red
+        fc = _forecast([{"c2h2": 2.5}, {"c2h2": 3}, {"c2h2": 3.5}])
+        res = engine.evaluate(_gases(h2=200, c2h2=2), forecast_df=fc)   # h2 超标 red
         assert res["level"] == "red"
         levels = {t["level"] for t in res["triggered"]}
         assert "red" in levels and "yellow" in levels

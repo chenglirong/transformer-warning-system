@@ -65,9 +65,8 @@
             <p class="text-2xl font-bold mt-1" :class="g.valueClass">
               {{ g.value }}<span class="text-[10px] ml-0.5 text-gray-500">μL/L</span>
             </p>
-            <div class="flex items-center justify-between text-[10px]">
+            <div class="flex items-center text-[10px]">
               <span class="text-gray-500">{{ g.thresholdLabel }}</span>
-              <span :class="g.trendClass">{{ g.trend }}</span>
             </div>
             <div class="flex-1 mt-1" style="min-height: 0">
               <EChart :option="g.sparkOption" />
@@ -85,7 +84,7 @@
             <span class="tier-desc">从 DGA 计算得到 · 喂入预警规则</span>
           </div>
           <span class="text-[10px] text-gray-400">
-            产气速率、气体比值是预警关键 — 涨得快比当前值高更危险
+            预测涨幅是预警关键 — 涨得快比当前值高更危险(规则看的就是这个)
           </span>
         </div>
         <div class="grid grid-cols-12 gap-2 flex-1" style="min-height: 0">
@@ -97,7 +96,7 @@
                 {{ totalHC.value }}<span class="text-xs ml-1 text-gray-400">μL/L</span>
               </p>
               <p class="text-[10px]" :class="totalHC.rateClass">
-                7d {{ totalHC.rate }} · 注意值 150
+                日环比 {{ totalHC.rate }} · 注意值 150
               </p>
             </div>
           </div>
@@ -124,13 +123,23 @@
             </div>
           </div>
 
-          <!-- 7 气体 72h 产气速率 -->
+          <!-- 7 气体「当前→ARIMA预测第3天」涨幅(预警引擎吃的口径,接 forecast_rate)-->
           <div class="col-span-5 derived-card flex flex-col overflow-hidden">
             <p class="text-[11px] text-gray-400 mb-1">
-              7 气体 72h 产气速率（%）· 红色 ≥ 20% 触发预警
+              7 气体预测涨幅（当前→未来3天 %）· 红色 ≥ 20% 触发预警
             </p>
             <div class="flex-1" style="min-height: 0">
-              <EChart :option="rateOption" />
+              <EChart v-if="rateApplicable" :option="rateOption" />
+              <div
+                v-else
+                class="h-full flex items-center justify-center text-center px-3"
+              >
+                <p class="text-[10px] text-gray-500 leading-relaxed">
+                  当日总烃 &lt; 10 μL/L,低于国标产气速率判据下限<br />
+                  (DL/T 722-2014 §9.3.2:起始含量很低不宜用相对产气速率)<br />
+                  <span class="text-gray-600">产气速率不适用,不作预警判据</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -279,12 +288,12 @@ const GAS_META = [
   { key: "co2", sym: "CO₂", zh: "二氧化碳", color: "#f472b6", attn: null },
 ];
 
-const buildSpark = (data, color, threshold) => ({
+const buildSpark = (data, color, threshold, dates = []) => ({
   tooltip: { ...TT, trigger: "axis" },
   grid: { top: 4, bottom: 16, left: 4, right: 4 },
   xAxis: {
     type: "category",
-    data: data.map((_, i) => `D-${data.length - 1 - i}`),
+    data: dates.length ? dates : data.map((_, i) => `D-${data.length - 1 - i}`),
     show: false,
   },
   yAxis: { type: "value", show: false, max: threshold ? threshold : null },
@@ -321,23 +330,13 @@ const buildSpark = (data, color, threshold) => ({
 const gases = computed(() =>
   GAS_META.map((m) => {
     const g = snapshot.value?.gases;
-    const hist = series.value.map((d) => d[m.key]).filter((v) => v != null);
+    // 曲线数据与真实日期对齐(同一组 series,不各自 filter 以免错位)
+    const pts = series.value
+      .map((d) => ({ date: d.date, val: d[m.key] }))
+      .filter((p) => p.val != null);
+    const hist = pts.map((p) => p.val);
+    const dates = pts.map((p) => p.date);
     const cur = g?.[m.key];
-    // 近 7 天涨幅:用 series 头尾(无足够历史则不显)
-    let trend = "";
-    let trendClass = "text-gray-500";
-    if (hist.length >= 8) {
-      const prev = hist[hist.length - 8];
-      const last = hist[hist.length - 1];
-      if (prev > 0) {
-        const pct = ((last - prev) / prev) * 100;
-        const s = pct >= 0 ? "↑" : "↓";
-        trend = `7d ${s} ${Math.abs(pct).toFixed(0)}%`;
-        trendClass =
-          pct >= 20 ? "text-red-400" : pct >= 8 ? "text-orange-400"
-            : pct >= 0 ? "text-yellow-400" : "text-green-400";
-      }
-    }
     // 超国标注意值则标警(仅有注意值的气体)
     const over = m.attn != null && cur != null && cur > m.attn;
     return {
@@ -345,13 +344,11 @@ const gases = computed(() =>
       zh: m.zh,
       value: cur != null ? cur.toFixed(cur < 10 ? 2 : 1) : "—",
       thresholdLabel: m.attn != null ? `/ ${m.attn}${over ? " ⚠" : ""}` : "无注意值",
-      trend,
-      trendClass,
       valueClass: over ? "text-red-400" : "text-gray-100",
       cls: over ? "danger" : "",
       alert: over,
       alertClass: "text-red-400",
-      sparkOption: buildSpark(hist, m.color, m.attn),
+      sparkOption: buildSpark(hist, m.color, m.attn, dates),
     };
   })
 );
@@ -387,19 +384,26 @@ const ratios = computed(() => {
   ];
 });
 
-// 7 气体 72h 产气速率(%),接 features.gas_rate_pct 真值
+// 7 气体「当前→ARIMA预测第3天」涨幅%——预警引擎趋势/组合规则吃的口径
+// (engine (fut-cur)/cur 同款),接 features.forecast_rate 真值。当前值≤0 的气体后端记 null
 const RATE_ORDER = [
   { key: "co2", sym: "CO₂" }, { key: "co", sym: "CO" },
   { key: "c2h2", sym: "C₂H₂" }, { key: "c2h4", sym: "C₂H₄" },
   { key: "c2h6", sym: "C₂H₆" }, { key: "ch4", sym: "CH₄" },
   { key: "h2", sym: "H₂" },
 ];
+// 产气速率判据是否适用:后端总烃 <10μL/L(§9.3.2)时整组 forecast_rate 为 null。
+// 全 null → 当日产气速率不适用,模板显占位而非一排 0% 伪柱。
+const rateApplicable = computed(() => {
+  const gr = snapshot.value?.features?.forecast_rate;
+  return !!gr && Object.values(gr).some((v) => v != null);
+});
 const rateOption = computed(() => {
-  const gr = snapshot.value?.features?.gas_rate_pct ?? {};
+  const gr = snapshot.value?.features?.forecast_rate ?? {};
   const cats = RATE_ORDER.map((r) => r.sym);
   const vals = RATE_ORDER.map((r) => {
     const v = gr[r.key];
-    return v == null ? 0 : +v.toFixed(1);
+    return v == null ? 0 : +v.toFixed(1);   // null=当前值≤0 或总烃不达标,显 0
   });
   return {
     tooltip: { trigger: "axis", ...TT },
@@ -458,10 +462,14 @@ const rateOption = computed(() => {
 });
 
 // ============ 第 3 层:运行工况 ============
-const buildCondTrend = (data, color, threshold) => ({
+const buildCondTrend = (data, color, threshold, dates = []) => ({
   tooltip: { ...TT, trigger: "axis" },
   grid: { top: 4, bottom: 16, left: 4, right: 4 },
-  xAxis: { type: "category", data: data.map((_, i) => i), show: false },
+  xAxis: {
+    type: "category",
+    data: dates.length ? dates : data.map((_, i) => i),
+    show: false,
+  },
   yAxis: { type: "value", show: false, max: threshold ? threshold * 1.1 : null },
   series: [
     {
@@ -496,6 +504,8 @@ const buildCondTrend = (data, color, threshold) => ({
 // 工况口径:油温注意 95℃、负载额定 250A、环温参考 40℃(承 Dashboard/合成器口径)
 const conditions = computed(() => {
   const c = snapshot.value?.conditions;
+  // 工况曲线与真实日期对齐(同一组 series,不各自 filter 以免与日期错位)
+  const dates = series.value.map((d) => d.date);
   const oilHist = series.value.map((d) => d.oil_temp).filter((v) => v != null);
   const loadHist = series.value.map((d) => d.load_current).filter((v) => v != null);
   const ambHist = series.value.map((d) => d.ambient_temp).filter((v) => v != null);
@@ -503,6 +513,7 @@ const conditions = computed(() => {
   const oil = c?.oil_temp;
   const load = c?.load_current;
   const amb = c?.ambient_temp;
+  const oilRate = snapshot.value?.features?.oil_temp_rate;   // 温升速率取后端(features 已算),不前端自算
   return [
     {
       label: "顶层油温",
@@ -513,19 +524,21 @@ const conditions = computed(() => {
       cls: oil != null && oil > 95 ? "warn" : "ok",
       alert: oil != null && oil > 95,
       alertClass: "text-red-400",
-      option: buildCondTrend(oilHist, "#10b981", 95),
+      option: buildCondTrend(oilHist, "#10b981", 95, dates),
       // 95℃=油温单指标告警线;C-01 组合规则用 80℃ 协同阈值(不必到告警线,
       // 偏高即可,叠加产气快才触发)—— 两个数角色不同,故脚注点明,免同屏歧义
       note: "95℃ 为油温告警线;组合规则 C-01 取 80℃ 协同阈值",
     },
     {
       label: "温升速率(油温日变化)",
-      value: oilHist.length >= 2 ? fmt(oilHist[oilHist.length - 1] - oilHist[oilHist.length - 2], 1) : "—",
+      // 取后端 features.oil_temp_rate(features.py 已算),不前端自算
+      value: fmt(oilRate, 1),
       unit: "℃/d",
       threshold: "参考",
       valueClass: "text-green-400",
       cls: "ok",
       alert: false,
+      // 曲线为辅助可视化:整段日差分序列后端未提供,前端按相邻日算(仅趋势,非展示数值)
       option: buildCondTrend(
         oilHist.slice(1).map((v, i) => +(v - oilHist[i]).toFixed(2)),
         "#10b981",
@@ -541,7 +554,7 @@ const conditions = computed(() => {
       cls: load != null && load > 250 ? "warn" : "ok",
       alert: load != null && load > 250,
       alertClass: "text-orange-400",
-      option: buildCondTrend(loadHist, "#f97316", 250),
+      option: buildCondTrend(loadHist, "#f97316", 250, dates),
     },
     {
       label: "环境温度",
@@ -552,7 +565,7 @@ const conditions = computed(() => {
       cls: amb != null && amb > 40 ? "warn" : "ok",
       alert: amb != null && amb > 40,
       alertClass: "text-yellow-400",
-      option: buildCondTrend(ambHist, "#eab308", 40),
+      option: buildCondTrend(ambHist, "#eab308", 40, dates),
     },
   ];
 });

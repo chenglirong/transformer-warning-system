@@ -26,6 +26,32 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 # 第2层衍生指标(特征工程)源:scripts/build_features.py 落盘的根 data/
 # 衍生特征不进 Monitoring 表(表只存原始气体+工况),按需从特征快照读
 FEATURED_CSV = BE_DIR.parent / "data" / "featured_timeseries.csv"
+# 逐日「当前→预测第3天」涨幅(预警引擎输入口径)源:scripts/backtest.py 落盘
+BACKTEST_JSON = BE_DIR.parent / "data" / "warning_backtest.json"
+# 缓存 daily_forecast_rate + 落盘文件 mtime;backtest 重跑(json 更新)后自动失效,
+# 无需重启服务(避免「重跑数据后前端仍读旧值」的坑)
+_FORECAST_RATE_CACHE: Optional[dict] = None
+_FORECAST_RATE_MTIME: float = 0.0
+
+
+def _load_forecast_rate(on_date: date) -> Optional[dict]:
+    """读某日「当前→ARIMA预测第3天」7气体涨幅%(预警引擎趋势/组合规则吃的口径)。
+
+    来源 warning_backtest.json 的 daily_forecast_rate(backtest 逐日预跑落盘,
+    与 engine 同口径 (fut-cur)/cur)。文件/当日缺失返回 None,前端回退不杜撰。
+    回测目标日从第 lookback 天起,故最早 lookback 天无预测涨幅(据实 None)。
+    缓存按文件 mtime 失效:json 更新后下次请求自动重读。
+    """
+    global _FORECAST_RATE_CACHE, _FORECAST_RATE_MTIME
+    if not BACKTEST_JSON.exists():
+        return None
+    mtime = BACKTEST_JSON.stat().st_mtime
+    if _FORECAST_RATE_CACHE is None or mtime != _FORECAST_RATE_MTIME:
+        import json
+        with open(BACKTEST_JSON, encoding="utf-8") as f:
+            _FORECAST_RATE_CACHE = json.load(f).get("daily_forecast_rate", {})
+        _FORECAST_RATE_MTIME = mtime
+    return _FORECAST_RATE_CACHE.get(on_date.isoformat())
 
 
 # ---------- 变压器列表 ----------
@@ -239,8 +265,13 @@ def _serialize_row(row: Monitoring) -> dict:
     """把一条监测记录序列化为三层数据快照(气体 + 工况 + 第2层衍生特征)。
 
     边界:只暴露二分类 is_abnormal,不暴露具体 IEC 故障类型;
-    第2层衍生特征(总烃/三比值/产气速率)取与本条同日,三比值仅数值。
+    第2层衍生特征(总烃/三比值)取与本条同日,三比值仅数值;
+    forecast_rate = 当日「当前→预测第3天」涨幅%(预警引擎吃的口径,backtest 落盘)。
     """
+    features = _load_features(row.transformer_id, row.date)
+    # 注入「预警输入」口径的预测涨幅(第2层据实展示预警真正用的涨幅,非历史环比)
+    if features is not None:
+        features["forecast_rate"] = _load_forecast_rate(row.date)
     return {
         "transformer_id": row.transformer_id,
         "date": row.date.isoformat(),
@@ -253,7 +284,7 @@ def _serialize_row(row: Monitoring) -> dict:
             "load_current": row.load_current,
             "ambient_temp": row.ambient_temp,
         },
-        "features": _load_features(row.transformer_id, row.date),
+        "features": features,
         "is_abnormal": row.fault_state != "Normal",
     }
 
@@ -352,11 +383,13 @@ def _load_features(transformer_id: int, on_date: date) -> Optional[dict]:
             "c2h2_c2h4": num("ratio_c2h2_c2h4"),
             "c2h4_c2h6": num("ratio_c2h4_c2h6"),
         },
-        # 七气体 72h 产气速率(%),前端 ≥20% 标预警
+        # 七气体日产气速率(相对前一日的环比%),前端 ≥20% 标预警
         "gas_rate_pct": {
             "h2": num("h2_rate_pct"), "ch4": num("ch4_rate_pct"),
             "c2h4": num("c2h4_rate_pct"), "c2h6": num("c2h6_rate_pct"),
             "c2h2": num("c2h2_rate_pct"), "co": num("co_rate_pct"),
             "co2": num("co2_rate_pct"),
         },
+        # 温升速率(油温日变化 ℃/d,features.py 已算),前端第3层直接用,不自算
+        "oil_temp_rate": num("oil_temp_rate"),
     }

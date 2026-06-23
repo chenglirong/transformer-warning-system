@@ -38,6 +38,21 @@ RULES_PATH = Path(__file__).resolve().parent / "rules.yaml"
 # 等级排序(取最高级用),数字越大越紧急
 LEVEL_ORDER: Dict[str, int] = {"blue": 1, "yellow": 2, "orange": 3, "red": 4}
 
+# 产气速率/涨幅判据的适用门槛:总烃起始含量 ≥ 10 μL/L(国标 DL/T 722-2014
+# §9.3.2 明文:「总烃起始含量很低(低于 10 μL/L)时,不宜用相对产气速率判断」)。
+# 总烃过低时,任一气体的涨幅% 都会被极小分母放大成伪信号(如 C₂H₄ 0.86→18=+2106%),
+# 故以总烃为总开关:总烃不达标的当日,所有气体涨幅一律不参与预警判定/不对外展示。
+# 另:§10.2.1 规定比值法「一般在每组气体含量超过注意值后使用」,同源精神。
+RATE_TOTAL_HC_MIN = 10.0
+
+
+def _rate_applicable(total_hydrocarbon: float) -> bool:
+    """当日产气速率/涨幅判据是否适用——总烃 ≥ 10 μL/L(§9.3.2)。
+
+    低于此,国标明文「不宜用相对产气速率」,且低基数下涨幅% 失真。
+    """
+    return total_hydrocarbon >= RATE_TOTAL_HC_MIN
+
 # 判定项 → 中文名(组合规则 message 的 {gas} 占位符用)
 _ITEM_LABEL: Dict[str, str] = {
     "h2": "H₂", "ch4": "CH₄", "c2h4": "C₂H₄", "c2h6": "C₂H₆",
@@ -183,12 +198,14 @@ def evaluate(
 
         # ---------- 趋势规则:涨幅明显但未超标 ----------
         last_values = daily_values[-1]
+        # 产气速率判据适用前提:当日总烃 ≥ 10 μL/L(§9.3.2);否则涨幅%失真,整体不判
+        rate_ok = _rate_applicable(_item_value(cur.values, "total_hydrocarbon"))
         for r in rules.get("trend_rules", []):
             item = r["item"]
             cur_v = _item_value(cur.values, item)
             fut_v = _item_value(last_values, item)
             # 已超标的交给硬/软规则,这里只管「未超标但涨势明显」
-            if cur_v > 0 and not _exceeds(last_values, item, thresholds):
+            if rate_ok and cur_v > 0 and not _exceeds(last_values, item, thresholds):
                 rise = (fut_v - cur_v) / cur_v
                 # 半开区间 [rise_ratio, rise_ratio_max):同一气体只命中其所在档
                 # (blue 20~50% / yellow ≥50%),避免一个气体既报 blue 又报 yellow
@@ -216,7 +233,8 @@ def evaluate(
             for item in ("c2h2", "total_hydrocarbon", "h2"):
                 cur_v = _item_value(cur.values, item)
                 fut_v = _item_value(last_values, item)
-                if cur_v > 0 and (fut_v - cur_v) / cur_v >= c["gas_rise_ratio"]:
+                # 同趋势规则:总烃达标(rate_ok)且当前值>0 才判涨幅(§9.3.2)
+                if rate_ok and cur_v > 0 and (fut_v - cur_v) / cur_v >= c["gas_rise_ratio"]:
                     hit_item = item
                     hit_rise = (fut_v - cur_v) / cur_v
                     break
