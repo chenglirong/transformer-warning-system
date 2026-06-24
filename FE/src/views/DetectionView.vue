@@ -63,9 +63,9 @@
       class="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden"
       style="min-height: 0"
     >
-      <!-- LEFT col-8: comparison chart + scatter + confusion -->
+      <!-- LEFT col-8: comparison chart + consistency timeline(两主角) -->
       <div class="col-span-8 flex flex-col gap-3 overflow-hidden">
-        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1.1">
+        <div class="glass rounded-lg p-3 overflow-hidden" style="flex: 1.2">
           <h3
             class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center justify-between"
           >
@@ -80,56 +80,10 @@
           </div>
         </div>
 
-        <div class="overflow-hidden" style="flex: 1">
-          <div class="glass rounded-lg p-3 flex flex-col overflow-hidden h-full">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="panel-title text-sm font-bold text-cyan-300">
-                <iconify-icon icon="mdi:gauge"></iconify-icon>
-                混淆矩阵
-              </h3>
-              <div class="flex gap-1">
-                <button
-                  v-for="cm in CONFUSION_METHODS"
-                  :key="cm.key"
-                  class="conf-tab"
-                  :class="{ active: confusionMethod === cm.key }"
-                  @click="confusionMethod = cm.key"
-                >{{ cm.label }}</button>
-              </div>
-            </div>
-            <div class="flex-1 grid grid-cols-2 gap-2" style="min-height: 0">
-              <div class="conf-cell ok">
-                <p class="text-[10px] text-gray-400">TP 真阳性</p>
-                <p class="text-3xl font-bold text-green-300">{{ selectedConfusion.tp }}</p>
-                <p class="text-[10px] text-gray-500">正确告警</p>
-              </div>
-              <div class="conf-cell warn">
-                <p class="text-[10px] text-gray-400">FP 假阳性</p>
-                <p class="text-3xl font-bold text-orange-300">{{ selectedConfusion.fp }}</p>
-                <p class="text-[10px] text-gray-500">误报</p>
-              </div>
-              <div class="conf-cell bad">
-                <p class="text-[10px] text-gray-400">FN 假阴性</p>
-                <p class="text-3xl font-bold text-red-300">{{ selectedConfusion.fn }}</p>
-                <p class="text-[10px] text-gray-500">漏报</p>
-              </div>
-              <div class="conf-cell neutral">
-                <p class="text-[10px] text-gray-400">TN 真阴性</p>
-                <p class="text-3xl font-bold text-gray-300">{{ selectedConfusion.tn }}</p>
-                <p class="text-[10px] text-gray-500">正常无误判</p>
-              </div>
-            </div>
-            <p class="text-[10px] text-gray-500 mt-1.5">{{ selectedConfusionNote }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT col-4: consistency timeline + threshold ref + ratio code -->
-      <div class="col-span-4 flex flex-col gap-3 overflow-hidden">
         <div class="glass rounded-lg p-3 flex flex-col overflow-hidden" style="flex: 1">
           <h3 class="panel-title text-sm font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
             <iconify-icon icon="mdi:timeline-check"></iconify-icon>
-            近 7 日检测一致性（融合规则：3 方法 ≥2 异常 → 异常）
+            典型 7 日检测一致性（融合规则：3 方法 ≥2 异常 → 异常）
           </h3>
           <table class="consistency-table">
             <thead>
@@ -163,8 +117,52 @@
             </tbody>
           </table>
           <p class="text-[10px] text-gray-500 mt-1.5">
-            ● 异常　○ 正常 · 阈值/三比值/iForest 三方逐日投票观察;实测等权融合(≥2 票)F1 0.649,优于单一 iForest(0.608)
+            ● 异常　○ 正常 · 取含「正常→异常过渡」的代表性窗口(非最新窗口);可见三比值法单方误报、iForest 先于阈值法捕获、三方收敛。{{ fusionNote }}
           </p>
+        </div>
+      </div>
+
+      <!-- RIGHT col-4: confusion matrix + threshold ref + ratio code(佐证 + 参考料) -->
+      <div class="col-span-4 flex flex-col gap-3 overflow-hidden">
+        <div class="glass rounded-lg p-3 flex flex-col overflow-hidden">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="panel-title text-sm font-bold text-cyan-300">
+              <iconify-icon icon="mdi:gauge"></iconify-icon>
+              混淆矩阵
+            </h3>
+            <div class="flex gap-1">
+              <button
+                v-for="cm in CONFUSION_METHODS"
+                :key="cm.key"
+                class="conf-tab"
+                :class="{ active: confusionMethod === cm.key }"
+                @click="confusionMethod = cm.key"
+              >{{ cm.label }}</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="conf-cell ok">
+              <p class="text-[10px] text-gray-400">TP 真阳性</p>
+              <p class="text-2xl font-bold text-green-300">{{ selectedConfusion.tp }}</p>
+              <p class="text-[10px] text-gray-500">正确告警</p>
+            </div>
+            <div class="conf-cell warn">
+              <p class="text-[10px] text-gray-400">FP 假阳性</p>
+              <p class="text-2xl font-bold text-orange-300">{{ selectedConfusion.fp }}</p>
+              <p class="text-[10px] text-gray-500">误报</p>
+            </div>
+            <div class="conf-cell bad">
+              <p class="text-[10px] text-gray-400">FN 假阴性</p>
+              <p class="text-2xl font-bold text-red-300">{{ selectedConfusion.fn }}</p>
+              <p class="text-[10px] text-gray-500">漏报</p>
+            </div>
+            <div class="conf-cell neutral">
+              <p class="text-[10px] text-gray-400">TN 真阴性</p>
+              <p class="text-2xl font-bold text-gray-300">{{ selectedConfusion.tn }}</p>
+              <p class="text-[10px] text-gray-500">正常无误判</p>
+            </div>
+          </div>
+          <p class="text-[10px] text-gray-500 mt-1.5">{{ selectedConfusionNote }}</p>
         </div>
 
         <div class="glass rounded-lg p-3 overflow-hidden">
@@ -271,6 +269,9 @@ const FALLBACK = {
       confusion: { tp: 74, tn: 136, fp: 133, fn: 17 } },
     iforest: { accuracy: 0.803, precision: 0.611, recall: 0.604, f1: 0.608, fpr: 0.130,
       confusion: { tp: 55, tn: 234, fp: 35, fn: 36 } },
+    // 融合(等权 ≥2/3 票):后端 /detect/_internal/compare 落盘,非手写死值
+    fusion: { accuracy: 0.817, precision: 0.629, recall: 0.670, f1: 0.649, fpr: 0.134,
+      confusion: { tp: 61, tn: 233, fp: 36, fn: 30 } },
   },
 };
 
@@ -279,6 +280,8 @@ const compare = ref(FALLBACK);
 
 // 单台最新一条监测(阈值参考表用真实气体值)
 const TRANSFORMER_ID = 1; // 单设备方案
+// 一致性表展示的代表性窗口终点:取含「正常→异常过渡」的 7 日(数据末尾平稳期看不出方法分歧)
+const SAMPLE_WINDOW_END = "2024-04-23";
 const latest = ref(null);
 const recent = ref([]); // 最近 7 天三方法逐日 + 投票(接真,非杜撰)
 const methodsResult = ref(null); // 后端阈值/IEC 对最新日的判定(阈值表判定取此,不前端复刻)
@@ -299,7 +302,9 @@ onMounted(async () => {
     console.warn("[DetectionView] latest 拉取失败,阈值表显示占位", e);
   }
   try {
-    const r = await getDetectRecent(TRANSFORMER_ID, 7);
+    // 固定取「正常→异常过渡」的代表性 7 日窗口(数据末尾恰为平稳期,看不出三方法分歧)。
+    // 该窗口含:三比值法单方误报(04-17/18)、iForest 先于阈值法捕获(04-19)、三方收敛(04-20起)。
+    const r = await getDetectRecent(TRANSFORMER_ID, 7, SAMPLE_WINDOW_END);
     recent.value = r?.daily ?? [];
   } catch (e) {
     console.warn("[DetectionView] recent 拉取失败,一致性表显示空", e);
@@ -449,6 +454,14 @@ const recentDaily = computed(() =>
     };
   })
 );
+
+// 融合 vs 单一 iForest 的 F1 对比文案:取后端落盘真值(数据重跑自动更新,不写死)
+const fusionNote = computed(() => {
+  const m = compare.value.metrics;
+  const fusF1 = (m.fusion?.f1 ?? 0).toFixed(3);
+  const isfF1 = m.iforest.f1.toFixed(3);
+  return `实测等权融合(≥2 票)F1 ${fusF1},优于单一 iForest(${isfF1})`;
+});
 
 // 阈值参考表:接 latest.gases 真实气体值,阈值口径与后端 ATTENTION_VALUES 一致。
 // 只列 DL/T 722-2014 表3 真正设了注意值的三项(220kV 及以下):H₂/C₂H₂/总烃。
@@ -612,7 +625,7 @@ const thresholds = computed(() => {
 .conf-cell {
   border: 1px solid;
   border-radius: 6px;
-  padding: 8px;
+  padding: 5px 6px;
   text-align: center;
   display: flex;
   flex-direction: column;

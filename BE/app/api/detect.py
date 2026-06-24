@@ -76,12 +76,19 @@ def detect_methods(transformer_id: int, db: Session = Depends(get_db)):
 # ---------- 单台:最近 N 天三方法逐日一致性 + 投票 ----------
 
 @router.get("/recent/{transformer_id}")
-def detect_recent(transformer_id: int, days: int = 7, db: Session = Depends(get_db)):
-    """最近 N 天三方法(阈值/IEC/iForest)逐日检测 + 融合投票(≥2 异常→异常)。
+def detect_recent(
+    transformer_id: int,
+    days: int = 7,
+    end_date: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """以 end_date 为终点的 N 天三方法(阈值/IEC/iForest)逐日检测 + 融合投票(≥2 异常→异常)。
 
-    供 DetectionView「近 N 日检测一致性」据实展示多方法投票融合。
-    iForest 是无监督批量法:在**全量历史**上 fit_predict 后取最近 N 天切片
+    供 DetectionView「检测一致性」据实展示多方法投票融合。
+    iForest 是无监督批量法:在**全量历史**上 fit_predict 后取窗口切片
     (与 /_internal/compare 同口径,属离线回测可视化,非在线增量)。
+    end_date 省略时取数据末尾 N 天(向后兼容);指定时取该日往前 N 天,
+    供前端选取含「正常→异常过渡」的代表性窗口(数据末尾恰为平稳期看不出方法分歧)。
 
     🚧 边界:每天只回三方法 is_abnormal 二分类 + 投票,不回 IEC 故障类型。
     """
@@ -108,7 +115,16 @@ def detect_recent(transformer_id: int, days: int = 7, db: Session = Depends(get_
     isf = iforest.detect_df(df).reset_index(drop=True)
 
     n = min(days, len(df))
-    sl = range(len(df) - n, len(df))
+    # end_date 指定时以该日为窗口终点(往前 n 天);省略时取数据末尾 n 天
+    if end_date:
+        end_iso = pd.to_datetime(end_date).date()
+        match = df.index[df["date"] == end_iso].tolist()
+        if not match:
+            raise HTTPException(404, f"end_date {end_date} not in series")
+        end_pos = match[0] + 1            # 含 end_date 当天
+        sl = range(max(0, end_pos - n), end_pos)
+    else:
+        sl = range(len(df) - n, len(df))
     daily: List[dict] = []
     for i in sl:
         votes = int(th[i]) + int(ie[i]) + int(isf[i])
@@ -162,9 +178,16 @@ def compare_internal(db: Session = Depends(get_db)):
         "iforest": iforest.detect_df,
     }
     out: Dict[str, dict] = {}
+    preds = {}
     for name, fn in methods.items():
         y_pred = fn(df)
+        preds[name] = y_pred.astype(int).reset_index(drop=True)
         out[name] = binary_metrics(y_true, y_pred)
+
+    # 融合(等权投票:三方法 ≥2 票判异常)——与 /detect/recent 同口径。
+    # 落盘供前端取真,免得手写死指标在数据重跑后变过期假数。
+    fusion = ((preds["threshold"] + preds["iec"] + preds["iforest"]) >= 2).astype(int)
+    out["fusion"] = binary_metrics(y_true.reset_index(drop=True), fusion)
 
     return {
         "_warning": "内部接口,业务 Dashboard 不应直接展示此评估数据",

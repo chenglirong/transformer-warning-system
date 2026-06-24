@@ -43,8 +43,8 @@ export const getDetectMethods = (transformerId) =>
  * 守边界:每天只回三方法 is_abnormal 二分类 + 投票,不回故障类型。
  * 返回 { transformer_id, days, vote_rule, daily:[{date,threshold,iec,iforest,vote_abnormal,is_abnormal}] }。
  */
-export const getDetectRecent = (transformerId, days = 7) =>
-  http.get(`/detect/recent/${transformerId}`, { days })
+export const getDetectRecent = (transformerId, days = 7, endDate = null) =>
+  http.get(`/detect/recent/${transformerId}`, endDate ? { days, end_date: endDate } : { days })
 
 // ============ 趋势预测接口 ============
 
