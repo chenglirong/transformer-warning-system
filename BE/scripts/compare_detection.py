@@ -104,18 +104,25 @@ def _plot_confusion(y_true: pd.Series, preds: dict, results: dict) -> None:
         return
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
+    # 展示名:对外图表用国标本体名(承 D-044,全栈 IEC→三比值法 DL/T 722)。
+    # 仅改图标题显示,不动 results 的 key(metrics 落盘/比对仍按内部键),零逻辑影响。
+    DISPLAY_NAME = {
+        "Threshold": "阈值法(DL/T 722 表3)",
+        "IEC": "三比值法(DL/T 722-2014)",
+        "IsolationForest": "孤立森林 Isolation Forest",
+    }
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
     for ax, (name, m) in zip(axes, results.items()):
         mat = [[m["TN"], m["FP"]], [m["FN"], m["TP"]]]
         ax.imshow(mat, cmap="Blues")
-        ax.set_title(f"{name}\nF1={m['f1']:.3f}  FPR={m['fpr']:.3f}")
-        ax.set_xticks([0, 1]); ax.set_xticklabels(["Pred Normal", "Pred Abnormal"])
-        ax.set_yticks([0, 1]); ax.set_yticklabels(["True Normal", "True Abnormal"])
+        ax.set_title(f"{DISPLAY_NAME.get(name, name)}\nF1={m['f1']:.3f}  FPR={m['fpr']:.3f}")
+        ax.set_xticks([0, 1]); ax.set_xticklabels(["预测正常", "预测异常"])
+        ax.set_yticks([0, 1]); ax.set_yticklabels(["实际正常", "实际异常"])
         for i in range(2):
             for j in range(2):
                 ax.text(j, i, str(mat[i][j]), ha="center", va="center",
                         color="black", fontsize=14)
-    plt.suptitle("Anomaly Detection: Confusion Matrices (GT = synthetic fault_state)")
+    plt.suptitle("异常检测三方法混淆矩阵(基准 = 合成真值 fault_state)")
     plt.tight_layout()
     plt.savefig(FIG_DIR / "detection_confusion.png", dpi=120)
     plt.close()
