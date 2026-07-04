@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>DGA 分析智能体 · 重构方案</title>
+<style>
+  :root{
+    --ink:#16202b; --sub:#5b6d7e; --line:#dde5ee; --bg:#fff; --soft:#f6f9fc;
+    --accent:#2563eb; --accent-soft:#eef4ff;
+    --old:#b04a3a; --old-soft:#fbeeeb;
+    --new:#1f7a4d; --new-soft:#e8f5ef;
+    --warn:#b7791f; --warn-soft:#fdf5e6;
+    --agent:#5b3fa8; --agent-soft:#f2edfb;
+    --danger:#c0392b; --danger-soft:#fbe9e7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{
+    font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--ink); background:#fff; line-height:1.6;
+  }
+  .slide{
+    max-width:960px; background:var(--bg); margin:0 auto;
+    padding:40px 48px 32px; position:relative;
+    border-bottom:1px solid #eef2f7;
+  }
+  .kicker{ color:var(--accent); font-size:15px; font-weight:700; letter-spacing:1px; }
+  h1{ font-size:34px; line-height:1.3; margin:8px 0 6px; letter-spacing:.5px; }
+  h2{ font-size:24px; margin:0 0 18px; padding-bottom:10px; border-bottom:3px solid var(--ink); }
+  h2 small{ font-size:15px; color:var(--sub); font-weight:400; margin-left:12px; }
+  .pageno{ display:none; }
+  .std{ display:block; color:#b0bac4; font-size:12px; letter-spacing:.5px; margin-top:14px; }
+  b.a{ color:var(--accent); } b.n{ color:var(--new); } b.g{ color:var(--agent); } b.w{ color:var(--warn); } b.d{ color:var(--danger); }
+  /* 中和「填满一屏」的布局:文档流下按自然高度排 */
+  .center{ display:block; }
+  .why,.flow,.cols,.bound,.duval,.roadwrap{ display:flex; }
+  .cover,.oneliner{ text-align:left; }
+  .oneliner{ text-align:center; }
+  /* 封面 */
+  .cover .sub{ font-size:19px; color:var(--sub); margin-top:12px; line-height:1.7; }
+  .cover .tag{ display:inline-block; background:var(--agent-soft); color:var(--agent);
+    font-size:15px; font-weight:700; padding:7px 18px; border-radius:24px; margin-top:20px; }
+  .cover .foot{ color:#9aa7b4; font-size:13px; margin-top:18px; }
+  /* 一句话定位 */
+  .oneliner .big{ font-size:22px; line-height:1.7; font-weight:600; }
+  .prem{ display:flex; gap:16px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
+  .prem .p{ border:1px solid var(--line); border-radius:12px; padding:12px 18px; background:var(--soft); font-size:15px; }
+  .prem .p b{ display:block; font-size:15px; color:var(--sub); font-weight:600; margin-bottom:4px; }
+  /* 通用表 */
+  table{ border-collapse:collapse; width:100%; }
+  th,td{ border:1px solid var(--line); padding:11px 14px; text-align:left; vertical-align:middle; }
+  th{ background:#eef2f7; font-weight:700; }
+  td.k{ font-weight:700; background:var(--soft); }
+  td.old{ background:var(--old-soft); } td.new{ background:var(--new-soft); }
+  .pill{ display:inline-block; font-size:14px; padding:2px 11px; border-radius:13px; font-weight:700; color:#fff; }
+  .pill.old{ background:var(--old); } .pill.new{ background:var(--new); }
+  /* 两硬约束卡 */
+  .why{ gap:20px; align-items:stretch; }
+  .whycard{ flex:1; border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+    display:flex; flex-direction:column; }
+  .whycard .num{ font-size:20px; font-weight:800; color:#fff; background:var(--old); width:38px; height:38px;
+    border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+  .whycard.c2 .num{ background:var(--warn); }
+  .whycard h3{ font-size:19px; margin-bottom:10px; }
+  .whycard p{ font-size:15px; color:#3a4652; line-height:1.65; }
+  .whycard .con{ margin-top:14px; background:var(--new-soft); color:var(--new); font-weight:700;
+    border-radius:10px; padding:10px 14px; font-size:15px; }
+  /* 数据流 */
+  .flow{ align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
+  .fcol{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .node{ border:2px solid var(--line); border-radius:12px; padding:10px 16px; text-align:center;
+    background:#fbfcfe; min-width:140px; }
+  .node .t{ font-weight:700; font-size:15px; } .node .d{ font-size:12px; color:var(--sub); margin-top:3px; }
+  .arr{ color:var(--accent); font-size:24px; }
+  .agentbox{ border:3px solid var(--agent); background:var(--agent-soft); border-radius:16px;
+    padding:16px 20px; max-width:520px; }
+  .agentbox .hd{ font-weight:800; color:var(--agent); font-size:17px; text-align:center; margin-bottom:8px; }
+  .step{ background:#fff; border:1px solid #ddd3f0; border-radius:9px; padding:8px 12px; margin:7px 0; font-size:14px; line-height:1.45;}
+  .step .k{ font-weight:800; color:var(--agent); }
+  .out{ border:2px dashed var(--new); background:var(--new-soft); color:var(--new); border-radius:12px;
+    padding:10px 16px; text-align:center; font-weight:800; font-size:15px; margin-top:4px; }
+  /* 通用列表卡 */
+  .cols{ gap:18px; align-items:stretch; }
+  .colcard{ flex:1; border:1px solid var(--line); border-top:6px solid var(--accent); border-radius:14px; padding:16px 20px; }
+  .colcard.c2{ border-top-color:var(--new); } .colcard.c3{ border-top-color:var(--warn); } .colcard.c4{ border-top-color:var(--agent); }
+  .colcard h3{ font-size:17px; margin-bottom:10px; } .colcard h3 span{ font-size:13px; color:var(--sub); font-weight:400; }
+  .colcard ul{ list-style:none; } .colcard li{ font-size:14px; line-height:1.55; color:#3a4652; padding:5px 0 5px 20px; position:relative; }
+  .colcard li::before{ content:"▸"; position:absolute; left:0; color:var(--accent); }
+  .colcard.c2 li::before{ color:var(--new); } .colcard.c3 li::before{ color:var(--warn); } .colcard.c4 li::before{ color:var(--agent); }
+  .tag2{ display:inline-block; font-size:13px; background:var(--accent-soft); color:var(--accent); padding:1px 8px; border-radius:8px; margin-left:6px; }
+  /* 边界 */
+  .bound{ gap:24px; align-items:stretch; }
+  .bcol{ flex:1; border-radius:14px; padding:18px 22px; }
+  .bcol.yes{ background:var(--new-soft); border:2px solid var(--new); }
+  .bcol.no{ background:var(--old-soft); border:2px solid var(--old); }
+  .bcol h3{ font-size:18px; margin-bottom:12px; } .bcol.yes h3{ color:var(--new); } .bcol.no h3{ color:var(--old); }
+  .bcol .row{ font-size:14px; line-height:1.5; padding:6px 0; display:flex; gap:10px; }
+  .bcol .ic{ font-size:16px; flex-shrink:0; }
+  /* Duval */
+  .duval{ align-items:center; justify-content:center; gap:40px; flex-wrap:wrap; }
+  .legend2{ font-size:15px; line-height:1.9; }
+  .legend2 .sw{ display:inline-block; width:16px; height:16px; border-radius:4px; vertical-align:middle; margin-right:9px; }
+  .legend2 .note{ font-size:13px; color:var(--sub); margin-top:12px; max-width:340px; line-height:1.5; }
+  /* 路线图 */
+  .roadwrap{ position:relative; align-items:flex-start; padding:8px 0; }
+  .baseline{ position:absolute; top:26px; left:6%; right:6%; height:3px; background:var(--line); z-index:0; }
+  .road{ position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:6px; width:100%; }
+  .stop{ flex:1; text-align:center; }
+  .stop .dot{ width:44px; height:44px; border-radius:50%; background:var(--accent); color:#fff;
+    font-weight:800; font-size:18px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; }
+  .stop .lb{ font-size:15px; font-weight:700; } .stop .ds{ font-size:12px; color:var(--sub); margin-top:5px; line-height:1.4;}
+  .stop.hot .dot{ background:var(--agent); box-shadow:0 0 0 5px var(--agent-soft); } .stop.hot .lb{ color:var(--agent); }
+  .stop .hard{ font-size:11px; color:var(--danger); font-weight:700; margin-top:3px; }
+  /* 小字脚注 */
+  .fn{ font-size:13.5px; color:var(--sub); margin-top:14px; line-height:1.6;
+    background:var(--soft); border-left:3px solid var(--line); padding:10px 14px; border-radius:0 8px 8px 0; }
+  table{ font-size:14px !important; }
+  td, th{ padding:8px 12px !important; }
+</style>
+</head>
+<body>
+
+<section class="slide cover">
+  <h1>变压器油中溶解气体分析智能体研究与实现</h1>
+  <div class="sub">基于 DGA 的在线监测分析后台软件<br>面向220kV 及以下油浸式变压器<br>异常检测 · 辅助诊断 · 分级告警 · 趋势预警</div>
+  <div class="tag">创新点 · 智能体（Agent）编排分析全链路</div>
+  <div class="foot">基于 DL/T 722-2014《变压器油中溶解气体分析和判断导则》 · DL/T 1498.2-2025 变电设备在线监测装置技术规范 第 2 部分：变压器油中溶解气体 
+在线监测装置</div>
+</section>
+
+
+
+<section class="slide">
+  <table style="font-size:20px;">
+    <thead><tr><th style="width:14%"></th><th style="width:40%"><span class="pill old">前期探索</span> 时序预测</th><th><span class="pill new">本阶段</span> 分析后台</th></tr></thead>
+    <tbody>
+      <tr><td class="k">主线</td><td class="old">时序预测（LSTM / ARIMA）</td><td class="new"><b>检测 + 辅助诊断 + 告警</b>（成链）</td></tr>
+      <tr><td class="k">数据适配</td><td class="old">743 条<b>无时间戳</b>快照，难支撑预测</td><td class="new">快照天然适合分析</td></tr>
+      <tr><td class="k">方法论</td><td class="old">单一模型精度比拼</td><td class="new"><b>多方法融合</b>：诊断三方交叉（三比值/Duval/特征气体）</td></tr>
+      <tr><td class="k">创新点</td><td class="old">算法对比</td><td class="new"><b>Agent 编排</b>整条分析全链路</td></tr>
+    </tbody>
+  </table>
+  <div class="fn">题目《变压器油中溶解气体<b>分析</b>智能体研究与实现》——「分析」取 DGA 本义（检测+辅助诊断+趋势分析），<b>分析≠确诊</b></div>
+</section>
+
+<section class="slide">
+  <h2>系统数据流：Agent 对合成时序的每一天串起全链路</h2>
+  <div class="flow" style="align-items:stretch;">
+    <div class="fcol" style="justify-content:center;">
+      <div class="node"><div class="t">743 快照</div><div class="d">合成分布原料</div></div>
+      <div class="arr">↓</div>
+      <div class="node"><div class="t">合成 360 天时序</div><div class="d">单台 · 健康75%/异常25%</div></div>
+      <div class="arr">↓</div>
+      <div class="node"><div class="t">预处理 + 造特征</div><div class="d">三比值/总烃/Duval坐标/产气速率</div></div>
+      <div class="arr">↓</div>
+      <div class="node" style="border-color:var(--agent);"><div class="t" style="color:var(--agent)">送入 Agent 编排</div></div>
+    </div>
+    <div class="arr" style="font-size:34px; align-self:center;">→</div>
+    <div class="agentbox" style="width:auto; flex:1.1;">
+      <div class="hd">Agent 对每一天</div>
+      <div class="step"><span class="k">① 检测 = 分级</span>　表A.3 四档全报 + 处置紧急度研判（产气速率 §9.3.3）</div>
+      <div class="step"><span class="k">② 辅助诊断</span>　三比值/Duval/特征气体 三方融合看倾向（仅注意值2及以上触发）</div>
+      <div class="step"><span class="k">③ 趋势</span>　产气速率展示 +「预」的提前预警</div>
+      <div class="out">四档档位 + 处置紧急度研判 + 辅助倾向 + 趋势</div>
+    </div>
+    <div class="arr" style="font-size:34px; align-self:center;">→</div>
+    <div style="flex:1; align-self:center; background:var(--new-soft); border:2px solid var(--new); border-radius:14px; padding:14px 16px;">
+      <div style="font-size:14px; color:var(--new); font-weight:800; margin-bottom:8px;">输出示例</div>
+      <div style="font-size:12.5px; color:var(--sub); margin-bottom:8px; line-height:1.5;">某日：总烃 355 · H₂ 175 · C₂H₄ 160 μL/L（总烃周涨 62%）</div>
+      <div style="font-size:13px; line-height:1.7; color:#1f4d38;">
+        <div><b>档位</b>：注意值2</div>
+        <div><b>紧急度</b>：周涨62%超注意值✓（§9.3.3 产气速率）→ <b>高</b></div>
+        <div><b>倾向</b>：三比值/大卫三角→T3 · 特征气体→油过热 → 三方一致</div>
+      </div>
+      <div style="font-size:12px; color:var(--agent); font-weight:700; margin-top:10px; margin-bottom:4px;">↓ 汇入表G.1 档案卡片「分析意见」栏</div>
+      <div style="background:#fff; border:1px solid var(--new); border-radius:9px; padding:10px 12px; font-size:12.5px; line-height:1.65; color:#1f4d38;">「倾向过热（高温 T3），三方一致，参考可信度较高。仅供参考，具体成因需结合其他电气试验（附录D），<b>不作确诊</b>。」</div>
+      <div style="margin-top:8px; font-size:12.5px; color:#3a4652;"><b class="g">Agent 建议</b>：缩短周期至每周一次；可二次采样验证<br><span style="font-size:12px;color:red;">Agent 还需细致设计，这里只是笼统建议</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>模块 0 · 数据预处理</h2>
+  <div class="cols">
+    <div class="colcard">
+      <h3>必做 3 步 <span>洗数据</span></h3>
+      <ul>
+        <li><b>类型清洗</b>：CO/CO₂ 列 <code>'-'</code>（未测）→ NaN，列恢复数值类型</li>
+        <li><b>选列</b>：核心取 5 种烃类，CO/CO₂ 作辅助列保留；弃 H₂O（全空）/O₂/N₂</li>
+        <li><b>缺失标注</b>：CO 缺≈22% / CO₂ 缺≈31%；<b>不强行填满</b>，有值则用、无值则跳过（诚实原则）</li>
+      </ul>
+    </div>
+    <div class="colcard c2">
+      <h3>造特征 <span>全程在合成360天上</span></h3>
+      <ul>
+        <li>气体比值（三比值）+ 总烃</li>
+        <li>Duval 三角坐标（供分级 / 诊断）</li>
+        <li>产气速率（一阶差分，供检测涨势佐证 + 模块3趋势）</li>
+        <li><b class="d">删</b>滑窗统计（不做 LSTM）、<b class="d">删</b>油温速率（无油温字段）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="std">沿用现有 features.py 改造</div>
+</section>
+
+<section class="slide">
+  <h2>数据策略：真实快照 + 合成时序</h2>
+  <div class="cols">
+    <div class="colcard">
+      <h3>原始 743 快照 <span>bmrayan 数据集</span></h3>
+      <ul>
+        <li>5 种烃类 <b>100% 完整</b>；CO 78% / CO₂ 69% 有值（辅助）</li>
+        <li>真实 μL/L 量级，18 条故障标签</li>
+        <li>角色：合成的<b>分布原料</b> + 答辩诚实交代来源</li>
+        <li><b class="d">真故障仅 4 条</b>（电气2+热2）→ 故障多分类留作展望的直接证据</li>
+      </ul>
+    </div>
+    <div class="colcard c2">
+      <h3>合成时序 <span>单台 × 360 天</span></h3>
+      <ul>
+        <li>健康约 75% / 异常约 25%，跨完整四季</li>
+        <li>单台最干净好讲（原始无设备标识，多台更假）</li>
+        <li>提供时间维度 → 可算产气速率 =「预」的来源</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>模块 1-① 检测 = 分级</h2>
+  <div style="display:flex; gap:26px; flex:1;">
+    <div style="flex:1.05">
+      <table style="font-size:18px;">
+        <thead><tr><th></th><th>正常</th><th>注意值1</th><th>注意值2</th><th>告警值</th></tr></thead>
+        <tbody>
+          <tr><td class="k">C₂H₂</td><td>&lt;1.0</td><td>≥1.0</td><td>≥5.0</td><td>≥8</td></tr>
+          <tr><td class="k">H₂</td><td>&lt;120</td><td>≥120</td><td>≥150</td><td>/</td></tr>
+          <tr><td class="k">总烃</td><td>&lt;120</td><td>≥120</td><td>≥150</td><td>/</td></tr>
+        </tbody>
+      </table>
+      <div class="fn" style="margin-top:14px"><b>四档全报</b>（正常也输出「正常，各气体在范围内」）。正常↔注意值1 纯靠表A.3，<b>阈值法并入此处不单列</b>（同为看绝对值阈值，单列会重复）。单位 μL/L。</div>
+    </div>
+    <div style="flex:1; border-left:1px solid var(--line); padding-left:24px;">
+      <h3 style="font-size:21px; color:var(--warn); margin-bottom:12px;">⚠️ 应用原则 ≠ 改档位（§9.3.3）</h3>
+      <p style="font-size:16px; color:#3a4652; line-height:1.6; margin-bottom:10px;">§9.3.3 调的是<b>紧急程度/处置建议</b>，不改档位 —— 解读放 Agent C，不动分级结果：</p>
+      <ul style="list-style:none; font-size:15.5px; line-height:1.5;">
+        <li style="padding:6px 0">▸ <b>超注意值但长期稳定</b> → 档位仍报，处置=「加强监视，不紧急」</li>
+        <li style="padding:6px 0">▸ <b>未超但产气速率超</b> → 档位报正常，处置=「涨势快，缩短周期」（即「预」）</li>
+        <li style="padding:6px 0">▸ <b>仅 H₂ 超但不涨</b> → 档位如实报，处置=「大概率非故障，加强监视」（不推翻档位）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="std">DL/T 1498.2-2025 附录A 表A.3 · DL/T 722-2014 §9.3.3</div>
+</section>
+
+<section class="slide">
+  <h2>模块 1-① 处置紧急度研判<small>产气速率视角，供 Agent 判「急不急、下一步动作」（仅注意值2以上启动）</small></h2>
+  <div style="background:var(--warn-soft); border:1px solid #ecd9a8; border-radius:10px; padding:12px 18px; font-size:14px; line-height:1.6; margin-bottom:16px;">
+    <b class="w">这一步不判「是不是异常」，也不改分级档位</b>（档位由表A.3 定，是事实、不被推翻）。它回答的是<b>「这个异常急不急、要不要采取动作」</b>—— 依据 <b>§9.3.3 a)</b>「气体含量超过注意值时，应<b>结合产气速率</b>进行判断；超过注意值但长期稳定，可继续运行」。结论喂给 <b class="g">Agent </b> 做处置决策（缩周期 / 二次采样 / 继续监视），<b>不动检测档位</b>。
+  </div>
+  <div class="cols" style="align-items:stretch">
+    <div class="colcard c2" style="flex:1">
+      <h3>产气速率判据 · 涨势视角</h3>
+      <ul>
+        <li>看：涨得快不快（超没超注意值）</li>
+        <li>依据：<b>DL/T 722 §9.3.3 a)</b>「结合产气速率判断」（需时序，跑在合成数据上）</li>
+        <li>产气速率两处分工：<b>此处</b>判涨势超没超→供处置紧急度研判；<b>模块3</b>做完整趋势展示 +「预」</li>
+      </ul>
+    </div>
+  </div>
+  <div class="fn"><b>为什么从注意值2 启动</b>　注意值2（C₂H₂≥5 / H₂≥150 / 总烃≥150）<b>正是 DL/T 722 表3 的经典注意值线</b>（表A.3 注意值2 = 722 表3，同一条线、两标准叫法）；§9.3.3 a) 明文「<b>超过注意值</b>才结合产气速率判断」，故门槛卡在注意值2，有国标原文撑腰。产气速率<b>与表A.3 互不重叠</b>（表A.3看绝对值、产气速率看变化率），故不是「再确认一遍超没超」而是国标要的「据产气速率定处置」。</div>
+  <div class="std">DL/T 722-2014 §9.3</div>
+</section>
+
+<section class="slide">
+  <h2>模块 1-② 辅助诊断 · 特征气体法<small>DL/T 722 §10.1 表5，看哪些气体偏高匹配倾向</small></h2>
+  <table style="font-size:18px;">
+    <thead><tr><th style="width:24%">故障类型</th><th>主要特征气体</th><th>次要特征气体</th></tr></thead>
+    <tbody>
+      <tr><td class="k">油过热</td><td>CH₄、C₂H₄</td><td>H₂、C₂H₆</td></tr>
+      <tr><td class="k">油和纸过热</td><td>CH₄、C₂H₄、CO</td><td>H₂、C₂H₆、CO₂</td></tr>
+      <tr><td class="k">油纸绝缘中局部放电</td><td>H₂、CH₄、CO</td><td>C₂H₄、C₂H₆、C₂H₂</td></tr>
+      <tr><td class="k">油中火花放电</td><td>H₂、C₂H₂</td><td>—</td></tr>
+      <tr><td class="k">油中电弧</td><td>H₂、C₂H₂、C₂H₄</td><td>CH₄、C₂H₆</td></tr>
+      <tr><td class="k">油和纸中电弧</td><td>H₂、C₂H₂、C₂H₄、CO</td><td>CH₄、C₂H₆、CO₂</td></tr>
+    </tbody>
+  </table>
+  <div class="fn"><b>三种诊断方法之一</b>　辅助诊断=<b>多方融合</b>看倾向是否一致（特征气体法 + 三比值 + Duval），「多方法融合」是贯穿全系统的方法论主线。输出「倾向XXX特征」</div>
+  <div class="std">DL/T 722-2014 §10.1 表5（原文逐格）</div>
+</section>
+
+<section class="slide">
+  <h2>模块 1-② 辅助诊断 · 三比值法 + 大卫三角 + 特征气体法</h2>
+  <div class="duval">
+    <div>
+      <!-- Duval 三角 SVG -->
+      <svg width="340" height="310" viewBox="0 0 340 310">
+        <polygon points="170,20 320,280 20,280" fill="none" stroke="#16202b" stroke-width="2"/>
+        <!-- 分区（示意） -->
+        <polygon points="170,20 200,72 140,72" fill="#e8f5ef" stroke="#1f7a4d" stroke-width="1"/>
+        <polygon points="140,72 200,72 230,124 110,124" fill="#fdf5e6" stroke="#b7791f" stroke-width="1"/>
+        <polygon points="110,124 230,124 260,176 80,176" fill="#fbeeeb" stroke="#b04a3a" stroke-width="1"/>
+        <polygon points="80,176 260,176 300,242 40,242" fill="#f2edfb" stroke="#5b3fa8" stroke-width="1"/>
+        <polygon points="40,242 300,242 320,280 20,280" fill="#eef4ff" stroke="#2563eb" stroke-width="1"/>
+        <text x="170" y="56" font-size="13" text-anchor="middle" fill="#1f7a4d" font-weight="700">PD</text>
+        <text x="170" y="104" font-size="13" text-anchor="middle" fill="#b7791f" font-weight="700">T1</text>
+        <text x="170" y="156" font-size="13" text-anchor="middle" fill="#b04a3a" font-weight="700">T2</text>
+        <text x="170" y="212" font-size="13" text-anchor="middle" fill="#5b3fa8" font-weight="700">D1 / D2</text>
+        <text x="170" y="266" font-size="13" text-anchor="middle" fill="#2563eb" font-weight="700">T3</text>
+        <text x="170" y="12" font-size="12" text-anchor="middle">%CH₄</text>
+        <text x="326" y="296" font-size="12" text-anchor="end">%C₂H₄</text>
+        <text x="14" y="296" font-size="12">%C₂H₂</text>
+        <circle cx="150" cy="200" r="6" fill="#c0392b"/>
+        <text x="160" y="200" font-size="12" fill="#c0392b">样本点</text>
+      </svg>
+    </div>
+    <div class="legend2">
+      <div><b>三比值法</b>（§10.2.1 表6/表7）</div>
+      <div style="font-size:16px; color:#3a4652; margin:6px 0 16px">三对比值 C₂H₂/C₂H₄、CH₄/H₂、C₂H₄/C₂H₆ 编码 → 倾向<br>（名：<b>DL/T 722</b>，非 IEC）</div>
+      <div><b>大卫三角（Duval Triangle，或立体图示法）</b>（附录C 图C.2）</div>
+      <div><span class="sw" style="background:#1f7a4d"></span>PD 局放</div>
+      <div><span class="sw" style="background:#b7791f"></span>T1/T2 中低温过热</div>
+      <div><span class="sw" style="background:#2563eb"></span>T3 高温过热 &gt;700℃</div>
+      <div><span class="sw" style="background:#5b3fa8"></span>D1/D2 低能/高能放电</div>
+      <div class="note">X=C₂H₂、Y=C₂H₄、Z=CH₄，取三气体百分比落点。附录C 为资料性附录，精确边界参考 Duval 原始论文。<br>⚠️ 附录C 图示法含<b>立体图示法</b>与<b>三角图示法</b>两种，本系统只采用三角法（§5.4.2 点名大卫三角 · 二维直观 · 立体图与三比值同质不重复做）。</div>
+    </div>
+  </div>
+  <div class="std">DL/T 722-2014 §10.2.1 表6/7 · 附录C 图C.2/表C.1</div>
+</section>
+
+<section class="slide">
+  <h2>辅助诊断的触发时机与局限</h2>
+  <div class="cols">
+    <div class="colcard c3" style="flex:1">
+      <h3>触发时机 <span>§10.3 + §10.2.4 a)</span></h3>
+      <ul>
+        <li>§10.3 判断步骤：<b>先比表3注意值 → 认为有故障 → 才用表5/6/7 判故障类型</b></li>
+        <li>而<b>表3注意值 = 分级的注意值2</b>（同一条线两标准叫法）</li>
+        <li>→ 辅助诊断<b>仅对注意值2及以上触发</b>，与处置紧急度研判<b>同一条线</b>；注意值1 及正常档只报档位不给倾向</li>
+        <li>§10.2.4 a) 印证：比值法只在超注意值后才有效，正常数据「比值法没有意义」</li>
+      </ul>
+    </div>
+    <div class="colcard" style="flex:1">
+      <h3>低浓度局限 <span>§10.2.4 c)</span></h3>
+      <ul>
+        <li>气体浓度 &lt;10μL/L 时，比值法误差大（比值误差已达 20%+）</li>
+        <li>→ 低浓度样本的辅助倾向<b>标可信度低</b></li>
+      </ul>
+    </div>
+    <div class="colcard c4" style="flex:1">
+      <h3>为什么不做故障确诊 <span>双重依据</span></h3>
+      <ul>
+        <li><b>数据</b>：bmrayan 真故障仅 4 条，无法验证多分类准确率</li>
+        <li><b>国标</b>：附录D 表D.1 明文——DGA 判出故障后，须结合绕组电阻/绝缘油/局放测量等<b>停电电气试验</b>才能定位成因</li>
+        <li>→ DGA 到「过热/放电 + 六分区」这层到顶，成因/确诊 <b>留作展望</b></li>
+      </ul>
+    </div>
+  </div>
+  <div class="fn"><b>三方法怎么比一致性</b>　三比值 + 大卫三角本是<b>同一套六代码</b>（PD/D1/D2/T1/T2/T3）直接比落格；特征气体法（表5，按油/纸分）<b>保留原话不硬翻代码</b>（国标无官方映射，硬映射=无依据）。<b>三方一致性统一拉到「放电 vs 过热」性质大类比</b>——都指同一大类→倾向可信度高，打架→标低。粒度不同不是缺陷，恰体现「多方法各有侧重」。</div>
+  <div class="std">DL/T 722-2014 §10.3 · §10.2.4 a)/c) · 附录D 表D.1　（完整输出示例见「系统数据流」页第三列）</div>
+</section>
+
+<section class="slide">
+  <h2>模块 2 · 分级告警：表A.3 三组判据<small>四档全报，判据全在一张表，口径统一</small></h2>
+  <div style="display:flex; gap:18px; flex:1;">
+    <div style="flex:1">
+      <div style="font-weight:700; font-size:16px; margin-bottom:6px; color:var(--accent)">① 绝对浓度 μL/L</div>
+      <table style="font-size:15px;">
+        <thead><tr><th></th><th>注1</th><th>注2</th><th>告警</th></tr></thead>
+        <tbody>
+          <tr><td class="k">C₂H₂</td><td>≥1.0</td><td>≥5.0</td><td>≥8</td></tr>
+          <tr><td class="k">H₂</td><td>≥120</td><td>≥150</td><td>/</td></tr>
+          <tr><td class="k">总烃</td><td>≥120</td><td>≥150</td><td>/</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="flex:1">
+      <div style="font-weight:700; font-size:16px; margin-bottom:6px; color:var(--new)">② 绝对增量 μL/L·周</div>
+      <table style="font-size:15px;">
+        <thead><tr><th></th><th>注1</th><th>注2</th><th>告警</th></tr></thead>
+        <tbody>
+          <tr><td class="k">C₂H₂</td><td>从无到有/≥1.0</td><td>≥2.0</td><td>≥4</td></tr>
+          <tr><td class="k">H₂</td><td>≥15</td><td>≥30</td><td>/</td></tr>
+          <tr><td class="k">总烃</td><td>≥15</td><td>≥30</td><td>/</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="flex:1">
+      <div style="font-weight:700; font-size:16px; margin-bottom:6px; color:var(--warn)">③ 相对增长速率 %/周</div>
+      <table style="font-size:15px;">
+        <thead><tr><th></th><th>注1</th><th>注2</th><th>告警</th></tr></thead>
+        <tbody>
+          <tr><td class="k">总烃</td><td>≥30</td><td>≥60</td><td>/</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:13px; color:var(--sub); margin-top:8px; line-height:1.5">⚠️ 总烃&lt;30μL/L 不计算相对增长速率。②③ 既作模块1检测的「涨势佐证」，又作模块3「预」的来源。</div>
+    </div>
+  </div>
+  <div class="fn"><b>告警输出三层信息（从硬到软，守边界）</b>　① 告警等级（国标阈值定，硬核）→ ② 超标气体 + 产气速率（实测事实）→ ③ 辅助诊断提示（措辞「倾向XX」，不决定等级、不确诊）。<b>220kV 无停运档</b>（停运只特高压表A.1有）。</div>
+  <div class="std">DL/T 1498.2-2025 附录A 表A.3（数值据原图核对）</div>
+</section>
+
+<section class="slide oneliner">
+  <h2 style="text-align:left">模块 3 · 趋势预警：题目的「预」从哪来<small>不靠预测模型，靠产气速率判据</small></h2>
+  <div class="center" style="text-align:center">
+    <div style="font-size:26px; line-height:1.7; margin-bottom:8px">
+      合成时序有时间维度 → 算<b class="a">产气速率 / 绝对增量 / 相对增长率</b><br>
+      → 对标 DL/T 722 §9.3.2 + 1498.2 附录A 增量判据 → <b class="n">涨势异常提前报</b>
+    </div>
+    <div style="background:var(--warn-soft); border:2px solid var(--warn); border-radius:14px; padding:22px 30px; margin:24px auto 0; max-width:820px;">
+      <div style="font-size:15px; color:var(--warn); font-weight:700; margin-bottom:8px">「预」的国标合法性依据 — DL/T 722 §9.3.3 a)</div>
+      <div style="font-size:21px; line-height:1.6; color:#3a4652">「气体含量虽<b>低于注意值</b>，但<b>产气速率超过注意值</b>，也应缩短检测周期（预警）。」</div>
+    </div>
+    <div class="fn" style="text-align:center; margin-top:22px">相对产气速率（式2，只需前后两次浓度）：γᵣ =（C₂−C₁)/C₁ × 1/Δt × 100%（%/月）；总烃相对产气速率注意值 = 10%/月，总烃起始含量低时不宜用。<b class="d">可考虑 ARIMA/LSTM 等时序预测模型</b>——只做趋势展示 + 判据预警</div>
+  </div>
+  <div class="std">DL/T 722-2014 §9.3.2 / §9.3.3 a)</div>
+</section>
+
+<section class="slide">
+  <h2>模块 4 · 智能体</h2>
+  <div style="background:var(--agent-soft); border:1px solid #ddd3f0; border-radius:12px; padding:14px 20px; font-size:18px; margin-bottom:16px; line-height:1.5">
+    <b class="g">为什么非 Agent 不可</b>：模块1-3（分级/研判/诊断/趋势）全是<b>确定性方法</b>（查表/投票/算数），规则代码就能做。Agent 的不可替代价值只在「需要判断或表达」处 —— 分析层保证「准」，智能体层保证「智能」。
+  </div>
+  <div class="cols">
+    <div class="colcard c4" style="flex:1">
+      <h3>B、生成自然语言分析报告 <span>必做，LLM 表达价值</span></h3>
+      <ul>
+        <li>把多维结果综合成一段<b>人话报告</b></li>
+        <li>内容：预警级别 + 超标项 + 趋势 + 处置紧急度研判（产气速率）+ 辅助倾向（<b>倾向XXX</b>）+ 建议动作</li>
+        <li><b>版式套 DL/T 722 附录G 表G.1</b>「油中溶解气体分析档案卡片」，报告落「分析意见」栏</li>
+        <li>合成拿不到的字段（铭牌/工况/O₂·N₂/绝对产气率）<b class="d">诚实留空「—」不杜撰</b>（P1）</li>
+        <li>叫「<b>分析报告</b>」</li>
+      </ul>
+    </div>
+    <div class="colcard c4" style="flex:1">
+      <h3>C、自主决策下一步动作 <span>体现「有决策」</span></h3>
+      <ul>
+        <li>研判紧急度低/诊断三方分歧 → 建议<b>二次采样验证</b>（§5.4.5）</li>
+        <li>异常时缩短周期（§5.4 b）：过热→周 / 放电→天，<b>按倾向触发非确诊</b></li>
+        <li>只出<b>监测决策</b>（采样/调周期），<b class="d">不出运维处置</b>（停电/检修）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="fn"><b class="d">自由对话问答 — 考虑</b>（幻觉/易越界/不可控）；用「固定按钮 + B式受控生成」替代。
+  </div>
+  <div class="std">LangChain 编排 · DL/T 1498.2-2025 §5.4.5 / §5.4 b) · DL/T 722 §5.3 表1</div></section>
+
+
+<section class="slide">
+  <h2>国标依据对照表</h2>
+  <table style="font-size:15.5px;">
+    <thead><tr><th style="width:30%">系统模块</th><th style="width:34%">对标国标条文</th><th>原文要点</th></tr></thead>
+    <tbody>
+      <tr><td class="k">检测-分级（主）</td><td>DL/T 1498.2-2025 附录A 表A.3</td><td>四档；阈值法并入此表不单列</td></tr>
+      <tr><td class="k">检测-处置紧急度研判·产气速率</td><td>DL/T 722 §9.3.3 a) + 1498.2 附录A</td><td>涨势视角；注意值2（=722表3）以上启动</td></tr>
+      <tr><td class="k">辅助诊断-特征气体法</td><td>DL/T 722 §10.1 表5</td><td>不同故障的主/次要特征气体</td></tr>
+      <tr><td class="k">辅助诊断-三比值法</td><td>DL/T 722 §10.2.1 表6/7</td><td>三比值编码→倾向（DL/T722，非IEC）</td></tr>
+      <tr><td class="k">辅助诊断-大卫三角</td><td>DL/T 722 附录C 图C.2/表C.1</td><td>三气体百分比三角分区</td></tr>
+      <tr><td class="k">辅助诊断-触发/局限</td><td>DL/T 722 §10.3 + §10.2.4 a)/c)</td><td>§10.3先比表3(=注意值2)→才诊断,故注意值2及以上触发；低浓度标可信度低</td></tr>
+      <tr><td class="k">后台辅助诊断要求</td><td>DL/T 1498.2-2025 §5.4.2</td><td>点名三比值法 + 大卫三角形法</td></tr>
+      <tr><td class="k">告警</td><td>DL/T 1498.2-2025 §5.4.3 + 表A.3</td><td>三级告警阈值（无停运值）</td></tr>
+      <tr><td class="k">Agent-二次验证/调周期</td><td>DL/T 1498.2-2025 §5.4.5 · DL/T 722 §5.3 表1/§5.4 b)</td><td>预警后二次采样、按倾向缩周期</td></tr>
+      <tr><td class="k">Agent-分析报告版式</td><td>DL/T 722 附录G 表G.1</td><td>油中溶解气体分析档案卡片格式；无数据字段诚实留空（P1）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>实施路线</h2>
+  <div class="roadwrap">
+    <div class="baseline"></div>
+    <div class="road">
+      <div class="stop"><div class="dot">1</div><div class="lb">数据地基</div><div class="ds">合成360天 + 预处理 + 造特征</div>
+    </div>
+      <div class="stop"><div class="dot">2</div><div class="lb">检测</div><div class="ds">表A.3四档 + §9.3.3处置 + 产气速率处置紧急度研判</div></div>
+      <div class="stop"><div class="dot">3</div><div class="lb">辅助诊断</div><div class="ds">特征气体 + 三比值 + Duval，注意值2及以上触发</div></div>
+      <div class="stop"><div class="dot">4</div><div class="lb">告警</div><div class="ds">表A.3三组阈值 + 四档全报</div></div>
+      <div class="stop hot"><div class="dot">5</div><div class="lb">Agent</div><div class="ds">LangChain 编排 + B报告 + C决策</div>
+    </div>
+      <div class="stop"><div class="dot">6</div><div class="lb">前端联调</div><div class="ds">Duval可视化 + 告警面板 + 趋势 + Demo</div></div>
+      <div class="stop"><div class="dot">7</div><div class="lb">收尾</div><div class="ds">从零重梳论文 + 答辩 + 录屏</div></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
