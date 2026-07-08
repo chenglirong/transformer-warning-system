@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>产气趋势 · DGA 分析智能体后台</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/ops-dashboard.css">
+  <link rel="stylesheet" href="assets/css/ops-pages.css">
+</head>
+<body data-page="trend">
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text"><h1>DGA 分析智能体</h1><span>220kV 及以下 · 站端后台</span></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-label">监测总览</div>
+        <a href="index.html" class="nav-item" data-page="dashboard"><span class="icon">◉</span>监测总览</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">分析链路</div>
+        <a href="detection.html" class="nav-item" data-page="detection"><span class="icon">◎</span>气体分级</a>
+        <a href="diagnosis.html" class="nav-item" data-page="diagnosis"><span class="icon">◈</span>类型判断</a>
+        <a href="trend.html" class="nav-item" data-page="trend"><span class="icon">↗</span>产气趋势</a>
+        <a href="alerts.html" class="nav-item" data-page="alerts"><span class="icon">⚠</span>告警记录</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">智能体</div>
+        <a href="agent.html" class="nav-item" data-page="agent"><span class="icon">🤖</span>Agent 编排</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">§9.3.2 产气速率 · 「预」§9.3.3 a</div>
+  </aside>
+
+  <div class="main-wrap">
+    <main class="page-content ops-page">
+      <div class="ops-page-top">
+        <div class="ops-page-head">
+          <h2>产气趋势</h2>
+          <p>产气速率与「预」提前预警 · 回答涨多快 · 不重判四档</p>
+        </div>
+      </div>
+
+      <section class="ops-kpi-row ops-kpi-row-compact">
+        <div class="ops-kpi-card">
+          <div class="ops-kpi-label">当前产气速率</div>
+          <div class="ops-kpi-value" id="trend-rate-val">—</div>
+          <div class="ops-kpi-sub" id="trend-rate-sub">—</div>
+        </div>
+        <div class="ops-kpi-card">
+          <div class="ops-kpi-label">「预」事件累计</div>
+          <div class="ops-kpi-value pre" id="trend-pre-count">—</div>
+          <div class="ops-kpi-sub">含量未达注意值 2 · 速率超阈</div>
+        </div>
+        <div class="ops-kpi-card">
+          <div class="ops-kpi-label">近 90 天超阈</div>
+          <div class="ops-kpi-value" id="trend-over-count">—</div>
+          <div class="ops-kpi-sub" id="trend-over-sub">—</div>
+        </div>
+      </section>
+
+      <section class="ops-panel ops-panel-wide">
+        <div class="ops-panel-head">
+          <h3>近 90 天产气速率</h3>
+          <span class="ops-panel-ref">黄点 =「预」· 10%/月 参考线</span>
+        </div>
+        <div class="ops-panel-body">
+          <div class="ops-rate-chart ops-rate-chart-tall" id="trend-rate-chart"></div>
+        </div>
+      </section>
+
+      <section class="ops-panel ops-panel-wide">
+        <div class="ops-panel-head ops-alert-toolbar">
+          <h3>「预」事件列表</h3>
+          <span class="ops-panel-ref" id="trend-pre-count-label">—</span>
+        </div>
+        <div class="ops-panel-body ops-table-panel">
+          <table class="data-table ops-pre-table">
+            <thead>
+              <tr>
+                <th class="col-idx">#</th>
+                <th class="col-date">日期</th>
+                <th class="num">总烃 μL/L</th>
+                <th class="num">C₂H₂ μL/L</th>
+                <th class="num">产气速率</th>
+                <th>当时档位</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody id="trend-pre-body"></tbody>
+          </table>
+        </div>
+        <div class="ops-panel-foot ops-alert-pagination" id="trend-pre-pagination"></div>
+      </section>
+
+      <section class="ops-panel ops-panel-wide" id="trend-detail-panel" hidden>
+        <div class="ops-panel-head"><h3>选中事件 · 速率计算</h3></div>
+        <div class="ops-panel-body">
+          <div class="ops-rate-calc" id="trend-rate-calc"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/dga-series.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/trend.js"></script>
+</body>
+</html>

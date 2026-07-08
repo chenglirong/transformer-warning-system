@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>故障类型判断 · DGA 分析智能体后台</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/ops-dashboard.css">
+  <link rel="stylesheet" href="assets/css/ops-pages.css">
+</head>
+<body data-page="diagnosis">
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text"><h1>DGA 分析智能体</h1><span>220kV 及以下 · 站端后台</span></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-label">监测总览</div>
+        <a href="index.html" class="nav-item" data-page="dashboard"><span class="icon">◉</span>监测总览</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">分析链路</div>
+        <a href="detection.html" class="nav-item" data-page="detection"><span class="icon">◎</span>气体分级</a>
+        <a href="diagnosis.html" class="nav-item" data-page="diagnosis"><span class="icon">◈</span>类型判断</a>
+        <a href="trend.html" class="nav-item" data-page="trend"><span class="icon">↗</span>产气趋势</a>
+        <a href="alerts.html" class="nav-item" data-page="alerts"><span class="icon">⚠</span>告警记录</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">智能体</div>
+        <a href="agent.html" class="nav-item" data-page="agent"><span class="icon">🤖</span>Agent 编排</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">三种国标方法 · §10.3 触发</div>
+  </aside>
+
+  <div class="main-wrap">
+    <main class="page-content ops-page">
+      <div class="ops-page-top">
+        <div class="ops-page-head">
+          <h2>故障类型判断</h2>
+          <p>DL/T 722 三种规则法 · 仅注意值 2 及以上触发 · 不做立体图示法 / 不做 ML 分类</p>
+        </div>
+        <div class="ops-page-actions">
+          <a href="agent.html" class="ops-link-btn">输出 G.1 报告 →</a>
+        </div>
+      </div>
+
+      <section class="ops-diag-hero">
+        <div>
+          <div style="font-size:11px;color:var(--copper);font-weight:600">综合结论（三方一致）</div>
+          <div class="result">高温过热 · T3</div>
+          <p>三种方法均指向过热；三比值与 David 三角同落 T3 格，特征气体法给出「油过热」。</p>
+        </div>
+        <span class="confidence-tag high">可信度高</span>
+      </section>
+
+      <!-- 仅此一节：三种方法，各一列 -->
+      <section class="ops-panel">
+        <div class="ops-panel-head">
+          <h3>三种国标方法</h3>
+          <span class="ops-panel-ref">特征气体法 · 三比值法 · 大卫三角法</span>
+        </div>
+        <div class="ops-panel-body">
+          <div class="ops-three-methods">
+            <article class="ops-method-col">
+              <div class="ops-method-num">①</div>
+              <h4>三比值法</h4>
+              <div class="ops-method-std">722 §10.2 · 表6 → 表7</div>
+              <div class="ops-method-result">T3 · 高温过热</div>
+              <ul class="ops-method-detail">
+                <li>C₂H₂/C₂H₄ = 0.12 → <strong>0</strong></li>
+                <li>CH₄/H₂ = 0.61 → <strong>1</strong></li>
+                <li>C₂H₄/C₂H₆ = 2.20 → <strong>2</strong></li>
+                <li>组合编码 <strong>102</strong></li>
+              </ul>
+            </article>
+
+            <article class="ops-method-col ops-method-col-duval">
+              <div class="ops-method-num">②</div>
+              <h4>大卫三角法</h4>
+              <div class="ops-method-std">722 附录 C · 表C.1</div>
+              <div class="ops-method-result">T3 分区</div>
+              <div class="duval-svg-wrap" id="duval-chart"></div>
+              <ul class="ops-method-detail">
+                <li>%C₂H₂ = 18.2 · %C₂H₄ = 51.6 · %CH₄ = 30.2</li>
+                <li>与三比值同一套六代码（PD/D1/D2/T1/T2/T3）</li>
+              </ul>
+            </article>
+
+            <article class="ops-method-col">
+              <div class="ops-method-num">③</div>
+              <h4>特征气体法</h4>
+              <div class="ops-method-std">722 §10.1 · 表5</div>
+              <div class="ops-method-result">油过热</div>
+              <ul class="ops-method-detail">
+                <li>主要特征：CH₄↑、C₂H₄↑</li>
+                <li>次要特征：H₂、C₂H₆ 偏高</li>
+                <li>粒度与六代码不同，比「过热 / 放电」大类</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- 一致性 = 对上面三者的比对，不是第四种方法 -->
+      <section class="ops-panel">
+        <div class="ops-panel-head">
+          <h3>一致性比对</h3>
+          <span class="ops-panel-ref">对三种方法结果的交叉验证，非独立判型方法</span>
+        </div>
+        <div class="ops-panel-body">
+          <div class="ops-consistency">
+            <div class="ops-consistency-row"><span>三比值 ↔ 大卫三角</span><span class="ok">同格 T3</span></div>
+            <div class="ops-consistency-row"><span>三比值 ↔ 特征气体</span><span class="ok">均属过热</span></div>
+            <div class="ops-consistency-row"><span>大卫三角 ↔ 特征气体</span><span class="ok">均属过热</span></div>
+          </div>
+          <p class="ops-footnote" style="margin-top:12px">低浓度局限（§10.2.4 c）：总烃 168.5 μL/L &gt; 10，本条不适用。</p>
+          <div class="ops-diag-measures">
+            <div class="ops-diag-measures-title">附录 D · 进一步试验建议（不出运维处置指令）</div>
+            <ul>
+              <li>绕组直流电阻测量</li>
+              <li>铁芯及夹件绝缘电阻</li>
+              <li>绝缘油击穿电压</li>
+              <li>必要时局放测量（需停电）</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/dga-series.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/diagnosis.js"></script>
+</body>
+</html>

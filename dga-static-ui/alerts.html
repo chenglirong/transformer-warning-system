@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>告警记录 · DGA 分析智能体后台</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/ops-dashboard.css">
+  <link rel="stylesheet" href="assets/css/ops-pages.css">
+  <link rel="stylesheet" href="assets/css/g1-form.css">
+  <link rel="stylesheet" href="assets/css/agent.css">
+</head>
+<body data-page="alerts">
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text"><h1>DGA 分析智能体</h1><span>220kV 及以下 · 站端后台</span></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-label">监测总览</div>
+        <a href="index.html" class="nav-item" data-page="dashboard"><span class="icon">◉</span>监测总览</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">分析链路</div>
+        <a href="detection.html" class="nav-item" data-page="detection"><span class="icon">◎</span>气体分级</a>
+        <a href="diagnosis.html" class="nav-item" data-page="diagnosis"><span class="icon">◈</span>类型判断</a>
+        <a href="trend.html" class="nav-item" data-page="trend"><span class="icon">↗</span>产气趋势</a>
+        <a href="alerts.html" class="nav-item" data-page="alerts"><span class="icon">⚠</span>告警记录</a>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">智能体</div>
+        <a href="agent.html" class="nav-item" data-page="agent"><span class="icon">🤖</span>Agent 编排</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">四档全报 · 告警流水</div>
+  </aside>
+
+  <div class="main-wrap">
+    <main class="page-content ops-page">
+      <div class="ops-page-top">
+        <div class="ops-page-head">
+          <h2>告警记录</h2>
+          <p>360 天四档全报流水 · 表格查记录 · 操作列查看 Agent 表 G.1 完整报告</p>
+        </div>
+      </div>
+
+      <section class="ops-kpi-row ops-kpi-row-compact" id="alert-kpi-row"></section>
+
+      <section class="ops-panel ops-panel-wide">
+        <div class="ops-panel-head ops-alert-toolbar">
+          <div class="ops-alert-toolbar-left">
+            <div class="ops-chip-row">
+              <span class="ops-chip active" data-filter="all">全部</span>
+              <span class="ops-chip" data-filter="non-normal">仅异常</span>
+              <span class="ops-chip" data-filter="w2">注意值 2</span>
+              <span class="ops-chip" data-filter="w1">注意值 1</span>
+              <span class="ops-chip" data-filter="alarm">告警值</span>
+              <span class="ops-chip" data-filter="normal">正常</span>
+            </div>
+            <div class="ops-alert-search">
+              <input type="search" id="alert-search" placeholder="搜索日期 / 告警内容 / 报告编号" autocomplete="off">
+            </div>
+            <label class="ops-alert-sort">
+              排序
+              <select id="alert-sort">
+                <option value="date-desc">日期 ↓ 新→旧</option>
+                <option value="date-asc">日期 ↑ 旧→新</option>
+                <option value="level-desc">档位 ↓ 高→低</option>
+              </select>
+            </label>
+          </div>
+          <span class="ops-panel-ref" id="alert-count">—</span>
+        </div>
+        <div class="ops-panel-body ops-alert-table-wrap">
+          <table class="data-table ops-alert-table">
+            <thead>
+              <tr>
+                <th class="col-idx">#</th>
+                <th class="col-date">日期</th>
+                <th class="col-level">档位</th>
+                <th class="col-summary">告警内容</th>
+                <th class="col-gas num">C₂H₂</th>
+                <th class="col-gas num">总烃</th>
+                <th class="col-gas num">H₂</th>
+                <th class="col-rate num">产气速率</th>
+                <th class="col-diag">故障类型</th>
+                <th class="col-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody id="alert-table-body"></tbody>
+          </table>
+        </div>
+        <div class="ops-panel-foot ops-alert-pagination">
+          <div class="ops-pagination-meta">
+            <label class="ops-pagination-size">
+              每页
+              <select id="alert-page-size">
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              条
+            </label>
+            <span class="ops-panel-ref" id="alert-range">—</span>
+          </div>
+          <div class="ops-pagination-nav" id="alert-pagination-nav"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- G.1 分析报告弹框 -->
+<div class="agent-modal" id="alert-report-modal" aria-hidden="true">
+  <div class="agent-modal-backdrop" id="alert-report-backdrop"></div>
+  <div class="agent-modal-dialog" role="dialog" aria-labelledby="alert-report-title">
+    <div class="agent-modal-header">
+      <div>
+        <h3 id="alert-report-title">Agent 分析报告</h3>
+        <div class="modal-meta" id="alert-report-meta">—</div>
+      </div>
+      <button class="agent-modal-close" id="alert-report-close" aria-label="关闭">×</button>
+    </div>
+    <div class="agent-modal-body" id="alert-report-body"></div>
+    <div class="agent-modal-footer">
+      <button class="btn btn-ghost" id="alert-report-cancel">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/dga-series.js"></script>
+<script src="assets/js/g1-report.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/alerts.js"></script>
+</body>
+</html>
