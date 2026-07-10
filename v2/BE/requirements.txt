@@ -1,0 +1,13 @@
+# v2 后端依赖(分批装,别一次性 pip install -r,3.9→3.11 下慢/易卡)
+# 阶段0 数据地基:合成/预处理/特征只需下面三个
+pandas
+numpy
+openpyxl        # 读 data/raw/FinalDataSet_DGA.xlsx
+
+# ===== 以下延后,做到对应模块再装 =====
+# fastapi              # Web 层(模块1起)
+# 'uvicorn[standard]'  # zsh 下要带引号
+# sqlalchemy           # DB 层
+# scikit-learn         # 若检测保留孤立森林佐证(蓝图已倾向去 ML,视情况)
+# langchain 等         # 模块4 Agent(题眼)
+# 不装 tensorflow(v2 不做 LSTM/预测)
