@@ -1,11 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// v2 路由 —— 待按新模块补齐(检测/诊断/告警/趋势/Agent 页面)
+// v2 路由 —— 后台管理骨架(左菜单+主内容),页面挂 AppLayout 下
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: () => import('@/views/HomeView.vue'),
+    component: () => import('@/layout/AppLayout.vue'),
+    children: [
+      { path: '', redirect: '/trend' },
+      { path: 'trend', name: 'trend', component: () => import('@/views/TrendView.vue') },
+    ],
   },
 ]
 

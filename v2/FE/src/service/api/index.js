@@ -12,5 +12,5 @@ import http from '@/service/http'
 //   Agent:  /agent(分析报告 + 决策建议)
 // ============================================================
 
-// 示例(占位,实现后端后启用):
-// export const getTimeseries = (days = 360) => http.get('/data/timeseries', { days })
+// 趋势:月度相对产气速率(DL/T 722 §9.3.2 式2,%/月)+ 总烃 10%/月 判据
+export const getTrendMonthly = () => http.get('/trend/monthly')
