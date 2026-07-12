@@ -1,16 +1,18 @@
 import http from '@/service/http'
 
 // ============================================================
-// v2 重构接口层 —— 待按新模块补齐(旧接口已清空)
+// v2 重构接口层(对应重构模块)
 // 后端统一信封 { status, code, message, data },http.js 已解出 data.data
-// 规划(对应重构模块,实现时逐个补):
-//   数据:   /data/timeseries、/data/snapshot ...
-//   检测:   /detect(表A.3四档分级 + 两视角佐证)
-//   诊断:   /diagnose(特征气体/三比值/Duval 倾向)
-//   告警:   /warning(四档全报)
-//   趋势:   /trend(产气速率 + 预)
-//   Agent:  /agent(分析报告 + 决策建议)
 // ============================================================
 
-// 趋势:月度相对产气速率(DL/T 722 §9.3.2 式2,%/月)+ 总烃 10%/月 判据
 export const getTrendMonthly = () => http.get('/trend/monthly')
+export const getTrendDaily = () => http.get('/trend/daily')
+
+export const getDetectSeries = () => http.get('/detect/series')
+export const getDetectDay = (day) => http.get(`/detect/day/${day}`)
+
+export const getWarningRecords = (params) => http.get('/warning/records', params)
+export const getWarningDay = (day) => http.get(`/warning/day/${day}`)
+
+export const getDiagnoseSeries = () => http.get('/diagnose/series')
+export const getDiagnoseDay = (day) => http.get(`/diagnose/day/${day}`)
