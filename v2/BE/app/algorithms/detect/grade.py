@@ -132,7 +132,6 @@ def detect(df: pd.DataFrame) -> list[dict]:
             "total_hydrocarbon": round(thc, 2),
             "triggers": triggers,
             "thc_rel_rate": None if thc_rel_rate is None else round(thc_rel_rate, 1),
-            "_conc_over": conc_over,
             "_rate_over": (thc_rel_rate is not None and thc >= THC_REL_RATE_MIN_BASE
                            and thc_rel_rate >= THC_REL_RATE_ATTENTION),
         })
@@ -146,8 +145,9 @@ def detect(df: pd.DataFrame) -> list[dict]:
     ]
     for i, r in enumerate(results):
         rising = _confirm_rate_over[i]
-        # ④「预」= 浓度未超注意值,但相对速率连续超 10%/月(§9.3.3 a)→ 缩周期
-        r["is_pre"] = rising and not r.pop("_conc_over")
+        # ④「预」= **浓度还没到注意值2 经典超标线**(档位仅正常/注意值1),但相对速率
+        # 连续超 10%/月(§9.3.3 a)→ 缩周期。注意值2+ 已明确超标,归②处置研判不算「预」。
+        r["is_pre"] = rising and r["grade"] in (NORMAL, ATTENTION_1)
         r["urgency"] = _assess_urgency(r["grade"], r["thc_rel_rate"], rising)
         del r["_rate_over"]
     return results
