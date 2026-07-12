@@ -150,8 +150,10 @@ def _cholesky_psd(corr: np.ndarray) -> np.ndarray:
 # 马尔可夫状态机(健康 ~75% / 异常 ~25%,事件预算保必现)
 # ============================================================
 
-# 异常事件平均持续天数(几何分布) → 每次事件 ~21 天
-FAULT_DURATION_MEAN_DAYS = 21
+# 异常事件平均持续天数 → 每次事件 ~60 天。真实故障(表D.1)一旦发生,气体维持
+# 高位平台数月不回落(不是尖峰几天就消)。事件拉长 → 相对产气速率是「阶跃到位后
+# 平台窄波动」而非「几天冲几万%又跌回」,速率峰值回归合理(几百%量级,非几万)。
+FAULT_DURATION_MEAN_DAYS = 60
 
 
 @dataclass
@@ -210,13 +212,22 @@ class StateChain:
 # 长期游走幅度越小。故障态用小 θ(0.15,半衰期~4.6天,让浓度有时间爬升到故障
 # 高位);健康态用大 θ(0.45,回归快),把健康段死死钉在低位均值附近,避免随机
 # 游走甩出高尾被检测误判成异常。
-OU_THETA_FAULT = 0.15
-OU_THETA_HEALTHY = 1.2  # 健康段回归更狠(半衰期~0.6天),压日间游走
+# 故障态回归速度:目标本身在 FAULT_RAMP_DAYS 内渐变到位(见主循环),θ 只需让浓度
+# 贴着渐变目标走,取适中 0.5(过小则滞后于目标、过大则日抖被放大)。
+OU_THETA_FAULT = 0.5
+OU_THETA_HEALTHY = 1.2   # 健康段回归更狠(半衰期~0.6天),压日间游走
+# 故障目标爬升期(天):事件起始后,烃类目标在 log 空间线性从健康位爬到故障位的
+# 时长。真实产气数周累积(表D.1 从 3月健康到 5月故障历时约 2 个月),取 21 天让
+# 相对速率是「持续爬坡」而非阶跃。之后维持高位平台直到事件结束。
+FAULT_RAMP_DAYS = 21
 # 健康段日 driving noise 衰减:真实变压器健康段读数天与天之间本就平稳,日环比
 # 波动应 <10%(722 相对速率月注意值)。全额 log-σ(0.15)的日噪声会造成 ~30%
 # 日抖,让 722 相对速率(%/月)在健康段天天假超 10%。乘 0.35 把日抖压到 <8%,
 # 使「预/处置研判」只在异常段真实爬升时触发。仅缩日间噪声,不动均值/相关性/上限。
 HEALTHY_NOISE_SCALE = 0.35
+# 故障段日噪声缩放:爬坡期若叠满额日抖,月环比仍会被单日噪声推出几千%假尖峰。
+# 收到 0.5 让爬坡曲线干净(趋势=渐进爬升,不是锯齿),故障高位平台也窄幅波动。
+FAULT_NOISE_SCALE = 0.5
 # 辅助气体(CO/CO₂)日噪声缩放:压制成稳定辅助量,不随故障大幅波动
 AUX_NOISE_SCALE = 0.3
 
@@ -250,6 +261,9 @@ def synthesize(raw: pd.DataFrame, cfg: SynthConfig | None = None) -> pd.DataFram
     # 初值:从健康态锚点起步
     log_val = {g: anchors.log_mu[NORMAL][g] for g in GAS_KEYS}
     target = dict(log_val)
+    target_start = dict(log_val)  # 故障爬升起点(切入故障当天的实测)
+    target_end = dict(log_val)    # 故障爬升终态(故障高位平台目标)
+    ramp_day = 0                  # 故障爬升已进行天数
     prev_state = NORMAL
 
     rows: list[dict] = []
@@ -257,18 +271,30 @@ def synthesize(raw: pd.DataFrame, cfg: SynthConfig | None = None) -> pd.DataFram
         cur_date = cfg.start_date + timedelta(days=day_idx)
         state = chain.step()
 
-        # 状态切换 → 仅烃类重设目标均值(故障判据);辅助气体 CO/CO₂ 恒定健康锚点,
-        # 不随故障漂移(它们无故障锚点、非本系统判据,漂移会失真爆表)。
+        # 状态切换 → 记录事件起点,目标均值改为**逐日渐变到位**(不是一次设到高位靠
+        # OU 追):真实故障是数周累积产气,目标应线性(log 空间)从健康位滑向故障位,
+        # 让总烃是「持续数百%/月爬坡」而非「单日跳几万%」的假尖峰。
         if state != prev_state:
             for g in HYDROCARBONS:
                 mu = anchors.log_mu[state][g]
                 sig = anchors.log_sigma[state][g]
-                target[g] = mu + rng.normal(0, sig * 0.5)  # 事件间目标略有个体差异
+                target_end[g] = mu + rng.normal(0, sig * 0.5)  # 事件终态目标(个体差异)
+                target_start[g] = log_val[g]                    # 从当前值起爬
+            ramp_day = 0
             prev_state = state
 
         theta = OU_THETA_HEALTHY if state == NORMAL else OU_THETA_FAULT
-        # 健康段额外缩日噪声(读数平稳),异常段全额(要能爬升)
-        noise_scale = HEALTHY_NOISE_SCALE if state == NORMAL else 1.0
+        # 日噪声缩放:健康段压最狠(读数平稳),故障段中等(平台窄波动,不锯齿)
+        noise_scale = HEALTHY_NOISE_SCALE if state == NORMAL else FAULT_NOISE_SCALE
+        # 故障段:目标在 RAMP_DAYS 内 log 空间线性爬到终态,之后维持高位平台
+        if state != NORMAL:
+            frac = min(1.0, ramp_day / FAULT_RAMP_DAYS)
+            for g in HYDROCARBONS:
+                target[g] = target_start[g] + frac * (target_end[g] - target_start[g])
+            ramp_day += 1
+        else:
+            for g in HYDROCARBONS:
+                target[g] = anchors.log_mu[NORMAL][g]
         # 烃类:Cholesky 着色噪声(注入相关性)
         z = rng.standard_normal(len(HYDROCARBONS))
         colored = L @ z
