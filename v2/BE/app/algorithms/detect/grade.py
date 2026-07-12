@@ -69,8 +69,11 @@ def detect(df: pd.DataFrame) -> list[dict]:
         df: 日期升序,含 date + 5 主烃类列。
 
     Returns:
-        每日一 dict:date, grade, total_hydrocarbon, triggers(命中判据列表),
-        urgency(注意值2+ 时的产气速率处置研判,否则 None)。
+        每日一 dict:
+          date, grade(综合最高档), total_hydrocarbon,
+          indicators(表A.3 全部指标,含正常),
+          triggers(indicators 中非正常子集,兼容旧调用),
+          urgency / is_pre / thc_rel_rate(§9.3.2 处置与「预」)。
     """
     df = df.reset_index(drop=True)
     total_hc = df[HYDROCARBONS].sum(axis=1)
@@ -80,56 +83,121 @@ def detect(df: pd.DataFrame) -> list[dict]:
            "h2": df["h2"].astype(float).tolist(),
            "total_hydrocarbon": thc_seq}
 
+    gas_label = {
+        "c2h2": "乙炔",
+        "h2": "氢气",
+        "total_hydrocarbon": "总烃",
+    }
+
     results: list[dict] = []
     for i in range(len(df)):
         row = df.iloc[i]
         c2h2, h2, thc = float(row["c2h2"]), float(row["h2"]), float(total_hc.iloc[i])
         metrics = {"c2h2": c2h2, "h2": h2, "total_hydrocarbon": thc}
 
-        triggers: list[dict] = []
+        indicators: list[dict] = []
 
-        # ① 绝对浓度(当日实测值)
+        # ① 绝对浓度(当日实测值)——三项全报,含正常
         for gas, bounds in ABS_CONCENTRATION.items():
             g = _grade_by_thresholds(metrics[gas], bounds)
-            if g != NORMAL:
-                triggers.append({"gas": gas, "basis": "绝对浓度", "grade": g,
-                                 "value": round(metrics[gas], 2)})
+            indicators.append({
+                "basis": "绝对浓度",
+                "gas": gas,
+                "item": f"{gas_label[gas]}值",
+                "unit": "μL/L",
+                "value": round(metrics[gas], 2),
+                "grade": g,
+                "note": None,
+            })
 
-        # ② 绝对增量 ③ 相对增长速率:当前值 − 参比值(A.3.3 参比=前14~前7天窗口均值)
-        # 窗口 = [i-14, i-7)。不足前14天(序列开头)则跳过增量/增长率判据。
+        # ② 绝对增量 ③ 相对增长速率:当前值 − 参比值(A.3.3)
         lo, hi = i - BASELINE_WINDOW_START, i - BASELINE_WINDOW_END
         if lo >= 0:
             base_metrics = {k: _baseline(seq[k][lo:hi]) for k in seq}
             base_thc = base_metrics["total_hydrocarbon"]
             for gas, bounds in ABS_INCREMENT.items():
-                inc = metrics[gas] - base_metrics[gas]  # γₐ = 当前值 − 参比值(A.1)
+                base = base_metrics[gas]
+                inc = metrics[gas] - base  # γₐ = 当前值 − 参比值(A.1)
                 g = _grade_by_thresholds(inc, bounds)
+                note = None
                 # C₂H₂「从无到有」:参比≈0 且现值≥1 → 注意值1
-                if gas == "c2h2" and base_metrics[gas] < 1.0 and metrics[gas] >= 1.0:
+                if gas == "c2h2" and base < 1.0 and metrics[gas] >= 1.0:
                     g = _max_grade(g, ATTENTION_1)
-                if g != NORMAL:
-                    triggers.append({"gas": gas, "basis": "绝对增量", "grade": g,
-                                     "value": round(inc, 2)})
-            # ③ 相对增长速率(仅总烃,参比≥30 才算;γᵣ=(当前−参比)/参比×100%,A.2)
-            if base_thc >= REL_GROWTH_MIN_BASE:
+                    if g == ATTENTION_1 and _grade_by_thresholds(inc, bounds) == NORMAL:
+                        note = "从无到有"
+                indicators.append({
+                    "basis": "绝对增量",
+                    "gas": gas,
+                    "item": gas_label[gas],
+                    "unit": "μL/L·周",
+                    "value": round(inc, 2),
+                    "grade": g,
+                    "baseline": round(base, 2),
+                    "note": note,
+                })
+            # ③ 相对增长速率(仅总烃)
+            if base_thc is None or base_thc < REL_GROWTH_MIN_BASE:
+                indicators.append({
+                    "basis": "相对增长速率",
+                    "gas": "total_hydrocarbon",
+                    "item": "总烃",
+                    "unit": "%/周",
+                    "value": None,
+                    "grade": NORMAL,
+                    "note": "总烃参比 <30 μL/L，不计算相对增长速率",
+                })
+            else:
                 rate = (thc - base_thc) / base_thc * 100.0
                 g = _grade_by_thresholds(rate, REL_GROWTH["total_hydrocarbon"])
-                if g != NORMAL:
-                    triggers.append({"gas": "total_hydrocarbon", "basis": "相对增长速率",
-                                     "grade": g, "value": round(rate, 1)})
+                indicators.append({
+                    "basis": "相对增长速率",
+                    "gas": "total_hydrocarbon",
+                    "item": "总烃",
+                    "unit": "%/周",
+                    "value": round(rate, 1),
+                    "grade": g,
+                    "baseline": round(base_thc, 2),
+                    "note": None,
+                })
+        else:
+            # 序列开头不足参比窗:增量/增长率仍报「正常」并注明未计算
+            for gas in ABS_INCREMENT:
+                indicators.append({
+                    "basis": "绝对增量",
+                    "gas": gas,
+                    "item": gas_label[gas],
+                    "unit": "μL/L·周",
+                    "value": None,
+                    "grade": NORMAL,
+                    "note": "参比窗不足（前14天），暂不计算",
+                })
+            indicators.append({
+                "basis": "相对增长速率",
+                "gas": "total_hydrocarbon",
+                "item": "总烃",
+                "unit": "%/周",
+                "value": None,
+                "grade": NORMAL,
+                "note": "参比窗不足（前14天），暂不计算",
+            })
 
-        # 最终档 = 所有命中判据的最高档(无命中即正常)。落档只认表A.3(1498.2 %/周),
-        # 722 相对速率不参与落档(D-004)。
-        grade = _max_grade(NORMAL, *[t["grade"] for t in triggers]) if triggers else NORMAL
+        # 综合档 = 全部指标最高档(含正常则仍为正常)
+        grade = _max_grade(*[ind["grade"] for ind in indicators])
+        # 兼容旧字段:仅非正常项
+        triggers = [
+            {"gas": ind["gas"], "basis": ind["basis"], "grade": ind["grade"],
+             "value": ind["value"]}
+            for ind in indicators if ind["grade"] != NORMAL and ind["value"] is not None
+        ]
 
         # DL/T 722 §9.3.2 相对产气速率(月环比,%/月);供②处置研判 + ④「预」。
         thc_rel_rate = _rel_rate_monthly(thc_seq, i)
-        conc_over = any(t["basis"] == "绝对浓度" for t in triggers)
 
         results.append({
             "date": row["date"] if isinstance(row["date"], str) else row["date"].isoformat(),
             "grade": grade,
             "total_hydrocarbon": round(thc, 2),
+            "indicators": indicators,
             "triggers": triggers,
             "thc_rel_rate": None if thc_rel_rate is None else round(thc_rel_rate, 1),
             "_rate_over": (thc_rel_rate is not None and thc >= THC_REL_RATE_MIN_BASE

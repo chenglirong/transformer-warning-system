@@ -48,6 +48,7 @@ def detect_series(db: Session = Depends(get_db)):
             "gases": {g: round(float(row[g]), 2) for g in GAS_COLS},
             "fault_state": row["fault_state"],  # 合成真值,答辩对照用
             "trigger_count": len(r["triggers"]),
+            "is_pre": r["is_pre"],
         })
 
     # 四档统计
