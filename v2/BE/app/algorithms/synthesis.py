@@ -26,14 +26,15 @@ import numpy as np
 import pandas as pd
 
 # ============================================================
-# 气体口径(蓝图 §六:5 主烃类核心 + CO/CO₂ 辅助)
+# 气体口径(蓝图:7 种全用平等;烃类有 Analysis 锚点,CO/CO₂ 用 xlsx 有值部分)
 # ============================================================
 
-# 5 主烃类:100% 完整,检测/诊断/相关性建模核心
+# 5 烃类:100% 完整,检测/诊断/相关性建模核心
 HYDROCARBONS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
-# 辅助气体:原始 CO 78%/CO₂ 69% 有值,无 Analysis 锚点,逐列独立合成,可靠性弱
-AUX_GASES = ["co", "co2"]
-GAS_KEYS = HYDROCARBONS + AUX_GASES
+# CO/CO₂:原始覆盖较低、锚点弱于烃类(答辩如实交代),但仍是表5主判据
+OXIDES = ["co", "co2"]
+AUX_GASES = OXIDES  # 兼容旧名;语义非「辅助」
+GAS_KEYS = HYDROCARBONS + OXIDES
 
 # 原始 xlsx 长列名 → 短键
 RAW_COLUMN_MAP = {
@@ -228,8 +229,13 @@ HEALTHY_NOISE_SCALE = 0.35
 # 故障段日噪声缩放:爬坡期若叠满额日抖,月环比仍会被单日噪声推出几千%假尖峰。
 # 收到 0.5 让爬坡曲线干净(趋势=渐进爬升,不是锯齿),故障高位平台也窄幅波动。
 FAULT_NOISE_SCALE = 0.5
-# 辅助气体(CO/CO₂)日噪声缩放:压制成稳定辅助量,不随故障大幅波动
-AUX_NOISE_SCALE = 0.3
+# CO/CO₂ 日噪声:略低于烃类(原始覆盖率弱、σ 易放大),但仍跟状态目标爬升(7 气平等)
+OXIDE_NOISE_SCALE = 0.45
+# 过热态「涉纸」加强:表5「油和纸过热」主特征含 CO。真实 Thermal 仅 2 条,CO 锚点
+# 可能偏弱 → 过热终态 CO 目标取 max(故障锚点, 健康锚点+抬升)。
+OVERHEAT_CO_LIFT = 0.55   # log10 空间相对健康的最低抬升(约 ×3.5)
+OVERHEAT_CO2_LIFT = 0.35  # CO₂ 次要特征,抬升略小
+
 
 
 @dataclass
@@ -280,6 +286,19 @@ def synthesize(raw: pd.DataFrame, cfg: SynthConfig | None = None) -> pd.DataFram
                 sig = anchors.log_sigma[state][g]
                 target_end[g] = mu + rng.normal(0, sig * 0.5)  # 事件终态目标(个体差异)
                 target_start[g] = log_val[g]                    # 从当前值起爬
+            for g in OXIDES:
+                mu = anchors.log_mu[state][g]
+                sig = anchors.log_sigma[state][g]
+                end = mu + rng.normal(0, sig * 0.4)
+                # 过热:保证 CO/CO₂ 相对健康有可见抬升(表5 油和纸过热)
+                if state == OVERHEAT:
+                    floor = {
+                        "co": anchors.log_mu[NORMAL]["co"] + OVERHEAT_CO_LIFT,
+                        "co2": anchors.log_mu[NORMAL]["co2"] + OVERHEAT_CO2_LIFT,
+                    }[g]
+                    end = max(end, floor)
+                target_end[g] = end
+                target_start[g] = log_val[g]
             ramp_day = 0
             prev_state = state
 
@@ -289,11 +308,11 @@ def synthesize(raw: pd.DataFrame, cfg: SynthConfig | None = None) -> pd.DataFram
         # 故障段:目标在 RAMP_DAYS 内 log 空间线性爬到终态,之后维持高位平台
         if state != NORMAL:
             frac = min(1.0, ramp_day / FAULT_RAMP_DAYS)
-            for g in HYDROCARBONS:
+            for g in GAS_KEYS:
                 target[g] = target_start[g] + frac * (target_end[g] - target_start[g])
             ramp_day += 1
         else:
-            for g in HYDROCARBONS:
+            for g in GAS_KEYS:
                 target[g] = anchors.log_mu[NORMAL][g]
         # 烃类:Cholesky 着色噪声(注入相关性)
         z = rng.standard_normal(len(HYDROCARBONS))
@@ -303,12 +322,12 @@ def synthesize(raw: pd.DataFrame, cfg: SynthConfig | None = None) -> pd.DataFram
             drift = theta * (target[g] - log_val[g])
             log_val[g] = min(log_val[g] + drift + sig * noise_scale * colored[j],
                              anchors.log_cap[g])
-        # 辅助气体:独立 OU,恒定回归健康锚点,日噪声压到 0.3×(CO/CO₂ 是稳定辅助量,
-        # 不随故障波动,原始 σ 直接用会累积成数量级摆动、失真爆表)。
-        for g in AUX_GASES:
-            sig = anchors.log_sigma[NORMAL][g] * AUX_NOISE_SCALE
+        # CO/CO₂:独立 OU,但目标随状态爬升(与烃类同日程);噪声略收、上限夹死
+        for g in OXIDES:
+            sig = anchors.log_sigma[state][g]
             drift = theta * (target[g] - log_val[g])
-            log_val[g] = min(log_val[g] + drift + sig * rng.standard_normal(), anchors.log_cap[g])
+            noise = sig * noise_scale * OXIDE_NOISE_SCALE * rng.standard_normal()
+            log_val[g] = min(log_val[g] + drift + noise, anchors.log_cap[g])
 
         row = {
             "transformer_id": cfg.transformer_id,
@@ -319,6 +338,7 @@ def synthesize(raw: pd.DataFrame, cfg: SynthConfig | None = None) -> pd.DataFram
             row[g] = round(max(0.0, 10 ** log_val[g] - 1.0), 3)
         rows.append(row)
 
-    # 列序:元信息 + 5 烃类 + 辅助
+    # 列序:元信息 + 7 种特征气体
     cols = ["transformer_id", "date"] + GAS_KEYS + ["fault_state"]
     return pd.DataFrame(rows)[cols]
+
