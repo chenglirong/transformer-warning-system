@@ -3,7 +3,7 @@
 按蓝图告警三层组织字段:
   ① 档位(表A.3 当日最高档)
   ② 超标判据 + 「预」/处置紧急度(§9.3.2 %/月)
-  ③ 故障类型(注意值2+ 才有)
+  ③ 故障类型(注意值2+ 或 速率超/「预」才有)
 """
 from __future__ import annotations
 
@@ -67,8 +67,8 @@ def _hits_text(hits: list[dict], grade: str, is_pre: bool) -> str:
     return text
 
 
-def _diagnose_fault(grade: str, row) -> tuple[str | None, str | None]:
-    if not can_diagnose(grade):
+def _diagnose_fault(grade: str, row, *, rate_rising: bool = False, is_pre: bool = False) -> tuple[str | None, str | None]:
+    if not can_diagnose(grade, rate_rising=rate_rising):
         return None, None
     diag = diagnose_sample(
         grade=grade,
@@ -79,6 +79,8 @@ def _diagnose_fault(grade: str, row) -> tuple[str | None, str | None]:
         c2h2=float(row["c2h2"]),
         co=float(row["co"]) if row.get("co") is not None else None,
         co2=float(row["co2"]) if row.get("co2") is not None else None,
+        rate_rising=rate_rising,
+        is_pre=is_pre,
     )
     if diag.get("triggered") and diag.get("fusion"):
         return diag["fusion"].get("primary"), diag["fusion"].get("primary_code")
@@ -101,8 +103,11 @@ def warning_records(db: Session = Depends(get_db)):
         grade = r["grade"]
         indicators = r.get("indicators") or []
         is_pre = bool(r.get("is_pre"))
+        rate_rising = bool(r.get("rate_rising"))
         hits = _hits(indicators)
-        fault_type, fault_code = _diagnose_fault(grade, row)
+        fault_type, fault_code = _diagnose_fault(
+            grade, row, rate_rising=rate_rising, is_pre=is_pre,
+        )
         urg = r.get("urgency")
 
         records.append({
@@ -110,11 +115,14 @@ def warning_records(db: Session = Depends(get_db)):
             "date": r["date"],
             "grade": grade,
             "is_pre": is_pre,
+            "rate_rising": rate_rising,
             "hits": hits,
             "hits_text": _hits_text(hits, grade, is_pre),
             "thc_rel_rate": r.get("thc_rel_rate"),  # 722 §9.3.2 %/月
             "urgency_level": urg["level"] if urg else None,
             "urgency_rising": urg.get("rising") if urg else None,
+            "scope_exceeded": r.get("scope_exceeded"),
+            "scope_note": r.get("scope_note"),
             "fault_type": fault_type,
             "fault_code": fault_code,
         })
@@ -141,18 +149,26 @@ def warning_day(day: str, db: Session = Depends(get_db)):
 
     row = df[df["date"] == day].iloc[0]
     hits = _hits(hit.get("indicators") or [])
-    fault_type, fault_code = _diagnose_fault(hit["grade"], row)
+    fault_type, fault_code = _diagnose_fault(
+        hit["grade"], row,
+        rate_rising=bool(hit.get("rate_rising")),
+        is_pre=bool(hit.get("is_pre")),
+    )
 
     return ok({
         "date": hit["date"],
         "grade": hit["grade"],
         "is_pre": hit.get("is_pre", False),
+        "rate_rising": bool(hit.get("rate_rising")),
         "total_hydrocarbon": hit["total_hydrocarbon"],
         "indicators": hit.get("indicators") or [],
         "hits": hits,
         "hits_text": _hits_text(hits, hit["grade"], bool(hit.get("is_pre"))),
         "urgency": hit.get("urgency"),
         "thc_rel_rate": hit.get("thc_rel_rate"),
+        "scope_exceeded": hit.get("scope_exceeded"),
+        "scope_note": hit.get("scope_note"),
+        "non_fault_source_tip": hit.get("non_fault_source_tip"),
         "fault_type": fault_type,
         "fault_code": fault_code,
         "gases": {g: round(float(row[g]), 2) for g in GAS_COLS},

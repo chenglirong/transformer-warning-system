@@ -1,6 +1,6 @@
 """ORM 模型。
 
-v2 精简:只存合成产出的字段——5 主烃类 + CO/CO₂ 辅助 + 故障状态,无工况
+v2 精简:只存合成产出的字段——7 种特征气体 + 故障状态,无工况
 (合成不造油温/负载,见 D-001)。Py3.11 可直接用新式注解。
 """
 from __future__ import annotations
@@ -22,13 +22,12 @@ class Monitoring(Base):
     transformer_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     date: Mapped[DateType] = mapped_column(Date, index=True, nullable=False)
 
-    # 5 主烃类(核心判据)
+    # 7 种特征气体(H₂/烃类 + CO/CO₂)
     h2: Mapped[float | None] = mapped_column(Float)
     ch4: Mapped[float | None] = mapped_column(Float)
     c2h4: Mapped[float | None] = mapped_column(Float)
     c2h6: Mapped[float | None] = mapped_column(Float)
     c2h2: Mapped[float | None] = mapped_column(Float)
-    # CO/CO₂ 辅助
     co: Mapped[float | None] = mapped_column(Float)
     co2: Mapped[float | None] = mapped_column(Float)
 

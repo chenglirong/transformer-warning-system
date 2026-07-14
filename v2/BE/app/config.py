@@ -16,3 +16,6 @@ DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 # CORS(前端 vite dev)
 CORS_ORIGINS = ["http://localhost:5173", "http://localhost:5174"]
+
+# Agent B LLM(环境变量优先;见 .env.example)
+# LLM_API_KEY / LLM_BASE_URL / LLM_MODEL

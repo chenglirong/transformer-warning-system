@@ -49,15 +49,18 @@ def detect_series(db: Session = Depends(get_db)):
             "fault_state": row["fault_state"],  # 合成真值,答辩对照用
             "trigger_count": len(r["triggers"]),
             "is_pre": r["is_pre"],
+            "rate_rising": r.get("rate_rising", False),
         })
 
-    # 四档统计
+    # 四档统计 +「预」计数
     from collections import Counter
     counts = Counter(r["grade"] for r in results)
+    pre_count = sum(1 for r in results if r.get("is_pre"))
     summary = {
         "total_days": len(results),
         "grade_counts": {g: counts.get(g, 0) for g in
                          ["正常", "注意值1", "注意值2", "告警值"]},
+        "pre_count": pre_count,
         "date_range": [series[0]["date"], series[-1]["date"]],
     }
     return ok({"series": series, "summary": summary})

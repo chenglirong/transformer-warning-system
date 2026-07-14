@@ -8,6 +8,6 @@ openpyxl        # 读 data/raw/FinalDataSet_DGA.xlsx
 # fastapi              # Web 层(模块1起)
 # 'uvicorn[standard]'  # zsh 下要带引号
 # sqlalchemy           # DB 层
-# scikit-learn         # 若检测保留孤立森林佐证(蓝图已倾向去 ML,视情况)
-# langchain 等         # 模块4 Agent(题眼)
+# scikit-learn         # 蓝图已定去掉孤立森林等 ML,勿装
+# langchain 等         # 可选;本版 Agent B 用 OpenAI 兼容 HTTP(stdlib),配 LLM_API_KEY 即可
 # 不装 tensorflow(v2 不做 LSTM/预测)

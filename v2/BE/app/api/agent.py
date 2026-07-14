@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.algorithms.agent.pipeline import run_agent
 from app.algorithms.detect.grade import detect
 from app.algorithms.diagnose.pipeline import can_diagnose
+from app.algorithms.knowledge.refs import REFS
 from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
@@ -33,19 +34,21 @@ def _load_df(db: Session) -> pd.DataFrame:
 
 @router.get("/series")
 def agent_series(db: Session = Depends(get_db)):
-    """选日列表:档位 + 是否可判型。"""
+    """选日列表:档位 + 是否可进判型(注意值2+ 或 速率超/「预」)。"""
     df = _load_df(db)
     if df.empty:
         return fail("无监测数据,请先跑 synthesize_data + import_data")
     results = detect(df)
     series = []
     for i, r in enumerate(results):
+        rate_rising = bool(r.get("rate_rising"))
         series.append({
             "date": r["date"],
             "day": i + 1,
             "grade": r["grade"],
-            "eligible": can_diagnose(r["grade"]),
+            "eligible": can_diagnose(r["grade"], rate_rising=rate_rising),
             "is_pre": bool(r.get("is_pre")),
+            "rate_rising": rate_rising,
         })
     default = next((s for s in reversed(series) if s["eligible"]), series[-1])
     return ok({
@@ -59,14 +62,25 @@ def agent_series(db: Session = Depends(get_db)):
     })
 
 
+@router.get("/knowledge")
+def agent_knowledge():
+    """模块5 判据库清单(静态)。"""
+    items = [{"id": k, **v} for k, v in REFS.items()]
+    return ok({"items": items, "count": len(items)})
+
+
 @router.get("/run")
-def agent_run(day: str = Query(..., description="ISO 日期 YYYY-MM-DD"), db: Session = Depends(get_db)):
+def agent_run(
+    day: str = Query(..., description="ISO 日期 YYYY-MM-DD"),
+    force_template: bool = Query(False, description="强制 Agent B 走规则模板"),
+    db: Session = Depends(get_db),
+):
     """对指定日跑七步编排,返回步骤日志/依据/表G.1/监测决策。"""
     df = _load_df(db)
     if df.empty:
         return fail("无监测数据")
     try:
-        result = run_agent(df, day)
+        result = run_agent(df, day, force_template=force_template)
     except ValueError as e:
         return fail(str(e), code=404)
     return ok(result)
