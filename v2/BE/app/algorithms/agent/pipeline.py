@@ -1,6 +1,6 @@
 """Agent 编排 —— 串检测/判型/趋势,产出步骤日志+依据+表G.1+监测决策。
 
-LLM 不下判定(红线);本版分析意见/决策用规则模板(降级路径可跑通)。
+红线:分级/判型/告警全由国标规则;LLM 只写分析意见人话(Agent B),失败则规则模板降级。
 纯算法:输入 DataFrame + 目标日,输出编排结果 dict。
 """
 from __future__ import annotations
@@ -9,14 +9,25 @@ from typing import Any
 
 import pandas as pd
 
+from app.algorithms.agent.report_b import build_facts_pack, generate_opinion
+from app.algorithms.agent.report_card import build_g1_card, build_g2_card
 from app.algorithms.detect.grade import detect
-from app.algorithms.diagnose.pipeline import can_diagnose, diagnose_sample
+from app.algorithms.diagnose.pipeline import diagnose_sample
+from app.algorithms.knowledge.refs import (
+    cites_for_decision,
+    cites_for_detect,
+    cites_for_diagnosis,
+    expand,
+)
 
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
 
 
-def run_agent(df: pd.DataFrame, day: str) -> dict[str, Any]:
-    """对指定监测日跑七步编排。"""
+def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> dict[str, Any]:
+    """对指定监测日跑七步编排。
+
+    force_template=True 时强制 Agent B 走规则模板(答辩演示降级/无网环境)。
+    """
     if df.empty:
         raise ValueError("无监测数据")
     df = df.reset_index(drop=True)
@@ -32,6 +43,11 @@ def run_agent(df: pd.DataFrame, day: str) -> dict[str, Any]:
     gases = {g: round(float(row[g]), 2) for g in GAS_COLS}
     co = float(row["co"]) if row.get("co") is not None and pd.notna(row.get("co")) else None
     co2 = float(row["co2"]) if row.get("co2") is not None and pd.notna(row.get("co2")) else None
+    if co is not None:
+        gases["co"] = round(co, 2)
+    if co2 is not None:
+        gases["co2"] = round(co2, 2)
+
     thc = hit["total_hydrocarbon"]
     grade = hit["grade"]
     is_pre = bool(hit.get("is_pre"))
@@ -39,25 +55,59 @@ def run_agent(df: pd.DataFrame, day: str) -> dict[str, Any]:
     thc_rel = hit.get("thc_rel_rate")
     triggers = hit.get("triggers") or []
     indicators = hit.get("indicators") or []
+    scope_note = hit.get("scope_note")
+    non_fault_tip = hit.get("non_fault_source_tip")
 
     diagnosis = diagnose_sample(
         grade=grade,
         h2=gases["h2"], ch4=gases["ch4"], c2h4=gases["c2h4"],
         c2h6=gases["c2h6"], c2h2=gases["c2h2"],
         co=co, co2=co2,
+        rate_rising=bool(hit.get("rate_rising")),
+        is_pre=is_pre,
     )
     fusion = diagnosis.get("fusion") if diagnosis.get("triggered") else None
 
-    # 近窗取样日(表G.1 多列):当日 / −6 / −14(有则填)
     sample_dates = _sample_dates(df, idx)
 
-    decision = _decide_c(grade=grade, is_pre=is_pre, urgency=urgency, fusion=fusion)
-    opinion = _build_opinion(
+    decision = _decide_c(
+        grade=grade, is_pre=is_pre, urgency=urgency, fusion=fusion,
+        rate_rising=bool(hit.get("rate_rising")),
+    )
+
+    facts = build_facts_pack(
         grade=grade, gases=gases, thc=thc, triggers=triggers,
         is_pre=is_pre, thc_rel=thc_rel, urgency=urgency,
         diagnosis=diagnosis, fusion=fusion, decision=decision,
+        scope_note=scope_note, non_fault_tip=non_fault_tip,
     )
+    opinion_pack = generate_opinion(facts=facts, force_template=force_template)
+    opinion = opinion_pack["text"]
+    report_mode = opinion_pack["mode"]
+
+    # 模块5:结论↔依据 id
+    detect_cites = cites_for_detect(
+        is_pre=is_pre, urgency=urgency,
+        scope_exceeded=bool(hit.get("scope_exceeded")),
+    )
+    diag_cites = cites_for_diagnosis(
+        triggered=bool(diagnosis.get("triggered")),
+        trigger_by=diagnosis.get("trigger_by"),
+        fusion=fusion,
+    )
+    decide_cites = cites_for_decision(is_pre=is_pre, grade=grade)
+    knowledge = {
+        "detect": expand(detect_cites),
+        "diagnose": expand(diag_cites),
+        "decision": expand(decide_cites),
+        "report": expand(["722-附录G"]),
+    }
+
     report_no = f"RPT-{day.replace('-', '')}-{day_num:03d}"
+    report_log = (
+        f"生成 DL/T 722 表 G.1/G.2 · 分析意见已写入({report_mode}) · {report_no}"
+        + (f" · {opinion_pack['error']}" if opinion_pack.get("error") else "")
+    )
 
     steps = [
         _step(
@@ -66,7 +116,7 @@ def run_agent(df: pd.DataFrame, day: str) -> dict[str, Any]:
             sub="360 天合成时序 · SYN-001",
             tag="detect",
             cite={"id": "722-10.3", "label": "§10.3"},
-            log=f"加载虚拟设备 #SYN-001 · 第 {day_num} 采样日 {day} · 5 主烃类完整",
+            log=f"加载虚拟设备 #SYN-001 · 第 {day_num} 采样日 {day} · 7 种特征气体",
             detail={"day": day_num, "date": day, "gases": gases, "total_hydrocarbon": thc},
         ),
         _step(
@@ -76,7 +126,8 @@ def run_agent(df: pd.DataFrame, day: str) -> dict[str, Any]:
             tag="detect",
             cite={"id": "1498-表A3", "label": "表A.3"},
             log=_grade_log(grade, triggers),
-            detail={"grade": grade, "indicators": indicators, "triggers": triggers},
+            detail={"grade": grade, "indicators": indicators, "triggers": triggers,
+                    "cite_ids": detect_cites},
         ),
         _step(
             id="urgency",
@@ -94,7 +145,7 @@ def run_agent(df: pd.DataFrame, day: str) -> dict[str, Any]:
             tag="diag",
             cite={"id": "722-10.3", "label": "§10.3"},
             log=_diag_log(diagnosis, fusion),
-            detail={"diagnosis": diagnosis},
+            detail={"diagnosis": diagnosis, "cite_ids": diag_cites},
         ),
         _step(
             id="trend",
@@ -110,53 +161,59 @@ def run_agent(df: pd.DataFrame, day: str) -> dict[str, Any]:
             label="Agent 决策",
             sub="模块 B 报告 + 模块 C 监测",
             tag="agent",
-            cite={"id": "722-5.4", "label": "§5.4 / §5.4.5"},
+            cite={"id": "1498-5.4.5", "label": "§5.4.5 / A.3.1"},
             log=decision["log"],
-            detail=decision,
+            detail={**decision, "cite_ids": decide_cites, "report_mode": report_mode},
         ),
         _step(
             id="report",
-            label="表 G.1 报告",
+            label="表 G.1/G.2 报告",
             sub="附录 G 档案卡片 · 分析意见",
             tag="report",
-            cite={"id": "722-附录G", "label": "附录G 表G.1"},
-            log=f"生成 DL/T 722 表 G.1 档案卡片 · 分析意见已写入 · {report_no}",
-            detail={"report_no": report_no},
+            cite={"id": "722-附录G", "label": "附录G"},
+            log=report_log,
+            detail={"report_no": report_no, "mode": report_mode},
         ),
     ]
 
-    g1 = {
-        "report_no": report_no,
-        "device_id": "SYN-001",
-        "voltage": "220kV 及以下",
-        "sample_dates": sample_dates,
-        "gases": {
-            "h2": _gas_cols(df, idx, "h2", sample_dates),
-            "ch4": _gas_cols(df, idx, "ch4", sample_dates),
-            "c2h4": _gas_cols(df, idx, "c2h4", sample_dates),
-            "c2h6": _gas_cols(df, idx, "c2h6", sample_dates),
-            "c2h2": _gas_cols(df, idx, "c2h2", sample_dates),
-            "co": _gas_cols(df, idx, "co", sample_dates) if "co" in df.columns else [None] * 4,
-            "co2": _gas_cols(df, idx, "co2", sample_dates) if "co2" in df.columns else [None] * 4,
-            "thc": [
-                _thc_at(df, _date_to_idx(df, d)) if d else None
-                for d in sample_dates
-            ],
-        },
-        "opinion": opinion,
-        "empty_note": "合成虚拟设备无铭牌/油重/油温等工况字段,如实留空",
-    }
+    cite_ids = list(dict.fromkeys(
+        detect_cites + diag_cites + decide_cites + ["722-附录G"]
+    ))
+    g1 = build_g1_card(
+        df=df,
+        idx=idx,
+        day=day,
+        day_num=day_num,
+        sample_dates=sample_dates,
+        opinion=opinion,
+        report_no=report_no,
+        cite_ids=cite_ids,
+    )
+    g2 = build_g2_card()
+
+    note = (
+        "判定全由国标规则完成;Agent B 分析意见="
+        + ("LLM 组织人话" if report_mode == "llm" else "规则模板")
+        + ";Agent C 监测决策为规则。"
+    )
+    if opinion_pack.get("error"):
+        note += f" ({opinion_pack['error']})"
+    if opinion_pack.get("note"):
+        note += f" ({opinion_pack['note']})"
 
     return {
         "date": day,
         "day": day_num,
         "grade": grade,
         "is_pre": is_pre,
+        "rate_rising": bool(hit.get("rate_rising")),
         "steps": steps,
         "decision": decision,
         "g1": g1,
-        "mode": "rule_template",  # LLM 降级
-        "note": "判定全由国标规则完成;分析意见与监测决策为本版规则模板(Agent B/C 降级路径)",
+        "g2": g2,
+        "knowledge": knowledge,
+        "mode": report_mode,
+        "note": note,
     }
 
 
@@ -185,14 +242,19 @@ def _urgency_log(grade: str, urgency: dict | None, thc_rel: float | None, is_pre
 
 def _diag_log(diagnosis: dict, fusion: dict | None) -> str:
     if not diagnosis.get("triggered"):
-        return diagnosis.get("reason") or "未达注意值2,按 §10.3 / §10.2.4 a 不判型"
+        return diagnosis.get("reason") or "未进判型(档位未达注意值2且速率未连续超注意)"
     if not fusion:
         return "已触发判型但融合无结论"
     code = fusion.get("primary_code") or ""
     conf = fusion.get("confidence") or "—"
+    by = diagnosis.get("trigger_note") or ""
+    provisional = fusion.get("provisional") or conf == "低"
+    stance = "暂定" if provisional else ""
     return (
-        f"{fusion.get('primary')}{' · '+code if code else ''} · 可信度{conf}"
+        f"{stance}{fusion.get('primary')}{' · '+code if code else ''} · 可信度{conf}"
         f" · {fusion.get('confidence_reason','')}"
+        + (" · 不作确诊" if provisional else "")
+        + (f" · {by}" if by else "")
     )
 
 
@@ -205,39 +267,48 @@ def _trend_log(is_pre: bool, thc_rel: float | None, urgency: dict | None) -> str
     return f"总烃相对产气速率 {rate} · 未形成连续超阈涨势"
 
 
-def _decide_c(*, grade: str, is_pre: bool, urgency: dict | None, fusion: dict | None) -> dict:
-    """Agent C 监测决策(规则模板)。"""
-    nature = (fusion or {}).get("nature")
+def _decide_c(
+    *,
+    grade: str,
+    is_pre: bool,
+    urgency: dict | None,
+    fusion: dict | None,
+    rate_rising: bool = False,
+) -> dict:
+    """Agent C 监测决策 —— 在线口径(1498.2 A.3.1 / §5.4.5 / §5.5.5)。"""
     conf = (fusion or {}).get("confidence")
     measures = list((fusion or {}).get("measures") or [])
-    cite_period = "722-5.4"
-    cite_resample = "722-5.4.5"
+    cite_period = "1498-A.3.1"
+    cite_resample = "1498-5.4.5"
 
-    if grade in ("正常", "注意值1"):
-        if is_pre:
-            period = "缩短检测周期（建议每周）"
-            period_sub = "§9.3.3 a · 「预」缩周期"
-            cite_period = "722-9.3.3"
-        else:
-            period = "按表1正常周期"
-            period_sub = "§5.3 表1 · 默认监测周期"
+    # 正常基线 ≤12h;预警确认后快速周期,下限多组分 ≤2h
+    if grade in ("正常", "注意值1") and not is_pre and not rate_rising:
+        period = "按在线基线周期(≤12h)"
+        period_sub = "1498.2 A.3.1 · 220kV 及以下采集周期"
         resample = "不需要"
-        resample_sub = "未达注意值2 经典线"
+        resample_sub = "未达预警触发条件"
+        log = f"Agent C → {period} · 二次采样：{resample}"
+    elif is_pre or (grade == "注意值1" and rate_rising):
+        period = "缩短至快速采样周期(下限≤2h)"
+        period_sub = "§9.3.3 a「预」+ §5.4.5 / §5.5.5"
+        cite_period = "1498-5.5.5"
+        resample = "建议二次采样验证"
+        resample_sub = "§5.4.5 · 发现预警先验证再缩周期"
         log = f"Agent C → {period} · 二次采样：{resample}"
     else:
-        if nature == "discharge":
-            period = "每天一次"
-            period_sub = "§5.4 b · 放电类缩短至天"
-        elif nature == "thermal":
-            period = "每周一次"
-            period_sub = "§5.4 b · 过热类缩短至周"
-        elif urgency and urgency.get("rising"):
-            period = "缩短检测周期（建议每周）"
-            period_sub = "§9.3.3 a · 涨势快"
+        # 注意值2 / 告警值
+        if urgency and urgency.get("level") == "低":
+            period = "保持基线并加强监视(≤12h)"
+            period_sub = "§9.3.3 d 协调 · 仅 H₂ 超且不涨"
             cite_period = "722-9.3.3"
+        elif urgency and urgency.get("rising"):
+            period = "缩短至快速采样周期(下限≤2h)"
+            period_sub = "§5.4.5 确认后快速周期 · §5.5.5 下限"
+            cite_period = "1498-5.5.5"
         else:
-            period = "加强监视（可暂不缩周期）"
-            period_sub = "§9.3.3 a · 超标但暂稳"
+            period = "缩短采集周期并加强监视(建议逼近≤2h)"
+            period_sub = "A.3.1 异常宜缩至最小检测周期"
+            cite_period = "1498-A.3.1"
 
         if conf == "低":
             resample = "建议二次采样验证"
@@ -246,10 +317,16 @@ def _decide_c(*, grade: str, is_pre: bool, urgency: dict | None, fusion: dict | 
             resample = "暂不建议二次采样"
             resample_sub = f"可信度{conf or '—'} · 确认后再调周期"
 
-        log = (
-            f"Agent C → 检测周期 {period} · 二次采样：{resample}"
-            + (f" · 附录D 试验 {len(measures)} 项" if measures else "")
+        trials_note = (
+            f" · 核实试验 {len(measures)} 项"
+            if measures and conf == "低"
+            else (f" · 试验建议 {len(measures)} 项" if measures else "")
         )
+        log = f"Agent C → 采集周期 {period} · 二次采样：{resample}{trials_note}"
+
+    measures_purpose = (fusion or {}).get("measures_purpose") or (
+        "verify" if conf == "低" else "recommend"
+    )
 
     return {
         "period": period,
@@ -257,47 +334,16 @@ def _decide_c(*, grade: str, is_pre: bool, urgency: dict | None, fusion: dict | 
         "resample": resample,
         "resample_sub": resample_sub,
         "trials": measures,
+        "trials_purpose": measures_purpose,
+        "trials_basis": list((fusion or {}).get("measures_basis") or []),
+        "trials_appendix_d": list((fusion or {}).get("measures_appendix_d") or []),
+        "trials_1685_items": list((fusion or {}).get("measures_1685_items") or []),
+        "trials_nature_label": (fusion or {}).get("measures_nature_label"),
         "cite_period": cite_period,
         "cite_resample": cite_resample,
         "log": log,
+        "offline_note": "722 §5.3 表1 / §5.4 b(月/周/天)为离线例行对照,不写入在线主规则",
     }
-
-
-def _build_opinion(*, grade, gases, thc, triggers, is_pre, thc_rel, urgency, diagnosis, fusion, decision) -> str:
-    parts = [f"【告警级别】{grade}。"]
-    if triggers:
-        hit_txt = "、".join(
-            f"{_gas_zh(t.get('gas'))}({t.get('basis')})→{t.get('grade')}" for t in triggers[:6]
-        )
-        parts.append(f"超标判据：{hit_txt}。")
-    else:
-        parts.append("表 A.3 七项均在正常范围。")
-
-    rate = f"{thc_rel}%/月" if thc_rel is not None else "—"
-    if is_pre:
-        parts.append(f"【趋势】总烃月环比 {rate} 连续超阈，触发「预」提前预警。")
-    elif urgency:
-        parts.append(f"【趋势】总烃月环比 {rate}；处置紧急度 {urgency.get('level')}。{urgency.get('advice','')}")
-    else:
-        parts.append(f"【趋势】总烃月环比 {rate}。")
-
-    if fusion:
-        code = fusion.get("primary_code") or ""
-        parts.append(
-            f"【故障类型】{fusion.get('primary')}"
-            + (f"（{code}）" if code else "")
-            + f"；可信度{fusion.get('confidence')}（{fusion.get('confidence_reason','')}）。"
-        )
-    elif not diagnosis.get("triggered"):
-        parts.append("【故障类型】未触发（§10.3：未达注意值2不判型）。")
-
-    parts.append(
-        f"【处置建议】检测周期：{decision['period']}；二次采样：{decision['resample']}。"
-    )
-    if decision.get("trials"):
-        parts.append("附录 D 建议试验：" + "、".join(decision["trials"]) + "。")
-    parts.append("（本意见由规则模板组织；判定本身全部来自国标规则，非 LLM 下判。）")
-    return "".join(parts)
 
 
 def _sample_dates(df: pd.DataFrame, idx: int) -> list[str | None]:
@@ -309,34 +355,6 @@ def _sample_dates(df: pd.DataFrame, idx: int) -> list[str | None]:
         out.append(dates[j] if j >= 0 else None)
     out.append(None)
     return out
-
-
-def _date_to_idx(df: pd.DataFrame, day: str | None) -> int | None:
-    if not day:
-        return None
-    hits = df.index[df["date"].astype(str) == day].tolist()
-    return int(hits[0]) if hits else None
-
-
-def _gas_cols(df: pd.DataFrame, idx: int, gas: str, sample_dates: list) -> list:
-    out = []
-    for d in sample_dates:
-        if d is None:
-            out.append(None)
-            continue
-        j = _date_to_idx(df, d)
-        if j is None or gas not in df.columns or pd.isna(df.iloc[j][gas]):
-            out.append(None)
-        else:
-            out.append(round(float(df.iloc[j][gas]), 2))
-    return out
-
-
-def _thc_at(df: pd.DataFrame, j: int | None) -> float | None:
-    if j is None:
-        return None
-    row = df.iloc[j]
-    return round(float(row["ch4"]) + float(row["c2h4"]) + float(row["c2h6"]) + float(row["c2h2"]), 2)
 
 
 def _gas_zh(gas: str | None) -> str:
