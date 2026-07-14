@@ -1,6 +1,6 @@
 """三比值法 —— DL/T 722-2014 §10.2 表6 编码 + 表7 判型。
 
-方法名属 DL/T 722「三比值法」,非 IEC(旧 iec.py 命名已废)。
+方法属 DL/T 722「三比值法」(在 IEC 60599 基础上按国内经验细化;旧 iec.py 已废)。
 纯算法:输入 5 烃类标量(μL/L),输出故障类型判断结论。
 """
 from __future__ import annotations
@@ -25,7 +25,8 @@ _NON_DIAGNOSTIC = {UNDETERMINED, INSUFFICIENT_DATA}
 
 # 表7 编码三元组 → 故障类型
 _FAULT_CODE_TABLE = {
-    (0, 0, 0): THERMAL_LOW1,
+    # 表7:低温过热<150℃ = (0,0,1);无 (0,0,0) 行 → 无对应编码
+    (0, 0, 1): THERMAL_LOW1,
     (0, 2, 0): THERMAL_LOW2,
     (0, 2, 1): THERMAL_MID,
     (0, 0, 2): THERMAL_HIGH,

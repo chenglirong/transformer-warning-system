@@ -1,9 +1,10 @@
-"""多方法融合 + 可信度 + 成因参考 + 附录D 措施建议。
+"""多方法融合 + 可信度 + 试验建议(附录D / 1685 附录B)。
 
 一致性规则(蓝图已定):
   - 三比值 ↔ 大卫三角:比六代码是否同格/相邻
   - 特征气体法:保留原话,不硬翻成六代码
   - 三方一致性拉到「放电 vs 过热」性质大类
+  - 只荐试验、不下成因
 """
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ from typing import Optional
 
 from app.algorithms.diagnose.duval import DuvalResult
 from app.algorithms.diagnose.key_gas import KeyGasResult
+from app.algorithms.diagnose.measures import build_measures
 from app.algorithms.diagnose.ratios import RatioResult
 
 # 六代码相邻关系(同格或相邻 → 一致)
@@ -30,49 +32,12 @@ _ZONE_NATURE = {
     "DT": "mixed",
 }
 
-# 表7 故障 → 性质
 _RATIO_NATURE = {
     "低温过热<150℃": "thermal", "低温过热150~300℃": "thermal",
     "中温过热300~700℃": "thermal", "高温过热>700℃": "thermal",
     "局部放电": "discharge",
     "低能放电": "discharge", "低能放电兼过热": "mixed",
     "电弧放电": "discharge", "电弧放电兼过热": "mixed",
-}
-
-# 成因参考(路线乙,克制列举 —— 依 DL/T 1685 附录B 提炼,只列举不判断)
-CAUSES = {
-    "T3": "接头松动 / 铁芯多点接地 / 油道堵塞 / 磁屏蔽短路",
-    "T2": "导电回路接触不良 / 涡流损耗 / 局部过热",
-    "T1": "导电回路接触不良 / 涡流损耗 / 局部过热",
-    "D2": "分接开关拉弧 / 绕组引线击穿 / 匝间短路",
-    "D1": "悬浮电位接触不良 / 油流带电 / 气泡放电",
-    "PD": "金属尖端放电 / 悬浮放电 / 绝缘受潮",
-    "DT": "放电与过热并存,需结合附录D 试验进一步核实",
-}
-
-# 附录D 进一步试验建议(按性质,不下运维处置指令)
-MEASURES = {
-    "thermal": [
-        "绕组直流电阻测量",
-        "铁芯绝缘电阻测量",
-        "红外测温(导电/磁回路过热点排查)",
-        "绝缘油击穿电压试验",
-    ],
-    "discharge": [
-        "局部放电测量",
-        "绕组绝缘电阻 / 吸收比 / 极化指数",
-        "绝缘油击穿电压与微水",
-        "绕组变形试验(必要时)",
-    ],
-    "mixed": [
-        "局部放电测量",
-        "绕组直流电阻测量",
-        "铁芯绝缘电阻测量",
-        "绝缘油击穿电压试验",
-    ],
-    "unknown": [
-        "建议按附录D 表D.1 选择电气试验进一步核实",
-    ],
 }
 
 NATURE_LABEL = {
@@ -97,8 +62,9 @@ def fuse(
     key_gas: KeyGasResult,
     *,
     low_concentration: bool = False,
+    gases: Optional[dict] = None,
 ) -> dict:
-    """三方融合 → 结论 / 可信度 / 成因参考 / 措施。"""
+    """三方融合 → 结论 / 可信度 / 试验建议(不下成因)。"""
     ratio_code = ratios.duval_code if ratios.ok else None
     duval_zone = duval.zone if duval.ok else None
     pair_ok = _codes_consistent(ratio_code, duval_zone)
@@ -111,7 +77,6 @@ def fuse(
     if key_gas.ok and key_gas.nature:
         natures.append(key_gas.nature)
 
-    # 大类一致性:忽略 mixed/unknown 后是否同指
     pure = [n for n in natures if n in ("thermal", "discharge")]
     if len(pure) >= 2 and len(set(pure)) == 1:
         nature_agree = True
@@ -129,7 +94,6 @@ def fuse(
         nature_agree = None
         nature = "unknown"
 
-    # 主结论:优先 Duval 六代码(与 1498.2 点名一致),其次三比值映射,再次特征气体原话
     if duval.ok and duval_zone:
         primary = duval.fault
         primary_code = duval_zone
@@ -143,42 +107,82 @@ def fuse(
         primary = "无法判定"
         primary_code = None
 
-    # 可信度
     if low_concentration:
         confidence = "低"
-        confidence_reason = "低浓度<10μL/L(§10.2.4 c),比值法误差大"
+# 可信度文案也压短
+        confidence_reason = "低浓度<10μL/L(§10.2.4 c)"
     elif nature_agree is False:
         confidence = "低"
-        confidence_reason = "三方性质大类打架(放电 vs 过热)"
+        confidence_reason = "放电 vs 过热分歧"
     elif pair_ok is False and nature_agree is not True:
         confidence = "低"
-        confidence_reason = "三比值与大卫三角落格不一致"
+        confidence_reason = "比值与三角落格不一"
     elif nature_agree is True and pair_ok is True:
         confidence = "高"
-        confidence_reason = "三比值与大卫三角一致,特征气体法亦指向同性质"
+        confidence_reason = "三方法性质一致"
     elif nature_agree is True or pair_ok is True:
         confidence = "中"
-        confidence_reason = "性质大类一致,细分代码部分一致"
+        confidence_reason = "大类一致、细分部分一致"
     else:
         confidence = "中"
-        confidence_reason = "有效方法不足,结论仅供参考"
+        confidence_reason = "有效方法不足"
 
-    causes = CAUSES.get(primary_code or "", "需停电试验确认,系统不区分具体成因")
-    measures = MEASURES.get(nature, MEASURES["unknown"])
+    measure_nature = nature
+    if measure_nature == "unknown" and primary_code:
+        # 大类打架时仍按主结论六代码给附录D(试验按过热/放电分,不下成因)
+        measure_nature = _ZONE_NATURE.get(primary_code, "unknown")
 
-    summary_parts = [f"判定{primary}"]
-    if pair_ok is True:
-        summary_parts.append("三比值与大卫三角一致")
-    elif pair_ok is False:
-        summary_parts.append("三比值与大卫三角落格不一致")
+    provisional = confidence == "低"
+    stance = "provisional" if provisional else "adopted"
+
+    measure_pack = build_measures(
+        measure_nature,
+        gases,
+        primary=primary,
+        primary_code=primary_code,
+        provisional=provisional,
+    )
+
+    # 链路短句：依表 → 结论；综合留给页面右侧，不在此复述
+    reasoning: list[dict] = []
+    if ratios.ok:
+        enc = "".join(str(c) for c in (ratios.code or ())) if ratios.code else "—"
+        bit = f"/{ratio_code}" if ratio_code else ""
+        reasoning.append({
+            "label": "三比值",
+            "text": f"表6 编码 {enc} → 表7「{ratios.fault}」{bit}",
+            "cite": "722-表6-7",
+        })
+    elif ratios.fault:
+        reasoning.append({"label": "三比值", "text": ratios.fault, "cite": "722-表6-7"})
+    if duval.ok:
+        reasoning.append({
+            "label": "大卫三角",
+            "text": f"图C.2 {duval_zone} →「{duval.fault}」",
+            "cite": "722-附录C",
+        })
+    elif duval.fault:
+        reasoning.append({"label": "大卫三角", "text": duval.fault, "cite": "722-附录C"})
     if key_gas.ok:
-        summary_parts.append(f"特征气体法指向「{key_gas.fault}」")
-    if nature_agree is True:
-        summary_parts.append(f"三方同指{NATURE_LABEL[nature]}——可信度{confidence}")
-    elif nature_agree is False:
-        summary_parts.append(f"性质大类打架——可信度{confidence}")
+        reasoning.append({
+            "label": "特征气体",
+            "text": f"表5 →「{key_gas.fault}」",
+            "cite": "722-表5",
+        })
+    elif key_gas.fault:
+        reasoning.append({"label": "特征气体", "text": key_gas.fault, "cite": "722-表5"})
+
+    # 一句话摘要(Agent/日志用)，页面右侧只用 confidence_reason
+    head = f"{'暂定' if provisional else ''}{primary}".strip() or primary
+    if nature_agree is False:
+        tip = "放电与过热分歧"
+    elif pair_ok is False:
+        tip = "比值与三角落格不一"
+    elif nature_agree is True and pair_ok is True:
+        tip = f"三方同指{NATURE_LABEL[nature]}"
     else:
-        summary_parts.append(f"可信度{confidence}")
+        tip = confidence_reason
+    summary = f"{head}；可信度{confidence}（{tip}）" + ("；试验仅核实" if provisional else "")
 
     return {
         "primary": primary,
@@ -189,7 +193,16 @@ def fuse(
         "nature_agree": nature_agree,
         "confidence": confidence,
         "confidence_reason": confidence_reason,
-        "causes": f"可能成因参考(需停电试验确认,系统不区分):{causes}",
-        "measures": measures,
-        "summary": "；".join(summary_parts) + "。",
+        "stance": stance,
+        "provisional": provisional,
+        "reasoning": reasoning,
+        "measures": measure_pack["all"],
+        "measures_appendix_d": measure_pack["appendix_d"],
+        "measures_1685": measure_pack["detail_1685"],
+        "measures_1685_items": measure_pack.get("detail_1685_items") or [],
+        "measures_basis": measure_pack.get("basis") or [],
+        "measures_nature": measure_pack.get("measure_nature"),
+        "measures_nature_label": measure_pack.get("measure_nature_label"),
+        "measures_purpose": "verify" if provisional else "recommend",
+        "summary": summary + "。",
     }
