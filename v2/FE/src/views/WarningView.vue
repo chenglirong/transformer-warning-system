@@ -1,6 +1,6 @@
 <script setup>
 // 告警记录 —— 蓝图告警三层流水:
-// ① 档位(表A.3) ② 超标判据 +「预」/处置紧急度 ③ 故障类型(注意值2+)
+// ① 档位(表A.3) ② 超标判据 +「预」/处置紧急度 ③ 故障类型(注意值2+ 或速率超)
 // 布局参考 alerts.html(KPI/筛选/分页),列按本系统字段自定
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -21,6 +21,7 @@ const pageSize = ref(20)
 const modalOpen = ref(false)
 const modalLoading = ref(false)
 const modalDetail = ref(null)
+const modalDate = ref('')
 
 const FILTERS = [
   { id: 'all', label: '全部' },
@@ -155,6 +156,7 @@ async function openReport(row) {
   modalOpen.value = true
   modalLoading.value = true
   modalDetail.value = null
+  modalDate.value = row?.date || ''
   try {
     modalDetail.value = await http.get(`/warning/day/${row.date}`)
   } finally {
@@ -165,13 +167,23 @@ function closeReport() {
   modalOpen.value = false
   modalDetail.value = null
 }
+function jumpDate() {
+  return modalDate.value || modalDetail.value?.date || ''
+}
 function goDiagnose() {
+  const d = jumpDate()
   closeReport()
-  router.push({ path: '/diagnose' })
+  router.push({ path: '/diagnose', query: d ? { date: d } : {} })
 }
 function goDetect() {
+  const d = jumpDate()
   closeReport()
-  router.push({ path: '/detect' })
+  router.push({ path: '/detect', query: d ? { date: d } : {} })
+}
+function goAgent() {
+  const d = jumpDate()
+  closeReport()
+  router.push({ path: '/agent', query: d ? { date: d } : {} })
 }
 
 onMounted(loadRecords)
@@ -181,9 +193,9 @@ onMounted(loadRecords)
   <div v-loading="loading" class="alerts">
     <div class="kpis">
       <div class="kpi">
-        <div class="kpi-k">流水条数</div>
-        <div class="kpi-v">{{ summary.total_days ?? 0 }}</div>
-        <div class="kpi-s">四档全报 · 含正常</div>
+        <div class="kpi-k">正常</div>
+        <div class="kpi-v normal">{{ counts['正常'] ?? 0 }}</div>
+        <div class="kpi-s">天 · 共 {{ summary.total_days ?? 0 }} 天流水</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">注意值 1</div>
@@ -193,12 +205,17 @@ onMounted(loadRecords)
       <div class="kpi">
         <div class="kpi-k">注意值 2</div>
         <div class="kpi-v w2">{{ counts['注意值2'] ?? 0 }}</div>
-        <div class="kpi-s">天 · 起判型 / 处置研判</div>
+        <div class="kpi-s">天 · 启处置研判（判型另含速率超/「预」）</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">告警值</div>
         <div class="kpi-v alarm">{{ counts['告警值'] ?? 0 }}</div>
-        <div class="kpi-s">「预」{{ summary.pre_count ?? 0 }} 次（档未超注意值2、速率已超）</div>
+        <div class="kpi-s">天</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-k">「预」</div>
+        <div class="kpi-v pre">{{ summary.pre_count ?? 0 }}</div>
+        <div class="kpi-s">档未达注意值2 · 速率连续超阈</div>
       </div>
     </div>
 
@@ -356,7 +373,7 @@ onMounted(loadRecords)
             <div class="modal-meta mono">
               {{ modalDetail?.date || '…' }}
               <template v-if="modalDetail"> · {{ modalDetail.grade }}</template>
-              · Agent 表 G.1 完整报告待搭
+              · 当日告警摘要（非表 G.1）
             </div>
           </div>
           <button type="button" class="modal-x" aria-label="关闭" @click="closeReport">×</button>
@@ -365,6 +382,8 @@ onMounted(loadRecords)
           <template v-if="modalDetail">
             <p class="sum">{{ modalDetail.hits_text }}</p>
             <div v-if="modalDetail.is_pre" class="pre-line">「预」：浓度未达注意值2，总烃相对速率连续超 10%/月</div>
+            <div v-if="modalDetail.scope_note" class="pre-line">{{ modalDetail.scope_note }}</div>
+            <div v-if="modalDetail.non_fault_source_tip" class="pre-line tip">{{ modalDetail.non_fault_source_tip }}</div>
             <div v-if="modalDetail.fault_type" class="fault">
               故障类型：{{ modalDetail.fault_type }}
               <span v-if="modalDetail.fault_code" class="code">{{ modalDetail.fault_code }}</span>
@@ -392,7 +411,8 @@ onMounted(loadRecords)
         <div class="modal-foot">
           <button type="button" class="btn btn-ghost" @click="goDetect">分级检测</button>
           <button type="button" class="btn btn-ghost" @click="goDiagnose">故障判型</button>
-          <button type="button" class="btn btn-primary" @click="closeReport">关闭</button>
+          <button type="button" class="btn btn-primary" @click="goAgent">打开 Agent 完整报告</button>
+          <button type="button" class="btn btn-ghost" @click="closeReport">关闭</button>
         </div>
       </div>
     </div>
@@ -404,8 +424,11 @@ onMounted(loadRecords)
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
+}
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 900px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
@@ -424,6 +447,8 @@ onMounted(loadRecords)
 .kpi-v.w1 { color: var(--lv-w1); }
 .kpi-v.w2 { color: var(--lv-w2); }
 .kpi-v.alarm { color: var(--lv-alarm); }
+.kpi-v.normal { color: var(--lv-normal); }
+.kpi-v.pre { color: #67e8f9; }
 .kpi-s { font-size: 11px; color: var(--fg-4); line-height: 1.4; }
 
 .toolbar {
@@ -623,6 +648,7 @@ onMounted(loadRecords)
 .modal-body { padding: 14px 16px; overflow-y: auto; }
 .sum { margin: 0 0 10px; font-size: 13px; color: var(--fg-2); line-height: 1.55; }
 .pre-line { margin-bottom: 8px; font-size: 12px; color: #fbbf24; }
+.pre-line.tip { color: var(--fg-2); }
 .fault { margin-bottom: 8px; font-size: 13px; color: var(--amber-2); font-weight: 650; }
 .urg { margin-bottom: 8px; font-size: 12px; color: var(--fg-3); line-height: 1.55; }
 .rate-line { margin-bottom: 12px; font-size: 12px; color: var(--fg-4); }

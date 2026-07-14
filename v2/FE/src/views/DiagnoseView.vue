@@ -2,10 +2,13 @@
 // 故障类型判断页 —— 三方法对标参考页信息密度:
 // 三比值表+编码块 / 大卫三角图 / 特征气体雷达+含量表 → 一致性结论
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import http from '@/service/http'
 import StdCite from '@/components/StdCite.vue'
 
+const route = useRoute()
+const router = useRouter()
 const loading = ref(true)
 const series = ref([])
 const summary = ref({})
@@ -118,6 +121,56 @@ const consistencyOk = computed(() => {
   return !!(f?.ratio_duval_consistent && f?.nature_agree)
 })
 
+const isProvisional = computed(() =>
+  !!fusion.value?.provisional || fusion.value?.confidence === '低' || fusion.value?.stance === 'provisional',
+)
+
+const measuresPurpose = computed(() =>
+  fusion.value?.measures_purpose || (isProvisional.value ? 'verify' : 'recommend'),
+)
+
+/** 判型页只留对表钩子；完整试验在 Agent */
+const measuresHook = computed(() => {
+  const f = fusion.value
+  if (!f) return ''
+  const stance = isProvisional.value ? '暂定' : ''
+  const nature = f.measures_nature_label || f.nature_label || '—'
+  const code = f.primary_code ? `（${f.primary_code}）` : ''
+  const typeTag = stance ? `${stance}「${nature}」` : `「${nature}」`
+  const clauses = (f.measures_1685_items || []).map((x) => x.clause).filter(Boolean)
+  let s = `当前状况：${typeTag}${code} → 对应 722 表D.1「${nature}」列`
+  if (clauses.length) s += `、1685 表${clauses.join('/')}`
+  s += ' · 建议试验见 Agent'
+  return s
+})
+
+function goAgentTrials() {
+  router.push({ name: 'agent', query: selectedDate.value ? { date: selectedDate.value } : {} })
+}
+
+/** 研判链路：进入门槛 + 三法依表结论（不含综合，右侧独占） */
+const reasoningSteps = computed(() => {
+  const f = fusion.value
+  if (!f) return []
+  const head = []
+  if (detail.value?.grade || diagnosis.value?.trigger_note) {
+    head.push({
+      label: '进入判型',
+      text: diagnosis.value?.trigger_note || `档位「${detail.value?.grade}」达判型门槛`,
+      cite: '722-10.3',
+    })
+  }
+  if (Array.isArray(f.reasoning) && f.reasoning.length) {
+    return [...head, ...f.reasoning]
+  }
+  const steps = [...head]
+  methodResults.value.forEach((m, i) => {
+    const cites = ['722-表6-7', '722-附录C', '722-表5']
+    steps.push({ label: m.name, text: m.value, cite: cites[i] })
+  })
+  return steps
+})
+
 const GAS_GRID = [
   { key: 'h2', label: 'H₂' },
   { key: 'ch4', label: 'CH₄' },
@@ -125,13 +178,16 @@ const GAS_GRID = [
   { key: 'c2h4', label: 'C₂H₄' },
   { key: 'c2h6', label: 'C₂H₆' },
   { key: 'co', label: 'CO' },
+  { key: 'co2', label: 'CO₂' },
 ]
 
 const gasGrid = computed(() => {
   const g = detail.value?.gases || {}
   const elevated = new Set((keyGas.value?.elevated || []).map((x) => x.toLowerCase()))
   return GAS_GRID.map((row) => {
-    const raw = row.key === 'co' ? detail.value?.co : g[row.key]
+    let raw = g[row.key]
+    if (row.key === 'co') raw = detail.value?.co ?? raw
+    if (row.key === 'co2') raw = detail.value?.co2 ?? raw
     return {
       ...row,
       value: raw == null ? null : Number(raw),
@@ -179,6 +235,7 @@ const ZONE_LEGEND = [
   { id: 'T1', name: '热故障<300℃', color: '#facc15' },
   { id: 'T2', name: '热故障300~700℃', color: '#fb923c' },
   { id: 'T3', name: '热故障>700℃', color: '#a78bfa' },
+  { id: 'D+T', name: '放电兼过热', color: '#2dd4bf' },
 ]
 
 const point = computed(() => {
@@ -290,24 +347,37 @@ function disposeRadar() {
 
 async function loadSeries() {
   const res = await http.get('/diagnose/series')
-  series.value = res.series
-  summary.value = res.summary
-  selectedDate.value = res.summary.default_date
+  series.value = res.series || []
+  summary.value = res.summary || {}
+  const q = typeof route.query.date === 'string' ? route.query.date : ''
+  const fallback = res.summary?.default_date || series.value.at(-1)?.date
+  selectedDate.value = (q && series.value.some((s) => s.date === q)) ? q : fallback
 }
 async function loadDay(date) {
   if (!date) return
+  const req = date
   dayLoading.value = true
   try {
-    detail.value = await http.get(`/diagnose/day/${date}`)
+    const data = await http.get(`/diagnose/day/${date}`)
+    if (selectedDate.value !== req) return
+    detail.value = data
     await nextTick()
     if (triggered.value) renderRadar()
     else disposeRadar()
   } finally {
-    dayLoading.value = false
+    if (selectedDate.value === req) dayLoading.value = false
   }
 }
 
 watch(selectedDate, (d) => loadDay(d))
+watch(
+  () => route.query.date,
+  (q) => {
+    if (typeof q === 'string' && q && series.value.some((s) => s.date === q) && selectedDate.value !== q) {
+      selectedDate.value = q
+    }
+  },
+)
 onMounted(async () => {
   try { await loadSeries() } finally { loading.value = false }
   window.addEventListener('resize', onResize)
@@ -363,11 +433,14 @@ function onResize() {
       <template v-if="detail && !triggered">
         <div class="idle-banner">
           <div>
-            <div class="idle-title">当日未触发故障类型判断</div>
+            <div class="idle-title">当日未进入故障类型判断</div>
             <p>
-              档位「{{ detail.grade }}」。须达注意值2 才启用三种规则法
-              （<StdCite inline ref-id="722-10.3" label="§10.3" /> /
+              档位「{{ detail.grade }}」。
+              进判型须<strong>注意值2及以上</strong>，或 <strong>722 相对产气速率连续超注意</strong>
+              （含「预」；
+              <StdCite inline ref-id="722-10.3" label="§10.3" /> /
               <StdCite inline ref-id="722-10.2.4a" label="§10.2.4 a" />）。
+              处置紧急度研判仍仅注意值2+ 启动。
             </p>
           </div>
           <button type="button" class="btn btn-primary" :disabled="!eligibleDates.length" @click="goNearestEligible">
@@ -376,14 +449,34 @@ function onResize() {
         </div>
       </template>
 
+      <template v-else-if="detail && triggered && !fusion">
+        <div class="idle-banner">
+          <div>
+            <div class="idle-title">已触发判型，但融合结论缺失</div>
+            <p>{{ diagnosis?.reason || diagnosis?.trigger_note || '请换日重试或检查算法输出' }}</p>
+          </div>
+        </div>
+      </template>
+
       <template v-else-if="detail && triggered && fusion">
         <!-- 共用输入：三种方法都基于当日同一组含量 -->
         <section class="gp sample">
           <div class="gp-head">
             当日监测样含量
-            <span class="head-ref">μL/L · 5 主烃 + CO · 三比值 / 大卫三角 / 特征气体共用</span>
+            <span class="head-ref">μL/L · 7 种特征气体 · 三比值 / 大卫三角 / 特征气体共用</span>
           </div>
           <div class="gp-body sample-body">
+            <div class="trigger-bar">
+              <span class="trigger-k">进入判型</span>
+              <span
+                class="pill mini"
+                :class="diagnosis?.trigger_by === 'rate' ? 'pre-tone' : gradeClass(detail.grade)"
+              >
+                {{ diagnosis?.trigger_note || '已触发' }}
+              </span>
+              <span v-if="detail.is_pre" class="pill mini pre-tone">「预」</span>
+              <span v-if="detail.rate_rising" class="pill mini w2-tone">速率超阈</span>
+            </div>
             <div class="gas-grid shared">
               <div v-for="g in gasGrid" :key="g.key" class="gas-cell" :class="{ hot: g.hot }">
                 <span class="g-lab">{{ g.label }}</span>
@@ -502,35 +595,62 @@ function onResize() {
           </article>
         </section>
 
-        <!-- 三方法一致性 -->
+        <!-- 研判链路 + 综合结论（去重：左依表，右结论） -->
         <section class="gp conclude">
-          <div class="gp-head">三方法一致性结论</div>
+          <div class="gp-head">
+            研判结论
+            <span class="head-ref">可信度低 = 暂定 · 试验只核实</span>
+          </div>
           <div class="gp-body conclude-body">
-            <div class="conclude-col">
-              <div class="col-title">结论比对</div>
-              <ul class="cmp">
-                <li v-for="m in methodResults" :key="m.name">
-                  <span>{{ m.name }}</span>
-                  <strong>{{ m.value }}</strong>
+            <div class="conclude-col chain-col">
+              <div class="col-title">依据</div>
+              <ol class="reason-chain">
+                <li v-for="(s, i) in reasoningSteps" :key="i">
+                  <div class="rc-top">
+                    <span class="rc-idx">{{ i + 1 }}</span>
+                    <span class="rc-label">{{ s.label }}</span>
+                    <StdCite v-if="s.cite" :ref-id="s.cite" :label="s.cite" inline />
+                  </div>
+                  <p class="rc-text">{{ s.text }}</p>
                 </li>
-              </ul>
+              </ol>
             </div>
 
             <div class="conclude-col center">
-              <div class="col-title">一致性判断</div>
-              <div class="judge" :class="consistencyOk ? 'ok' : 'warn'">
-                <div class="judge-mark">{{ consistencyOk ? '✓' : '!' }}</div>
-                <div class="judge-text">{{ consistencyLabel }}</div>
+              <div class="col-title">结论</div>
+              <div class="judge" :class="isProvisional ? 'warn' : (consistencyOk ? 'ok' : 'warn')">
+                <div class="judge-mark">{{ isProvisional ? '!' : (consistencyOk ? '✓' : '!') }}</div>
+                <div class="judge-text">
+                  {{ isProvisional ? '暂定 · 可信度低' : consistencyLabel }}
+                </div>
               </div>
               <div class="judge-conf">
-                综合类型 <strong>{{ heroTitle }}</strong>
-                <span class="conf-tag" :class="confidenceClass">可信度{{ fusion.confidence }}</span>
+                <strong>{{ heroTitle }}</strong>
+                <span class="conf-tag" :class="confidenceClass">{{ fusion.confidence }}</span>
               </div>
-              <p class="judge-sum">{{ fusion.summary }}</p>
-              <p v-if="diagnosis.low_concentration" class="warn-line">
-                §10.2.4 c：当日气体均 &lt; 10 μL/L，比值误差大，可信度已标低。
-              </p>
+              <p class="judge-sum">{{ fusion.confidence_reason }}</p>
+              <p v-if="isProvisional" class="warn-line">可信度低 · 暂定，不作确诊。</p>
+              <p v-if="diagnosis.low_concentration" class="warn-line">§10.2.4 c 低浓度，比值慎用。</p>
             </div>
+          </div>
+        </section>
+
+        <!-- 方案2：判型页只留对表钩子，清单在 Agent -->
+        <section v-if="fusion" class="gp measures-hook" :class="{ verify: measuresPurpose === 'verify' }">
+          <div class="gp-body hook-body">
+            <p class="hook-text">
+              {{ measuresHook }}
+              <StdCite ref-id="722-附录D" label="722-附录D" inline />
+              <StdCite
+                v-if="(fusion.measures_1685_items || []).length || (fusion.measures_1685 || []).length"
+                ref-id="1685-附录B"
+                label="1685-附录B"
+                inline
+              />
+            </p>
+            <button type="button" class="btn btn-primary" @click="goAgentTrials">
+              去 Agent 看建议试验
+            </button>
           </div>
         </section>
 
@@ -725,7 +845,7 @@ function onResize() {
 .sample-body { display: flex; flex-direction: column; gap: 8px; }
 .gas-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
 }
 .gas-grid.shared .gas-cell {
@@ -751,6 +871,21 @@ function onResize() {
 .gas-cell.hot .g-val { color: #f87171; }
 .g-unit { font-size: 9px; color: var(--fg-4); }
 .gas-src-hint { margin: 0; font-size: 11px; color: var(--fg-4); }
+.trigger-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.trigger-k { font-size: 11px; color: var(--fg-4); font-weight: 650; }
+.pill.mini.pre-tone {
+  background: rgba(103, 232, 249, 0.12);
+  border: 1px solid rgba(103, 232, 249, 0.4);
+  color: #67e8f9;
+}
+.pill.mini.w2-tone {
+  background: rgba(251, 146, 60, 0.12);
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  color: #fdba74;
+}
 
 /* 特征气体 */
 .radar { width: 100%; height: 220px; }
@@ -765,10 +900,10 @@ function onResize() {
 }
 .muted { margin: 0; font-size: 12px; color: var(--fg-4); }
 
-/* 底栏一致性 */
+/* 底栏：研判链路 + 综合结论 */
 .conclude-body {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: 1.15fr 1fr;
   gap: 16px;
 }
 @media (max-width: 900px) {
@@ -778,6 +913,31 @@ function onResize() {
   font-size: 12px; font-weight: 700; color: var(--fg-3);
   margin-bottom: 10px;
 }
+.reason-chain {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.reason-chain li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg-3);
+  border-left: 3px solid var(--amber);
+}
+.rc-top {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+  margin-bottom: 2px;
+}
+.rc-idx {
+  width: 16px; height: 16px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800;
+  background: rgba(251, 191, 36, 0.2); color: #fbbf24;
+}
+.rc-label { font-size: 12px; font-weight: 700; color: var(--fg); }
+.rc-text {
+  margin: 0; font-size: 12px; color: var(--fg-2); line-height: 1.45;
+}
+.cmp-mini { margin-top: 14px; text-align: left; }
 .cmp { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .cmp li {
   display: flex; flex-direction: column; gap: 2px;
@@ -787,23 +947,25 @@ function onResize() {
 .cmp strong { font-size: 13px; color: var(--fg); font-weight: 700; }
 
 .conclude-col.center { text-align: center; }
-.judge { margin-bottom: 10px; }
+.conclude-col.chain-col { text-align: left; }
+.judge { margin-bottom: 8px; }
 .judge-mark {
-  width: 52px; height: 52px; margin: 0 auto 8px;
+  width: 44px; height: 44px; margin: 0 auto 6px;
   border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 24px; font-weight: 800;
+  font-size: 20px; font-weight: 800;
 }
 .judge.ok .judge-mark { background: rgba(52,211,153,0.18); color: #34d399; }
 .judge.warn .judge-mark { background: rgba(251,191,36,0.18); color: #fbbf24; }
-.judge-text { font-size: 18px; font-weight: 800; color: var(--fg); }
+.judge-text { font-size: 16px; font-weight: 800; color: var(--fg); }
 .judge-conf {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
-  margin-top: 10px; font-size: 12.5px; color: var(--fg-2);
+  margin-top: 8px; font-size: 12.5px; color: var(--fg-2);
 }
+.judge-conf .conf-role { font-size: 11px; color: var(--fg-4); font-weight: 650; }
 .judge-conf strong { color: var(--amber-2); font-size: 14px; }
 .judge-sum {
-  margin: 10px 0 0; font-size: 11.5px; color: var(--fg-3);
-  line-height: 1.6; text-align: left;
+  margin: 8px 0 0; font-size: 12px; color: var(--fg-3);
+  line-height: 1.45; text-align: center;
 }
 .conf-tag {
   font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
@@ -813,9 +975,22 @@ function onResize() {
 .conf-tag.low { background: var(--lv-alarm-bg); color: var(--lv-alarm); }
 
 .warn-line {
-  margin: 10px 0 0; font-size: 11.5px;
-  color: var(--lv-w2) !important; line-height: 1.5;
-  text-align: left;
+  margin: 6px 0 0; font-size: 11.5px;
+  color: var(--lv-w2) !important; line-height: 1.4;
+  text-align: center;
+}
+
+.measures-hook.verify {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+.hook-body {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px 16px;
+}
+.hook-text {
+  margin: 0; flex: 1; min-width: 220px;
+  font-size: 12.5px; color: var(--fg-2); line-height: 1.5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
 }
 
 .toolbar :deep(.el-input__wrapper),

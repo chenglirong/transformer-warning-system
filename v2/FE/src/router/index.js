@@ -22,7 +22,7 @@ const routes = [
         component: () => import('@/views/TrendView.vue'),
         meta: {
           title: '产气趋势预警',
-          sub: '产气速率 §9.3.2 + 「预」提前预警 §9.3.3a · 辅线',
+          sub: '§9.3.2 总烃月环比 · 「预」§9.3.3 a · 辅线不落档',
         },
       },
       {
@@ -40,7 +40,7 @@ const routes = [
         component: () => import('@/views/DiagnoseView.vue'),
         meta: {
           title: '故障类型判断',
-          sub: '特征气体 + 三比值 + 大卫三角 · 仅注意值2及以上触发',
+          sub: '特征气体 + 三比值 + 大卫三角 · 注意值2 或速率超触发',
         },
       },
       {
@@ -49,7 +49,7 @@ const routes = [
         component: () => import('@/views/AgentView.vue'),
         meta: {
           title: 'Agent 分析编排',
-          sub: '七步竖向串联 · §10.3 · 表 G.1 报告（规则模板降级）',
+          sub: '七步竖向串联 · §10.3 · 表 G.1/G.2 报告（规则模板降级）',
         },
       },
     ],
