@@ -21,7 +21,6 @@ from app.algorithms.detect.thresholds import (
     NORMAL,
     REL_GROWTH,
     REL_GROWTH_MIN_BASE,
-    REL_RATE_CONSECUTIVE_DAYS,
     REL_RATE_LOOKBACK_DAYS,
     THC_REL_RATE_ATTENTION,
     THC_REL_RATE_MIN_BASE,
@@ -48,7 +47,7 @@ def _max_grade(*grades: str) -> str:
 def _baseline(vals: list[float]) -> float | None:
     """参比值(DL/T 1498.2-2025 A.3.3 a):窗口内算术平均,先剔奇异值。
 
-    `vals` = 前14天~前7天窗口内的测量值。剔除超出 [μ±kσ] 的奇异值后再平均。
+    `vals` = 前14天~前7天(两端含)窗口内的测量值。剔除超出 [μ±kσ] 的奇异值后再平均。
     窗口不足(序列开头)时返回 None,该日不算增量/增长率判据。
     """
     if not vals:
@@ -66,7 +65,7 @@ def detect(df: pd.DataFrame) -> list[dict]:
     """对整段时序逐日分级 + 研判。
 
     Args:
-        df: 日期升序,含 date + 5 主烃类列。
+        df: 日期升序,含 date + 烃类列(落档用乙炔/H₂/总烃;序列里可另有其它气)。
 
     Returns:
         每日一 dict:
@@ -111,7 +110,9 @@ def detect(df: pd.DataFrame) -> list[dict]:
             })
 
         # ② 绝对增量 ③ 相对增长速率:当前值 − 参比值(A.3.3)
-        lo, hi = i - BASELINE_WINDOW_START, i - BASELINE_WINDOW_END
+        # 窗=前14~前7(两端含);Python 切片左闭右开 → [i-14, i-6)
+        lo = i - BASELINE_WINDOW_START
+        hi = i - BASELINE_WINDOW_END + 1
         if lo >= 0:
             base_metrics = {k: _baseline(seq[k][lo:hi]) for k in seq}
             base_thc = base_metrics["total_hydrocarbon"]
@@ -204,23 +205,17 @@ def detect(df: pd.DataFrame) -> list[dict]:
                            and thc_rel_rate >= THC_REL_RATE_ATTENTION),
         })
 
-    # 第二遍:连续确认 + 落 is_pre / urgency。相对速率须**连续 N 天**都超注意值才
-    # 认定涨势(§9.3.2 连续判据),滤掉健康段孤立随机超标。
-    _confirm_rate_over = [
-        all(results[k]["_rate_over"] for k in range(i - REL_RATE_CONSECUTIVE_DAYS + 1, i + 1))
-        if i >= REL_RATE_CONSECUTIVE_DAYS - 1 else False
-        for i in range(len(results))
-    ]
-    for i, r in enumerate(results):
-        rising = _confirm_rate_over[i]
-        # rate_rising:722 相对速率连续超注意(供判型 OR 门槛 + 「预」/研判共用)
+    # 第二遍:落 is_pre / urgency。贴 §9.3.3 a 字面——当日相对速率超注意值即认定,
+    # 不加自造「连续 N 天」确认窗(D-011)。
+    for r in results:
+        rising = bool(r["_rate_over"])
+        # rate_rising:722 相对速率超注意(供判型 OR 门槛 + 「预」/研判共用)
         r["rate_rising"] = rising
-        # ④「预」= 档位仅正常/注意值1,但相对速率连续超 10%/月(§9.3.3 a)→ 缩周期 + 可进判型
+        # ④「预」= 档位仅正常/注意值1,但相对速率超 10%/月(§9.3.3 a)→ 缩周期 + 可进判型
         r["is_pre"] = rising and r["grade"] in (NORMAL, ATTENTION_1)
         r["urgency"] = _assess_urgency(
             r["grade"], r["thc_rel_rate"], rising, indicators=r.get("indicators"),
         )
-        r.update(_scope_flags(r.get("indicators") or [], r["total_hydrocarbon"]))
         del r["_rate_over"]
     return results
 
@@ -250,9 +245,9 @@ def _assess_urgency(
 ) -> dict | None:
     """处置紧急度研判(§9.3.3),仅注意值2及以上启动;不改档位。
 
-    - 涨势确认 → 急
-    - 超注意值但暂稳 → 不急
-    - §9.3.3 d 协调:仅 H₂ 顶档且涨势未确认 → 档位如实,紧急度降为「低」
+    - 相对速率超注意 → 急
+    - 超含量注意值但相对速率未超 → 不急
+    - §9.3.3 d 协调:仅 H₂ 顶档且相对速率未超 → 档位如实,紧急度降为「低」
     """
     if GRADES.index(grade) < GRADES.index(URGENCY_TRIGGER_GRADE):
         return None
@@ -262,17 +257,20 @@ def _assess_urgency(
     if rising:
         level = "高"
         rate_txt = f"{thc_rel_rate:.0f}%/月" if thc_rel_rate is not None else "—"
-        advice = f"总烃相对产气速率 {rate_txt} 连续超注意值(10%/月),涨势快,建议缩短检测周期"
+        advice = f"涨势快：总烃月环比 {rate_txt} 已超注意值(10%/月)，建议缩短检测周期"
     elif h2_only:
         # 722 原文「也可判断为正常」;对接表A.3 时档位仍如实,只降紧急度
         level = "低"
         advice = (
-            "仅 H₂ 超标且产气速率涨势未确认(§9.3.3 d 协调设计):档位如实,"
-            "大概率非故障,加强监视"
+            "仅 H₂ 特殊协调（§9.3.3 d）：仅氢气超标且产气速率未超注意值，"
+            "档位如实，大概率非故障，加强监视"
         )
     else:
         level = "中"
-        advice = "超注意值但相对产气速率涨势平稳(未连续超注意值),加强监视"
+        rate_txt = f"{thc_rel_rate:.0f}%/月" if thc_rel_rate is not None else "—"
+        advice = (
+            f"暂稳：已达含量注意值，但总烃月环比 {rate_txt} 未超注意值(10%/月)，加强监视"
+        )
 
     return {
         "level": level,
@@ -288,30 +286,3 @@ def _is_h2_only_attention(indicators: list[dict]) -> bool:
     if not abnormal:
         return False
     return all(i.get("item") == "氢气" or i.get("gas") == "h2" for i in abnormal)
-
-
-def _scope_flags(indicators: list[dict], thc: float) -> dict:
-    """表A.3 适用范围(A.2.3):乙炔≤10 / H₂≤150 / 总烃≤150。超出仍报最高档并标注。"""
-    exceeded = []
-    for ind in indicators:
-        if ind.get("basis") != "绝对浓度" or ind.get("value") is None:
-            continue
-        gas = ind.get("gas")
-        val = float(ind["value"])
-        if gas == "c2h2" and val > 10:
-            exceeded.append(f"乙炔 {val:.1f}>10")
-        elif gas == "h2" and val > 150:
-            exceeded.append(f"氢气 {val:.1f}>150")
-    if thc > 150:
-        exceeded.append(f"总烃 {thc:.1f}>150")
-    tip = None
-    if any(i.get("grade") != NORMAL for i in indicators):
-        tip = (
-            "注意核查非故障气体来源(有载调压油污染、不锈钢催化、近期大修等),"
-            "参 DL/T 722 §4.3 / §9.3.3 e"
-        )
-    return {
-        "scope_exceeded": bool(exceeded),
-        "scope_note": ("已超表A.3 标定适用范围:" + "、".join(exceeded)) if exceeded else None,
-        "non_fault_source_tip": tip,
-    }
