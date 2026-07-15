@@ -1,6 +1,6 @@
 """故障类型判断编排 —— 双门槛触发(注意值2+ 或 722 相对产气速率超注意)。
 
-蓝图:判型 = 注意值2 **或** 速率超(§10.2.4 a / §10.3 a 判内部异常→据此进判型);
+蓝图:判型 = 注意值2 **或** 速率超(§10.2.4 a / §10.3 a);
 处置研判仍仅注意值2+(门槛分离,有意为之)。
 纯算法,不碰 DB/HTTP。
 """
@@ -26,8 +26,7 @@ def can_diagnose(grade: str, *, rate_rising: bool = False) -> bool:
     """是否进入判型流程。
 
     - grade ∈ {注意值2, 告警值} → 触发表3线
-    - rate_rising(722 相对产气速率连续超注意) → §10.2.4 a 增长率注意值有理由判可能故障;
-      §10.3 a 短期速增未超表3可判内部异常,据此启动判型(非国标直接写「速率超即可定类型」)
+    - rate_rising(722 相对产气速率超注意) → §10.2.4 a 增长率注意值有理由判可能故障
     """
     return grade in _TRIGGER_GRADES or bool(rate_rising)
 
@@ -55,8 +54,7 @@ def diagnose_sample(
             "is_pre": bool(is_pre),
             "rate_rising": bool(rate_rising),
             "reason": (
-                "未进判型:档位未达注意值2,且 722 相对产气速率未连续超注意"
-                "(§10.3 / §10.2.4 a)"
+                "当日档未到注意值2，且总烃月环比也未超注意值，故不做故障类型判断"
             ),
             "ratios": None,
             "duval": None,
@@ -67,13 +65,13 @@ def diagnose_sample(
 
     if grade in _TRIGGER_GRADES:
         trigger_by = "grade"
-        trigger_note = "档位达注意值2及以上(表3 = 表A.3 注意值2)"
+        trigger_note = f"当日最高档为{grade}"
+    elif is_pre:
+        trigger_by = "rate"
+        trigger_note = "涨势预警：档位未到注意值2，但总烃月环比已超注意值"
     else:
         trigger_by = "rate"
-        trigger_note = (
-            "722 相对产气速率连续超注意→§10.3 a 判内部异常,据此启动判型"
-            + ("(「预」)" if is_pre else "")
-        )
+        trigger_note = "总烃月环比已超注意值（约10%/月）"
 
     gases_for_low = [v for v in (h2, ch4, c2h4, c2h6, c2h2) if v is not None]
     low_concentration = bool(gases_for_low) and all(v < _LOW_CONC for v in gases_for_low)

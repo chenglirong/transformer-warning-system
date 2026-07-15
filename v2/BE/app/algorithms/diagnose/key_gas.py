@@ -1,6 +1,11 @@
 """特征气体法 —— DL/T 722-2014 §10.1 表5 + 注1~5。
 
-表5 匹配主/次要特征气体;注1~5 做细分与互斥(国标原文)。
+国标给的是**定性**名单与脚注,没有「偏高」数值门槛、也没有加权得分。
+本文件做工程落代码(D-018):
+  · 表结构 / 主·次要气体 / 注1~5 语义 ← 国标原文
+  · 「是否偏高」、行得分、注乘子 ← **本系统工程实现,非表5数值**
+有表3可对齐处尽量贴 220kV 及以下含量注意值(H₂=150 / C₂H₂=5 / 总烃=150);
+表3无单项(CH₄/C₂H₄/C₂H₆)或 CO/CO₂(见 §10.2.3.1)的门槛属工程经验。
 CO/CO₂ 残缺时跳过「油+纸」类型(有值则用、无值则跳过)。
 """
 from __future__ import annotations
@@ -8,7 +13,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Optional
 
-# 表5
+# 表5(原文六行:主/次要特征气体)
 _TABLE5 = [
     {"fault": "油过热", "primary": ["ch4", "c2h4"], "secondary": ["h2", "c2h6"],
      "need_co": False, "nature": "thermal"},
@@ -24,15 +29,23 @@ _TABLE5 = [
      "need_co": True, "nature": "discharge"},
 ]
 
+# —— 以下为工程实现阈值(非表5原文) ——
+# 相对「当日烃类中位」偏高倍率(工程)
 _ELEVATED_RATIO = 1.5
+# 绝对地板:有表3者贴 220kV 及以下注意值;其余为工程经验
 _ABS_FLOOR = {
-    "h2": 50.0, "ch4": 20.0, "c2h4": 20.0, "c2h6": 10.0, "c2h2": 1.0,
-    "co": 300.0, "co2": 3000.0,
+    "h2": 150.0,   # 722 表3
+    "c2h2": 5.0,   # 722 表3
+    "ch4": 20.0,   # 表3无单项 · 工程
+    "c2h4": 20.0,  # 表3无单项 · 工程
+    "c2h6": 10.0,  # 表3无单项 · 工程
+    "co": 300.0,   # 表3无绝对值(见§10.2.3.1) · 工程「增高」代理
+    "co2": 3000.0, # 同上
 }
-# 注4:火花放电总烃不高;注5:电弧总烃/乙炔显著
-_SPARK_THC_MAX = 150.0
-_ARC_C2H2_MIN = 5.0
-# 注3:局放几乎无乙炔
+# 注4「总烃不高」↔ 表3 总烃注意值量级;注5 乙炔显著 ↔ 表3 乙炔
+_SPARK_THC_MAX = 150.0   # ≈ 表3 总烃
+_ARC_C2H2_MIN = 5.0      # = 表3 乙炔
+# 注3「几乎无乙炔」:远低于表3 的工程上界
 _PD_C2H2_MAX = 2.0
 
 
@@ -46,6 +59,10 @@ class KeyGasResult:
     ok: bool
     note: Optional[str] = None      # 命中的表5注号说明
     reason: Optional[str] = None
+    # 答辩/页面:标明得分与偏高判定为工程实现
+    impl_note: Optional[str] = (
+        "表5定性匹配;偏高门槛与加权得分为本系统工程实现,非国标数值"
+    )
 
 
 def _is_elevated(gas: str, value: Optional[float], median_hc: float) -> bool:
@@ -60,6 +77,7 @@ def _is_elevated(gas: str, value: Optional[float], median_hc: float) -> bool:
 
 
 def _base_score(row: dict, elev_set: set, co: Optional[float]) -> float:
+    """工程加权:主气×2 + 次气×1,主气至少过半才计分。非表5公式。"""
     if row["need_co"] and co is None and "co" in row["primary"]:
         return 0.0
     pri, sec = row["primary"], row["secondary"]
@@ -83,7 +101,7 @@ def _apply_notes(
     thc: float,
     elev_set: set,
 ) -> tuple[dict[str, float], Optional[str], dict[str, str]]:
-    """按表5注1~5 调整得分;返回 (scores, 油过热细分名, 各类型注说明)。"""
+    """按表5注1~5 语义调分;乘子为工程量,非国标。"""
     note_by: dict[str, str] = {}
     refined: Optional[str] = None
     s = dict(scores)
@@ -165,7 +183,7 @@ def diagnose_key_gas(
     co: Optional[float] = None,
     co2: Optional[float] = None,
 ) -> KeyGasResult:
-    """单条样本特征气体法判型(表5 + 注1~5)。"""
+    """单条样本特征气体法判型(表5 定性 + 工程量化)。"""
     gases = {
         "h2": h2, "ch4": ch4, "c2h4": c2h4, "c2h6": c2h6, "c2h2": c2h2,
         "co": co, "co2": co2,

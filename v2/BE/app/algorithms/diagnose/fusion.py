@@ -2,7 +2,8 @@
 
 一致性规则(蓝图已定):
   - 三比值 ↔ 大卫三角:比六代码是否同格/相邻
-  - 特征气体法:保留原话,不硬翻成六代码
+  - 特征气体法:保留原话,不硬翻成六代码;主结论六代码仍 Duval/三比值
+  - 表5 油/纸维度以 paper_note 附注补进结论层(D-019),不抢主名
   - 三方一致性拉到「放电 vs 过热」性质大类
   - 只荐试验、不下成因
 """
@@ -56,6 +57,37 @@ def _codes_consistent(a: Optional[str], b: Optional[str]) -> Optional[bool]:
     return b in _ADJACENT.get(a, set())
 
 
+def _paper_annot(
+    key_gas: KeyGasResult,
+    *,
+    nature: str,
+    nature_agree: Optional[bool],
+) -> tuple[Optional[str], Optional[str]]:
+    """表5 油/纸维度附注(不改六代码主结论)。大类打架时不挂。
+
+    Returns:
+        (scope, note): scope ∈ {oil_paper, oil, None}
+    """
+    if not key_gas.ok or not key_gas.fault:
+        return None, None
+    if nature_agree is False:
+        return None, None
+    kg_n = key_gas.nature
+    if (
+        kg_n in ("thermal", "discharge")
+        and nature in ("thermal", "discharge")
+        and kg_n != nature
+    ):
+        return None, None
+
+    fault = key_gas.fault
+    if "油和纸" in fault or "油纸" in fault:
+        return "oil_paper", "表5提示可能涉及固体绝缘（油+纸）"
+    if fault.startswith("油过热") or fault.startswith("油中"):
+        return "oil", None
+    return None, None
+
+
 def fuse(
     ratios: RatioResult,
     duval: DuvalResult,
@@ -106,6 +138,11 @@ def fuse(
     else:
         primary = "无法判定"
         primary_code = None
+
+    # 油/纸附注:六代码主结论不动;表5 涉纸且大类不打架时挂一句(D-019)
+    paper_scope, paper_note = _paper_annot(
+        key_gas, nature=nature, nature_agree=nature_agree,
+    )
 
     if low_concentration:
         confidence = "低"
@@ -183,12 +220,16 @@ def fuse(
     else:
         tip = confidence_reason
     summary = f"{head}；可信度{confidence}（{tip}）" + ("；试验仅核实" if provisional else "")
+    if paper_note:
+        summary += f"；{paper_note}"
 
     return {
         "primary": primary,
         "primary_code": primary_code,
         "nature": nature,
         "nature_label": NATURE_LABEL.get(nature, "性质不明"),
+        "paper_scope": paper_scope,
+        "paper_note": paper_note,
         "ratio_duval_consistent": pair_ok,
         "nature_agree": nature_agree,
         "confidence": confidence,
