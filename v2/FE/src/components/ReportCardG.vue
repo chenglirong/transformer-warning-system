@@ -2,8 +2,10 @@
 /**
  * DL/T 722-2014 附录 G 表 G.1 / 表 G.2 档案卡片
  * 有值如实填; null →「—」;合成缺字段不杜撰
+ * 分析意见内【n】→ StdCite 角标(依据由规则绑死)
  */
 import { computed } from 'vue'
+import StdCite from '@/components/StdCite.vue'
 
 const props = defineProps({
   g1: { type: Object, required: true },
@@ -12,11 +14,48 @@ const props = defineProps({
   mode: { type: String, default: 'full' },
   /** 是否附带表 G.2 */
   showG2: { type: Boolean, default: true },
+  /** 可选覆盖;默认用 g1.cite_map */
+  citeMap: { type: Array, default: null },
+  /** 分析意见是否展示【n】角标；报告内默认不展示 */
+  showCites: { type: Boolean, default: false },
 })
 
 const np = computed(() => props.g1?.nameplate || {})
 const sample = computed(() => props.g1?.sample || {})
 const gases = computed(() => props.g1?.gases || {})
+
+const citeByN = computed(() => {
+  const list = props.citeMap || props.g1?.cite_map || []
+  const m = {}
+  for (const c of list) {
+    if (c && c.n != null && c.id) m[Number(c.n)] = c
+  }
+  return m
+})
+
+/** 把「……【1】【2】……」拆成文本 + 角标片段；showCites=false 时去掉角标 */
+const opinionParts = computed(() => {
+  let text = props.g1?.opinion
+  if (text == null || text === '') return [{ type: 'empty' }]
+  if (!props.showCites) {
+    text = String(text).replace(/【\d+】/g, '').replace(/\n{3,}/g, '\n\n').trim()
+    return text ? [{ type: 'text', text }] : [{ type: 'empty' }]
+  }
+  const parts = []
+  const re = /【(\d+)】/g
+  let last = 0
+  let m
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push({ type: 'text', text: text.slice(last, m.index) })
+    const n = Number(m[1])
+    const hit = citeByN.value[n]
+    if (hit) parts.push({ type: 'cite', n, id: hit.id })
+    else parts.push({ type: 'text', text: m[0] })
+    last = m.index + m[0].length
+  }
+  if (last < text.length) parts.push({ type: 'text', text: text.slice(last) })
+  return parts.length ? parts : [{ type: 'text', text: String(text) }]
+})
 
 function cell(v) {
   return v == null || v === '' ? '—' : v
@@ -56,13 +95,13 @@ const GAS_ROWS = [
   <div class="rcg" :class="mode">
     <!-- 表 G.1 -->
     <div class="g1-sheet">
-      <div class="g1-title">表 G.1 油中溶解气体分析档案卡片</div>
+      <div class="g1-title">油中溶解气体分析档案卡片</div>
       <div class="g1-meta">
         <div class="g1-meta-left">
           <span class="g1-meta-line">{{ g1.bureau || '' }}</span>局（厂、所）
         </div>
         <div class="g1-meta-right">
-          编号：<span class="g1-meta-no">{{ cell(g1.report_no) }}</span>
+          报告编号：<span class="g1-meta-no">{{ cell(g1.report_no) }}</span>
         </div>
       </div>
 
@@ -217,7 +256,22 @@ const GAS_ROWS = [
         <tr>
           <td class="g1-sub" colspan="2">分析意见</td>
           <td class="g1-opinion" colspan="8">
-            <div>{{ cell(g1.opinion) }}</div>
+            <div class="opinion-body">
+              <template v-for="(p, i) in opinionParts" :key="'op'+i">
+                <span v-if="p.type === 'empty'">—</span>
+                <span v-else-if="p.type === 'text'">{{ p.text }}</span>
+                <div
+                  v-else-if="p.type === 'cite'"
+                  class="opinion-cite-line"
+                >
+                  <StdCite
+                    class="opinion-cite"
+                    :ref-id="p.id"
+                    inline
+                  />
+                </div>
+              </template>
+            </div>
           </td>
         </tr>
       </table>
@@ -230,19 +284,21 @@ const GAS_ROWS = [
 
     <!-- 表 G.2 -->
     <div v-if="showG2 && g2" class="g2-sheet">
-      <div class="g2-title">表 G.2 油中溶解气体分析档案卡片</div>
+      <div class="g2-title">档案卡片（续）</div>
       <table class="g2-table">
         <tr>
           <td class="g2-lbl">其他检查性试验</td>
-          <td class="g2-val empty">{{ cell(g2.other_tests) }}</td>
+          <td class="g2-val" :class="{ empty: !g2.other_tests }">
+            <div class="g2-ot-prose">{{ cell(g2.other_tests) }}</div>
+          </td>
         </tr>
-        <tr>
+        <tr v-if="g2.maintenance || mode === 'full'">
           <td class="g2-lbl">检修情况</td>
-          <td class="g2-val empty">{{ cell(g2.maintenance) }}</td>
+          <td class="g2-val" :class="{ empty: !g2.maintenance }">{{ cell(g2.maintenance) }}</td>
         </tr>
-        <tr>
+        <tr v-if="g2.fault_records || mode === 'full'">
           <td class="g2-lbl">故障记录</td>
-          <td class="g2-val empty">{{ cell(g2.fault_records) }}</td>
+          <td class="g2-val" :class="{ empty: !g2.fault_records }">{{ cell(g2.fault_records) }}</td>
         </tr>
       </table>
       <p v-if="g2.note" class="g1-foot-note">{{ g2.note }}</p>
@@ -325,8 +381,22 @@ const GAS_ROWS = [
   font-size: 11px;
   line-height: 1.55;
   text-align: left;
-  min-height: 72px;
+  min-height: 0;
   vertical-align: top;
+}
+.opinion-body { white-space: pre-wrap; }
+.opinion-cite-line {
+  display: block;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.opinion-cite :deep(.std-cite) {
+  font-family: "Menlo", "Consolas", monospace;
+  font-size: 10px;
+  color: #0f766e;
+  border-bottom-color: #0f766e;
+  font-weight: 700;
+  vertical-align: baseline;
 }
 .g1-foot-note {
   margin: 6px 10px 8px;
@@ -337,7 +407,12 @@ const GAS_ROWS = [
 }
 
 .g2-lbl { width: 22%; }
-.g2-val { min-height: 48px; vertical-align: top; text-align: left; }
+.g2-val { min-height: 0; vertical-align: top; text-align: left; }
+.g2-ot-prose {
+  white-space: pre-wrap;
+  line-height: 1.55;
+  text-align: left;
+}
 
 /* 预览缩略 */
 .rcg.compact .g1-title,

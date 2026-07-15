@@ -6,6 +6,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '@/service/http'
 import StdCite from '@/components/StdCite.vue'
+import ReportCardG from '@/components/ReportCardG.vue'
 
 const router = useRouter()
 const loading = ref(true)
@@ -23,14 +24,21 @@ const modalLoading = ref(false)
 const modalDetail = ref(null)
 const modalDate = ref('')
 
+/** 在告警页直接打开完整报告（不跳 Agent） */
+const fullReportOpen = ref(false)
+const fullReportLoading = ref(false)
+const fullReportErr = ref('')
+const fullG1 = ref(null)
+const fullG2 = ref(null)
+const fullReportMode = ref('')
+
 const FILTERS = [
   { id: 'all', label: '全部' },
-  { id: 'abnormal', label: '仅异常' },
-  { id: 'pre', label: '仅「预」' },
-  { id: '注意值2', label: '注意值 2' },
-  { id: '注意值1', label: '注意值 1' },
-  { id: '告警值', label: '告警值' },
+  { id: '告警值', label: '告警' },
+  { id: '注意值2', label: '注意值2' },
+  { id: '注意值1', label: '注意值1' },
   { id: '正常', label: '正常' },
+  { id: 'pre', label: '仅涨势预警' },
 ]
 
 const GRADE_RANK = { 正常: 0, 注意值1: 1, 注意值2: 2, 告警值: 3 }
@@ -48,9 +56,7 @@ const filteredRows = computed(() => {
   const f = filter.value
   const q = searchText.value.trim().toLowerCase()
 
-  if (f === 'abnormal') {
-    rows = rows.filter((r) => r.grade !== '正常' || r.is_pre)
-  } else if (f === 'pre') {
+  if (f === 'pre') {
     rows = rows.filter((r) => r.is_pre)
   } else if (f !== 'all') {
     rows = rows.filter((r) => r.grade === f)
@@ -90,7 +96,7 @@ const rangeText = computed(() => {
   if (!n) return '无匹配记录'
   const start = (page.value - 1) * pageSize.value + 1
   const end = Math.min(page.value * pageSize.value, n)
-  return `第 ${start}–${end} 条 · 第 ${page.value} / ${totalPages.value} 页`
+  return `共 ${n} 条 · 第 ${start}–${end} 条 · 第 ${page.value} / ${totalPages.value} 页`
 })
 
 const pageNums = computed(() => {
@@ -131,14 +137,24 @@ function rateText(r) {
 }
 
 function rateTone(r) {
-  // 连续超 10%/月 才驱动「预」/紧急度;列表用 rising 或 is_pre 标色
-  if (r.is_pre || r.urgency_rising) return 'hot'
+  // 涨势预警优先紫；注意值2+ 急涨用橙；刚过阈用黄
+  if (r.is_pre) return 'pre'
+  if (r.urgency_rising) return 'hot'
   if (r.thc_rel_rate != null && r.thc_rel_rate >= 10) return 'warn'
   return ''
 }
 
 function urgencyLabel(r) {
   return r.urgency_level || null
+}
+
+/** 类型名已含代码时不再尾缀，避免「T3 T3」 */
+function faultLabel(type, code) {
+  if (!type) return ''
+  if (!code) return type
+  const t = String(type)
+  if (t.includes(code) || t.endsWith(code)) return t
+  return `${t} ${code}`
 }
 
 async function loadRecords() {
@@ -180,10 +196,34 @@ function goDetect() {
   closeReport()
   router.push({ path: '/detect', query: d ? { date: d } : {} })
 }
-function goAgent() {
+
+async function openFullReport() {
   const d = jumpDate()
-  closeReport()
-  router.push({ path: '/agent', query: d ? { date: d } : {} })
+  if (!d || fullReportLoading.value) return
+  fullReportErr.value = ''
+  fullG1.value = null
+  fullG2.value = null
+  fullReportOpen.value = true
+  fullReportLoading.value = true
+  try {
+    const data = await http.get('/agent/run', { day: d, force_template: false })
+    fullG1.value = data.g1 || null
+    fullG2.value = data.g2 || null
+    fullReportMode.value = data.mode || ''
+    if (!fullG1.value) throw new Error('未返回报告卡片')
+  } catch (e) {
+    fullReportErr.value = e?.message || String(e)
+  } finally {
+    fullReportLoading.value = false
+  }
+}
+
+function closeFullReport() {
+  fullReportOpen.value = false
+  fullReportLoading.value = false
+  fullReportErr.value = ''
+  fullG1.value = null
+  fullG2.value = null
 }
 
 onMounted(loadRecords)
@@ -205,7 +245,7 @@ onMounted(loadRecords)
       <div class="kpi">
         <div class="kpi-k">注意值 2</div>
         <div class="kpi-v w2">{{ counts['注意值2'] ?? 0 }}</div>
-        <div class="kpi-s">天 · 启处置研判（判型另含速率超/「预」）</div>
+        <div class="kpi-s">天 · 达注意值2，结合产气速率研判</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">告警值</div>
@@ -213,9 +253,9 @@ onMounted(loadRecords)
         <div class="kpi-s">天</div>
       </div>
       <div class="kpi">
-        <div class="kpi-k">「预」</div>
+        <div class="kpi-k">涨势预警</div>
         <div class="kpi-v pre">{{ summary.pre_count ?? 0 }}</div>
-        <div class="kpi-s">档未达注意值2 · 速率连续超阈</div>
+        <div class="kpi-s">档位正常/注意值1，且总烃月环比超注意值</div>
       </div>
     </div>
 
@@ -260,12 +300,11 @@ onMounted(loadRecords)
         <table class="alert-table">
           <thead>
             <tr>
-              <th class="col-idx">#</th>
               <th class="col-date">日期</th>
               <th class="col-level">当日最高档</th>
               <th class="col-hits">超标判据（表A.3）</th>
               <th class="col-rate" title="DL/T 722 §9.3.2 总烃相对产气速率；与表A.3 周增率不是同一套">总烃月环比</th>
-              <th class="col-pre" title="档位正常/注意值1 且月环比连续超 10%/月">「预」</th>
+              <th class="col-pre" title="档位正常/注意值1 且月环比超 10%/月">涨势预警</th>
               <th class="col-urg" title="注意值2+ 结合月环比判急不急">处置紧急度</th>
               <th class="col-diag">故障类型</th>
               <th class="col-actions">操作</th>
@@ -277,7 +316,6 @@ onMounted(loadRecords)
               :key="r.date"
               :class="'lv-' + gradeClass(r.grade)"
             >
-              <td class="num muted">{{ r.day }}</td>
               <td class="num">{{ r.date }}</td>
               <td>
                 <span class="pill mini" :class="gradeClass(r.grade)">
@@ -304,8 +342,8 @@ onMounted(loadRecords)
                 <span
                   v-if="r.is_pre"
                   class="pre-tag"
-                  title="档未到注意值2，月环比已连续超阈 → 缩短检测周期"
-                >预</span>
+                  title="档未到注意值2，月环比已超注意值 → 缩短检测周期"
+                >涨势预警</span>
                 <span v-else class="muted">—</span>
               </td>
               <td class="col-urg">
@@ -316,8 +354,7 @@ onMounted(loadRecords)
               </td>
               <td class="col-diag">
                 <template v-if="r.fault_type">
-                  {{ r.fault_type }}
-                  <span v-if="r.fault_code" class="code">{{ r.fault_code }}</span>
+                  {{ faultLabel(r.fault_type, r.fault_code) }}
                 </template>
                 <span v-else class="muted">—</span>
               </td>
@@ -326,7 +363,7 @@ onMounted(loadRecords)
               </td>
             </tr>
             <tr v-if="!pageRows.length">
-              <td colspan="9" class="empty">无匹配记录</td>
+              <td colspan="8" class="empty">无匹配记录</td>
             </tr>
           </tbody>
         </table>
@@ -380,30 +417,41 @@ onMounted(loadRecords)
         </div>
         <div v-loading="modalLoading" class="modal-body">
           <template v-if="modalDetail">
-            <p class="sum">{{ modalDetail.hits_text }}</p>
-            <div v-if="modalDetail.is_pre" class="pre-line">「预」：浓度未达注意值2，总烃相对速率连续超 10%/月</div>
-            <div v-if="modalDetail.scope_note" class="pre-line">{{ modalDetail.scope_note }}</div>
-            <div v-if="modalDetail.non_fault_source_tip" class="pre-line tip">{{ modalDetail.non_fault_source_tip }}</div>
-            <div v-if="modalDetail.fault_type" class="fault">
-              故障类型：{{ modalDetail.fault_type }}
-              <span v-if="modalDetail.fault_code" class="code">{{ modalDetail.fault_code }}</span>
+            <!-- 顶栏只扫列表不重复的结论；超标气体看下方明细 -->
+            <div class="sum-strip">
+              <span class="pill" :class="gradeClass(modalDetail.grade)">
+                <i class="d" />{{ modalDetail.grade }}
+              </span>
+              <span
+                v-if="modalDetail.is_pre"
+                class="pre-tag"
+                title="档未到注意值2，月环比已超注意值 → 缩短检测周期"
+              >涨势预警</span>
+              <span
+                v-if="modalDetail.urgency?.level"
+                class="urg-tag"
+                :class="urgClass(modalDetail.urgency.level)"
+              >紧急度 {{ modalDetail.urgency.level }}</span>
+              <span v-if="modalDetail.fault_type" class="sum-fault">
+                {{ faultLabel(modalDetail.fault_type, modalDetail.fault_code) }}
+              </span>
+              <span v-else class="sum-fault muted">未触发判型</span>
             </div>
-            <div v-if="modalDetail.urgency" class="urg">
-              处置研判（{{ modalDetail.urgency.level }}）：{{ modalDetail.urgency.advice }}
-            </div>
-            <div v-if="modalDetail.thc_rel_rate != null" class="rate-line">
-              总烃相对产气速率（§9.3.2）：{{ modalDetail.thc_rel_rate }}%/月
-            </div>
-            <div class="ind-list">
-              <div
-                v-for="ind in modalDetail.indicators"
-                :key="ind.basis + ind.item"
-                class="ind-line"
-                :class="gradeClass(ind.grade)"
-              >
-                <span>{{ ind.basis }} · {{ ind.item }}</span>
-                <span class="mono">{{ ind.value == null ? '—' : ind.value }} {{ ind.unit }}</span>
-                <span class="pill mini" :class="gradeClass(ind.grade)"><i class="d" />{{ ind.grade }}</span>
+            <p class="sum-hint">措施与处置文案见完整分析报告</p>
+
+            <div class="sum-sec">
+              <div class="sum-k">表 A.3 指标明细</div>
+              <div class="ind-list">
+                <div
+                  v-for="ind in modalDetail.indicators"
+                  :key="ind.basis + ind.item"
+                  class="ind-line"
+                  :class="gradeClass(ind.grade)"
+                >
+                  <span>{{ ind.basis }} · {{ ind.item }}</span>
+                  <span class="mono">{{ ind.value == null ? '—' : ind.value }} {{ ind.unit }}</span>
+                  <span class="pill mini" :class="gradeClass(ind.grade)"><i class="d" />{{ ind.grade }}</span>
+                </div>
               </div>
             </div>
           </template>
@@ -411,8 +459,57 @@ onMounted(loadRecords)
         <div class="modal-foot">
           <button type="button" class="btn btn-ghost" @click="goDetect">分级检测</button>
           <button type="button" class="btn btn-ghost" @click="goDiagnose">故障判型</button>
-          <button type="button" class="btn btn-primary" @click="goAgent">打开 Agent 完整报告</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            :disabled="fullReportLoading || !jumpDate()"
+            @click="openFullReport"
+          >
+            {{ fullReportLoading ? '生成报告中…' : '打开完整分析报告' }}
+          </button>
           <button type="button" class="btn btn-ghost" @click="closeReport">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 完整报告：留在告警页打开，不跳 Agent -->
+    <div v-if="fullReportOpen" class="modal report-modal">
+      <div class="modal-backdrop" @click="closeFullReport" />
+      <div class="modal-dialog report-dialog" role="dialog">
+        <div class="modal-head">
+          <div>
+            <h3>完整分析报告</h3>
+            <div class="modal-meta mono">
+              {{ jumpDate() }}
+              <template v-if="fullG1?.report_no"> · {{ fullG1.report_no }}</template>
+              <template v-if="fullReportMode">
+                · {{ fullReportMode === 'llm' ? '大模型撰写' : '固定模板' }}
+              </template>
+            </div>
+          </div>
+          <button type="button" class="modal-x" aria-label="关闭" @click="closeFullReport">×</button>
+        </div>
+        <div v-loading="fullReportLoading" class="modal-body report-body">
+          <p v-if="fullReportErr" class="report-err">{{ fullReportErr }}</p>
+          <ReportCardG
+            v-else-if="fullG1"
+            :g1="fullG1"
+            :g2="fullG2"
+            mode="full"
+            :show-cites="false"
+          />
+          <p v-else-if="!fullReportLoading" class="report-err">暂无报告内容</p>
+        </div>
+        <div class="modal-foot">
+          <button
+            type="button"
+            class="btn btn-ghost"
+            :disabled="fullReportLoading"
+            @click="router.push({ path: '/agent', query: { date: jumpDate() } })"
+          >
+            去分析编排
+          </button>
+          <button type="button" class="btn btn-primary" @click="closeFullReport">关闭</button>
         </div>
       </div>
     </div>
@@ -448,7 +545,7 @@ onMounted(loadRecords)
 .kpi-v.w2 { color: var(--lv-w2); }
 .kpi-v.alarm { color: var(--lv-alarm); }
 .kpi-v.normal { color: var(--lv-normal); }
-.kpi-v.pre { color: #67e8f9; }
+.kpi-v.pre { color: var(--lv-pre-2); }
 .kpi-s { font-size: 11px; color: var(--fg-4); line-height: 1.4; }
 
 .toolbar {
@@ -523,18 +620,18 @@ onMounted(loadRecords)
   color: var(--fg-2);
   vertical-align: middle;
 }
-.col-idx { width: 44px; }
 .col-date { width: 100px; white-space: nowrap; }
 .col-level { width: 96px; }
 .col-hits { min-width: 240px; line-height: 1.55; }
 .col-rate { width: 100px; text-align: right !important; white-space: nowrap; }
-.col-pre { width: 52px; text-align: center; }
+.col-pre { min-width: 88px; text-align: center; white-space: nowrap; }
 .col-urg { width: 72px; text-align: center; }
 .col-diag { min-width: 140px; color: var(--fg-3); }
 .col-actions { width: 96px; text-align: center; }
 .num { font-family: 'JetBrains Mono', monospace; text-align: right; }
 .num.warn { color: var(--lv-w1); }
-.num.hot { color: #fbbf24; font-weight: 700; }
+.num.hot { color: var(--lv-w2); font-weight: 700; }
+.num.pre { color: var(--lv-pre-2); font-weight: 700; }
 .muted { color: var(--fg-4); }
 .pill.mini { font-size: 10px; padding: 2px 8px; }
 .hit-chip {
@@ -551,12 +648,6 @@ onMounted(loadRecords)
 .hit-chip.w1 { border-color: rgba(251,191,36,0.35); color: var(--lv-w1); }
 .hit-chip.w2 { border-color: rgba(251,146,60,0.4); color: var(--lv-w2); }
 .hit-chip.alarm { border-color: rgba(245,85,90,0.4); color: var(--lv-alarm); }
-.pre-tag {
-  display: inline-block;
-  padding: 1px 6px; border-radius: 4px;
-  font-size: 10px; font-weight: 700;
-  background: rgba(251,191,36,0.18); color: #fbbf24;
-}
 .urg-tag {
   display: inline-block;
   padding: 2px 8px; border-radius: 4px;
@@ -646,12 +737,27 @@ onMounted(loadRecords)
   font-size: 22px; cursor: pointer; line-height: 1;
 }
 .modal-body { padding: 14px 16px; overflow-y: auto; }
-.sum { margin: 0 0 10px; font-size: 13px; color: var(--fg-2); line-height: 1.55; }
-.pre-line { margin-bottom: 8px; font-size: 12px; color: #fbbf24; }
-.pre-line.tip { color: var(--fg-2); }
-.fault { margin-bottom: 8px; font-size: 13px; color: var(--amber-2); font-weight: 650; }
-.urg { margin-bottom: 8px; font-size: 12px; color: var(--fg-3); line-height: 1.55; }
-.rate-line { margin-bottom: 12px; font-size: 12px; color: var(--fg-4); }
+.sum-strip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+}
+.sum-rate { font-size: 12.5px; color: var(--fg-2); }
+.sum-fault {
+  font-size: 13px; font-weight: 650; color: var(--amber-2);
+  margin-left: auto;
+}
+.sum-hint {
+  margin: 6px 0 12px;
+  font-size: 11px; color: var(--fg-4);
+}
+.sum-sec { margin-bottom: 4px; }
+.sum-k {
+  font-size: 11px; font-weight: 700; color: var(--fg-4);
+  letter-spacing: 0.04em; margin-bottom: 6px;
+}
 .ind-list { display: flex; flex-direction: column; gap: 6px; }
 .ind-line {
   display: grid; grid-template-columns: 1.2fr 1fr auto; gap: 8px; align-items: center;
@@ -665,6 +771,17 @@ onMounted(loadRecords)
 .modal-foot {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 12px 16px; border-top: 1px solid var(--line);
+}
+.report-dialog {
+  width: min(920px, 96vw);
+  max-height: 92vh;
+}
+.report-body {
+  background: #e8ecf0;
+  min-height: 200px;
+}
+.report-err {
+  margin: 24px; text-align: center; color: #b91c1c; font-size: 13px;
 }
 .mono { font-family: 'JetBrains Mono', monospace; }
 </style>

@@ -28,7 +28,6 @@ const keyGas = computed(() => diagnosis.value?.key_gas || null)
 
 const current = computed(() => series.value.find((s) => s.date === selectedDate.value))
 const idx = computed(() => series.value.findIndex((s) => s.date === selectedDate.value))
-const eligibleDates = computed(() => series.value.filter((s) => s.eligible).map((s) => s.date))
 
 const dateRange = computed(() => {
   if (!series.value.length) return null
@@ -140,7 +139,7 @@ const measuresHook = computed(() => {
   const clauses = (f.measures_1685_items || []).map((x) => x.clause).filter(Boolean)
   let s = `当前状况：${typeTag}${code} → 对应 722 表D.1「${nature}」列`
   if (clauses.length) s += `、1685 表${clauses.join('/')}`
-  s += ' · 建议试验见 Agent'
+  s += ' · 其他检查性试验见分析编排'
   return s
 })
 
@@ -254,40 +253,33 @@ function disabledDate(d) {
   const iso = formatDate(d)
   return iso < dateRange.value[0] || iso > dateRange.value[1]
 }
-function formatDate(d) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
+/** 日历色标：与检测页同一套 det-*（样式在 global.css，弹层随时可用） */
 function cellClassName(d) {
   const iso = formatDate(d)
   const hit = series.value.find((s) => s.date === iso)
   if (!hit) return ''
-  if (hit.eligible) return 'diag-eligible'
-  if (hit.grade === '注意值1') return 'diag-w1'
-  return 'diag-normal'
+  if (hit.is_pre) return 'det-pre'
+  if (hit.grade === '告警值') return 'det-alarm'
+  if (hit.grade === '注意值2') return 'det-w2'
+  if (hit.grade === '注意值1') return 'det-w1'
+  if (hit.grade === '正常') return 'det-normal'
+  return ''
+}
+function formatDate(d) {
+  if (!d) return ''
+  if (typeof d === 'string') return d.slice(0, 10)
+  if (typeof d.format === 'function') return d.format('YYYY-MM-DD')
+  const dt = d instanceof Date ? d : new Date(d)
+  if (Number.isNaN(dt.getTime())) return ''
+  const y = dt.getFullYear()
+  const m = String(dt.getMonth() + 1).padStart(2, '0')
+  const day = String(dt.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 function stepDay(delta) {
   const i = idx.value + delta
   if (i < 0 || i >= series.value.length) return
   selectedDate.value = series.value[i].date
-}
-function jumpEligible(dir) {
-  const list = eligibleDates.value
-  if (!list.length) return
-  const cur = selectedDate.value
-  if (dir < 0) {
-    selectedDate.value = [...list].reverse().find((d) => d < cur) || list[list.length - 1]
-  } else {
-    selectedDate.value = list.find((d) => d > cur) || list[0]
-  }
-}
-function goNearestEligible() {
-  const list = eligibleDates.value
-  if (!list.length) return
-  const cur = selectedDate.value
-  selectedDate.value = list.find((d) => d >= cur) || [...list].reverse().find((d) => d <= cur) || list[0]
 }
 
 function renderRadar() {
@@ -408,23 +400,24 @@ function onResize() {
             placeholder="选择日期"
             :disabled-date="disabledDate"
             :cell-class-name="cellClassName"
+            popper-class="dga-cal-popper"
             class="date-pick"
           />
           <button type="button" class="btn btn-ghost" :disabled="idx < 0 || idx >= series.length - 1" @click="stepDay(1)">后日 ›</button>
-        </div>
-        <div class="nav">
-          <button type="button" class="btn btn-ghost" :disabled="!eligibleDates.length" @click="jumpEligible(-1)">‹ 上一可判型</button>
-          <el-select v-model="selectedDate" filterable placeholder="跳到可判型日" class="eligible-select">
-            <el-option v-for="d in eligibleDates" :key="d" :label="d" :value="d" />
-          </el-select>
-          <button type="button" class="btn btn-ghost" :disabled="!eligibleDates.length" @click="jumpEligible(1)">下一可判型 ›</button>
+          <div class="cal-legend" aria-label="日历色标">
+            <span><i class="lg alarm" />告警</span>
+            <span><i class="lg w2" />注意2</span>
+            <span><i class="lg w1" />注意1</span>
+            <span><i class="lg normal" />正常</span>
+            <span><i class="lg pre" />涨势预警</span>
+          </div>
         </div>
         <div class="status">
           <span class="pill" :class="gradeClass(detail?.grade || current?.grade)">
             <i class="d" />{{ detail?.grade || current?.grade || '—' }}
           </span>
+          <span v-if="detail?.is_pre || current?.is_pre" class="pill pre-pill">涨势预警</span>
           <span class="meta mono">{{ selectedDate }}</span>
-          <span class="meta">可判型 {{ summary.eligible_days ?? 0 }}/{{ summary.total_days ?? 0 }}</span>
         </div>
       </div>
     </div>
@@ -433,19 +426,17 @@ function onResize() {
       <template v-if="detail && !triggered">
         <div class="idle-banner">
           <div>
-            <div class="idle-title">当日未进入故障类型判断</div>
+            <div class="idle-title">当日不做故障类型判断</div>
             <p>
-              档位「{{ detail.grade }}」。
-              进判型须<strong>注意值2及以上</strong>，或 <strong>722 相对产气速率连续超注意</strong>
-              （含「预」；
+              当前档位「{{ detail.grade }}」。进判型须满足其一：
+              <strong>注意值2 / 告警</strong>，或
+              <strong>总烃月环比超注意</strong>（含涨势预警）。
+              依据见
               <StdCite inline ref-id="722-10.3" label="§10.3" /> /
-              <StdCite inline ref-id="722-10.2.4a" label="§10.2.4 a" />）。
-              处置紧急度研判仍仅注意值2+ 启动。
+              <StdCite inline ref-id="722-10.2.4a" label="§10.2.4 a" />。
+              可用上方日期换一天查看。
             </p>
           </div>
-          <button type="button" class="btn btn-primary" :disabled="!eligibleDates.length" @click="goNearestEligible">
-            跳到最近可判型日
-          </button>
         </div>
       </template>
 
@@ -467,15 +458,25 @@ function onResize() {
           </div>
           <div class="gp-body sample-body">
             <div class="trigger-bar">
-              <span class="trigger-k">进入判型</span>
+              <span class="trigger-k">为何判型</span>
               <span
-                class="pill mini"
+                class="trigger-note"
                 :class="diagnosis?.trigger_by === 'rate' ? 'pre-tone' : gradeClass(detail.grade)"
               >
                 {{ diagnosis?.trigger_note || '已触发' }}
               </span>
-              <span v-if="detail.is_pre" class="pill mini pre-tone">「预」</span>
-              <span v-if="detail.rate_rising" class="pill mini w2-tone">速率超阈</span>
+              <StdCite
+                v-if="diagnosis?.trigger_by === 'rate'"
+                inline
+                ref-id="722-10.3"
+                label="§10.3"
+              />
+              <StdCite
+                v-else
+                inline
+                ref-id="1498-表A3"
+                label="表A.3"
+              />
             </div>
             <div class="gas-grid shared">
               <div v-for="g in gasGrid" :key="g.key" class="gas-cell" :class="{ hot: g.hot }">
@@ -484,7 +485,11 @@ function onResize() {
                 <span class="g-unit">μL/L</span>
               </div>
             </div>
-            <p class="gas-src-hint">来自本机 {{ selectedDate }} 快照；偏红为特征气体法判定偏高组分</p>
+            <p class="gas-src-hint">
+              含量取自 {{ selectedDate }} 当日监测值；
+              <span class="hint-hot">标红</span>
+              表示特征气体法认为该组分偏高（工程门槛，非表5数值；亦不是分级档位颜色）。
+            </p>
           </div>
         </section>
 
@@ -587,6 +592,9 @@ function onResize() {
               <span class="step-k">表5 判据</span>
               {{ keyGas.note }}
             </div>
+            <p v-if="keyGas?.ok" class="method-impl-note">
+              {{ keyGas.impl_note || '表5定性匹配;偏高门槛与加权得分为本系统工程实现,非国标数值' }}
+            </p>
 
             <div class="verdict" :class="keyGas?.ok ? 'hot' : ''">
               <span class="verdict-k">故障类型</span>
@@ -594,7 +602,6 @@ function onResize() {
             </div>
           </article>
         </section>
-
         <!-- 研判链路 + 综合结论（去重：左依表，右结论） -->
         <section class="gp conclude">
           <div class="gp-head">
@@ -629,6 +636,7 @@ function onResize() {
                 <span class="conf-tag" :class="confidenceClass">{{ fusion.confidence }}</span>
               </div>
               <p class="judge-sum">{{ fusion.confidence_reason }}</p>
+              <p v-if="fusion.paper_note" class="paper-note">{{ fusion.paper_note }}</p>
               <p v-if="isProvisional" class="warn-line">可信度低 · 暂定，不作确诊。</p>
               <p v-if="diagnosis.low_concentration" class="warn-line">§10.2.4 c 低浓度，比值慎用。</p>
             </div>
@@ -649,7 +657,7 @@ function onResize() {
               />
             </p>
             <button type="button" class="btn btn-primary" @click="goAgentTrials">
-              去 Agent 看建议试验
+              去分析编排查看其他检查性试验
             </button>
           </div>
         </section>
@@ -663,11 +671,27 @@ function onResize() {
 .diag { display: flex; flex-direction: column; gap: 12px; min-height: 200px; }
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; }
-.nav { display: flex; align-items: center; gap: 8px; }
+.nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .date-pick { width: 160px; }
-.eligible-select { width: 160px; }
+.cal-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  margin-left: 4px;
+  font-size: 11px; color: var(--fg-4); font-weight: 600;
+}
+.cal-legend .lg {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 4px; vertical-align: 0;
+}
+.cal-legend .lg.alarm { background: #f87171; }
+.cal-legend .lg.w2 { background: #fb923c; }
+.cal-legend .lg.w1 { background: #fbbf24; }
+.cal-legend .lg.normal { background: var(--lv-normal); }
+.cal-legend .lg.pre { background: var(--lv-pre); }
 .status { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .meta { font-size: 12px; color: var(--fg-3); }
+.pre-pill {
+  font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+}
 
 .body { display: flex; flex-direction: column; gap: 12px; min-height: 120px; }
 
@@ -796,6 +820,13 @@ function onResize() {
 }
 .verdict.hot .verdict-k { color: rgba(252,165,165,0.75); }
 
+.method-impl-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg-4);
+}
+
 /* 大卫三角 */
 .zone-legend {
   display: flex; flex-wrap: nowrap; align-items: center;
@@ -870,16 +901,28 @@ function onResize() {
 }
 .gas-cell.hot .g-val { color: #f87171; }
 .g-unit { font-size: 9px; color: var(--fg-4); }
-.gas-src-hint { margin: 0; font-size: 11px; color: var(--fg-4); }
+.gas-src-hint { margin: 0; font-size: 11px; color: var(--fg-4); line-height: 1.5; }
+.gas-src-hint .hint-hot { color: #f87171; font-weight: 650; }
 .trigger-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   margin-bottom: 10px;
 }
-.trigger-k { font-size: 11px; color: var(--fg-4); font-weight: 650; }
+.trigger-k { font-size: 11px; color: var(--fg-4); font-weight: 650; flex-shrink: 0; }
+.trigger-note {
+  flex: 1 1 220px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+  color: var(--fg-2);
+}
+.trigger-note.pre-tone { color: var(--lv-pre-2); }
+.trigger-note.w1 { color: var(--lv-w1); }
+.trigger-note.w2 { color: var(--lv-w2); }
+.trigger-note.alarm { color: var(--lv-alarm); }
 .pill.mini.pre-tone {
-  background: rgba(103, 232, 249, 0.12);
-  border: 1px solid rgba(103, 232, 249, 0.4);
-  color: #67e8f9;
+  background: var(--lv-pre-bg);
+  border: 1px solid var(--lv-pre-line);
+  color: var(--lv-pre-2);
 }
 .pill.mini.w2-tone {
   background: rgba(251, 146, 60, 0.12);
@@ -967,6 +1010,10 @@ function onResize() {
   margin: 8px 0 0; font-size: 12px; color: var(--fg-3);
   line-height: 1.45; text-align: center;
 }
+.paper-note {
+  margin: 6px 0 0; font-size: 12px; color: var(--lv-w2);
+  line-height: 1.45; text-align: center;
+}
 .conf-tag {
   font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
 }
@@ -1000,15 +1047,4 @@ function onResize() {
 }
 .toolbar :deep(.el-input__inner),
 .toolbar :deep(.el-select__selected-item) { color: var(--fg) !important; }
-</style>
-
-<style>
-.el-date-table td.diag-eligible .el-date-table-cell__text {
-  background: rgba(45, 212, 191, 0.22) !important;
-  color: #5eead4 !important;
-  border-radius: 50%;
-}
-.el-date-table td.diag-w1 .el-date-table-cell__text {
-  box-shadow: inset 0 -2px 0 #fbbf24;
-}
 </style>

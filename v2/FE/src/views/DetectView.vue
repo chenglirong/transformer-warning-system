@@ -55,20 +55,41 @@ const dateRange = computed(() => {
   if (!series.value.length) return null
   return [series.value[0].date, series.value[series.value.length - 1].date]
 })
-const abnormalDates = computed(() =>
-  series.value.filter((s) => s.grade !== '正常').map((s) => s.date),
-)
-const preDates = computed(() =>
-  series.value.filter((s) => s.is_pre).map((s) => s.date),
-)
 
 const dayGrade = computed(() => detail.value?.grade || null)
 const isPre = computed(() => !!detail.value?.is_pre)
 const rateRising = computed(() => !!detail.value?.rate_rising)
 const thcRel = computed(() => detail.value?.thc_rel_rate)
 const urgency = computed(() => detail.value?.urgency || null)
-const scopeNote = computed(() => detail.value?.scope_note || null)
-const nonFaultTip = computed(() => detail.value?.non_fault_source_tip || null)
+
+/** 右侧三格下方一句人话，给值班员看懂「这是啥、为啥是这个值」 */
+const rateHint = computed(() => {
+  const r = thcRel.value
+  if (r == null) return '相对产气速率；总烃参比不足时暂不计'
+  if (r >= 10) return '已超注意值约 10%/月'
+  return '未超注意值约 10%/月'
+})
+const preHint = computed(() => {
+  if (isPre.value) {
+    return '含量档仍为正常/注意值1，但月环比已超注意值约 10%/月'
+  }
+  if (rateRising.value) {
+    return '月环比已超，但当日档已达注意值2/告警 → 改看处置紧急度'
+  }
+  return '触发条件：档位仍为正常/注意值1，且月环比 ≥10%/月'
+})
+const urgencyLabel = computed(() => {
+  if (urgency.value?.level) return urgency.value.level
+  if (['注意值2', '告警值'].includes(dayGrade.value)) return '—'
+  return '不适用'
+})
+const urgencyHint = computed(() => {
+  if (urgency.value?.advice) return urgency.value.advice
+  if (['注意值2', '告警值'].includes(dayGrade.value)) {
+    return '已达注意值2/告警，正在研判急缓（涨势快→高，暂稳→中，仅H₂→低）'
+  }
+  return '仅注意值2/告警时才判急缓；当前档位更低，故不适用'
+})
 
 /** 抬到当日最高档的判据（可能多项并列） */
 const maxDrivers = computed(() => {
@@ -91,9 +112,14 @@ const indicatorGroups = computed(() => {
 })
 
 function formatDate(d) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
+  if (!d) return ''
+  if (typeof d === 'string') return d.slice(0, 10)
+  if (typeof d.format === 'function') return d.format('YYYY-MM-DD')
+  const dt = d instanceof Date ? d : new Date(d)
+  if (Number.isNaN(dt.getTime())) return ''
+  const y = dt.getFullYear()
+  const m = String(dt.getMonth() + 1).padStart(2, '0')
+  const day = String(dt.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
 }
 function disabledDate(d) {
@@ -101,6 +127,12 @@ function disabledDate(d) {
   const iso = formatDate(d)
   return iso < dateRange.value[0] || iso > dateRange.value[1]
 }
+function stepDay(delta) {
+  const i = idx.value + delta
+  if (i < 0 || i >= series.value.length) return
+  selectedDate.value = series.value[i].date
+}
+/** 日历色标：红告警 / 橙注意2 / 黄注意1 / 绿正常（与 --lv-normal 一致） */
 function cellClassName(d) {
   const iso = formatDate(d)
   const hit = series.value.find((s) => s.date === iso)
@@ -108,33 +140,8 @@ function cellClassName(d) {
   if (hit.grade === '告警值') return 'det-alarm'
   if (hit.grade === '注意值2') return 'det-w2'
   if (hit.grade === '注意值1') return 'det-w1'
-  if (hit.is_pre) return 'det-pre'
+  if (hit.grade === '正常') return 'det-normal'
   return ''
-}
-function stepDay(delta) {
-  const i = idx.value + delta
-  if (i < 0 || i >= series.value.length) return
-  selectedDate.value = series.value[i].date
-}
-function jumpAbnormal(dir) {
-  const list = abnormalDates.value
-  if (!list.length) return
-  const cur = selectedDate.value
-  if (dir < 0) {
-    selectedDate.value = [...list].reverse().find((d) => d < cur) || list[list.length - 1]
-  } else {
-    selectedDate.value = list.find((d) => d > cur) || list[0]
-  }
-}
-function jumpPre(dir) {
-  const list = preDates.value
-  if (!list.length) return
-  const cur = selectedDate.value
-  if (dir < 0) {
-    selectedDate.value = [...list].reverse().find((d) => d < cur) || list[list.length - 1]
-  } else {
-    selectedDate.value = list.find((d) => d > cur) || list[0]
-  }
 }
 function fmtVal(row) {
   if (row.value == null) return '—'
@@ -156,7 +163,7 @@ async function loadSeries() {
     series.value = res.series || []
     summary.value = res.summary || {}
     if (!series.value.length) {
-      loadError.value = '无监测数据，请先合成并入库（synthesize_data + import_data）'
+      loadError.value = '暂无监测数据，请先导入油中溶解气体时序'
       return
     }
     const q = typeof route.query.date === 'string' ? route.query.date : ''
@@ -220,15 +227,16 @@ onMounted(async () => {
               placeholder="选择日期"
               :disabled-date="disabledDate"
               :cell-class-name="cellClassName"
+              popper-class="dga-cal-popper"
               class="date-pick"
             />
             <button type="button" class="btn btn-ghost" :disabled="idx < 0 || idx >= series.length - 1" @click="stepDay(1)">后日 ›</button>
-          </div>
-          <div class="nav">
-            <button type="button" class="btn btn-ghost" :disabled="!abnormalDates.length" @click="jumpAbnormal(-1)">‹ 上一异常日</button>
-            <button type="button" class="btn btn-ghost" :disabled="!abnormalDates.length" @click="jumpAbnormal(1)">下一异常日 ›</button>
-            <button type="button" class="btn btn-ghost" :disabled="!preDates.length" @click="jumpPre(-1)">‹ 「预」</button>
-            <button type="button" class="btn btn-ghost" :disabled="!preDates.length" @click="jumpPre(1)">「预」 ›</button>
+            <div class="cal-legend" aria-label="日历色标">
+              <span><i class="lg alarm" />告警</span>
+              <span><i class="lg w2" />注意2</span>
+              <span><i class="lg w1" />注意1</span>
+              <span><i class="lg normal" />正常</span>
+            </div>
           </div>
         </div>
       </div>
@@ -251,7 +259,7 @@ onMounted(async () => {
                   <span class="pill" :class="gradeClass(dayGrade)">
                     <i class="d" />{{ dayGrade }}
                   </span>
-                  <span v-if="isPre" class="pill pre-pill">预</span>
+                  <span v-if="isPre" class="pill pre-pill" title="含量档为正常/注意值1，月环比已超注意值">涨势预警</span>
                 </div>
                 <div v-if="maxDrivers.length" class="drivers-list">
                   <span
@@ -271,26 +279,26 @@ onMounted(async () => {
                     <StdCite ref-id="722-9.3.2" label="§9.3.2" inline />
                   </div>
                   <div class="rate-v" :class="{ hot: rateRising }">{{ fmtRate(thcRel) }}</div>
+                  <p class="rate-hint">{{ rateHint }}</p>
                 </div>
                 <div class="rate-item">
                   <div class="rate-k">
-                    「预」
-                    <StdCite ref-id="722-9.3.3" label="§9.3.3" inline />
+                    涨势预警
+                    <StdCite ref-id="722-9.3.3" label="§9.3.3 a" inline />
                   </div>
-                  <div class="rate-v">{{ isPre ? '是' : '否' }}</div>
+                  <div class="rate-v" :class="{ 'pre-hot': isPre }">{{ isPre ? '已触发' : '未触发' }}</div>
+                  <p class="rate-hint">{{ preHint }}</p>
                 </div>
                 <div class="rate-item">
                   <div class="rate-k">处置紧急度</div>
                   <div class="rate-v" :class="{ hot: urgency?.level === '高' }">
-                    {{ urgency?.level || (['注意值2', '告警值'].includes(dayGrade) ? '—' : '不适用') }}
+                    {{ urgencyLabel }}
                   </div>
+                  <p class="rate-hint">{{ urgencyHint }}</p>
                 </div>
               </div>
             </div>
           </section>
-
-          <div v-if="scopeNote" class="alert-banner warn">{{ scopeNote }}</div>
-          <div v-if="nonFaultTip" class="alert-banner tip">{{ nonFaultTip }}</div>
 
           <section
             v-for="group in indicatorGroups"
@@ -353,8 +361,21 @@ onMounted(async () => {
 .empty-body { padding: 28px; text-align: center; color: var(--fg-3); font-size: 13px; }
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; }
-.nav { display: flex; align-items: center; gap: 8px; }
+.nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .date-pick { width: 160px; }
+.cal-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  margin-left: 4px;
+  font-size: 11px; color: var(--fg-4); font-weight: 600;
+}
+.cal-legend .lg {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 4px; vertical-align: 0;
+}
+.cal-legend .lg.alarm { background: #f87171; }
+.cal-legend .lg.w2 { background: #fb923c; }
+.cal-legend .lg.w1 { background: #fbbf24; }
+.cal-legend .lg.normal { background: var(--lv-normal); }
 
 .body { display: flex; flex-direction: column; gap: 12px; min-height: 120px; }
 
@@ -376,11 +397,19 @@ onMounted(async () => {
   gap: 8px 4px; margin-left: auto;
 }
 .kpi-right .rate-item {
-  min-width: 110px;
+  min-width: 148px;
+  max-width: 220px;
   padding: 6px 14px;
   border-left: 1px solid var(--line);
 }
 .kpi-right .rate-item:first-child { border-left: none; }
+.rate-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg-4);
+  font-weight: 500;
+}
 .day-grade-k {
   display: flex; align-items: center; gap: 6px;
   font-size: 11px; color: var(--fg-4); font-weight: 600;
@@ -388,9 +417,6 @@ onMounted(async () => {
 .day-grade-v { display: flex; align-items: center; gap: 8px; }
 .day-grade-v .pill { font-size: 14px; padding: 4px 12px; }
 .pre-pill {
-  background: rgba(103, 232, 249, 0.12);
-  border: 1px solid rgba(103, 232, 249, 0.4);
-  color: #67e8f9;
   font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
 }
 .day-grade-s { font-size: 12px; color: var(--fg-4); }
@@ -413,22 +439,7 @@ onMounted(async () => {
 }
 .rate-v { font-size: 18px; font-weight: 800; color: var(--fg); margin-top: 4px; }
 .rate-v.hot { color: var(--lv-w2); }
-
-.alert-banner {
-  padding: 10px 14px; border-radius: var(--r);
-  font-size: 12px; line-height: 1.5;
-  border: 1px solid var(--line);
-}
-.alert-banner.warn {
-  background: rgba(251, 146, 60, 0.1);
-  border-color: rgba(251, 146, 60, 0.35);
-  color: #fdba74;
-}
-.alert-banner.tip {
-  background: rgba(45, 212, 191, 0.08);
-  border-color: rgba(45, 212, 191, 0.3);
-  color: var(--fg-2);
-}
+.rate-v.pre-hot { color: var(--lv-pre-2); }
 
 .head-title { flex-shrink: 0; }
 .formula {
@@ -524,23 +535,4 @@ onMounted(async () => {
   box-shadow: 0 0 0 1px var(--line-2) inset !important;
 }
 .toolbar :deep(.el-input__inner) { color: var(--fg) !important; }
-</style>
-
-<style>
-.el-date-table td.det-alarm .el-date-table-cell__text {
-  background: rgba(245, 85, 90, 0.28) !important;
-  color: #fca5a5 !important;
-  border-radius: 50%;
-}
-.el-date-table td.det-w2 .el-date-table-cell__text {
-  background: rgba(251, 146, 60, 0.25) !important;
-  color: #fdba74 !important;
-  border-radius: 50%;
-}
-.el-date-table td.det-w1 .el-date-table-cell__text {
-  box-shadow: inset 0 -2px 0 #fbbf24;
-}
-.el-date-table td.det-pre .el-date-table-cell__text {
-  box-shadow: inset 0 -2px 0 #67e8f9;
-}
 </style>
