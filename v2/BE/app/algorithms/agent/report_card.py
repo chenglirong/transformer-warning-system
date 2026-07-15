@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Optional
 
 import pandas as pd
@@ -25,8 +26,9 @@ def build_g1_card(
     device_id: str = "SYN-001",
     voltage: str = "220kV及以下(前提声明)",
     cite_ids: list[str] | None = None,
+    cite_map: list[dict] | None = None,
 ) -> dict[str, Any]:
-    """装配表G.1完整字段。sample_dates 长度=4(当日/约-6/约-14/第四列占位)。"""
+    """装配表G.1完整字段。sample_dates 长度=4(当日 / 约−7 / 约−14 / 约−21 天)。"""
     gases = {
         "h2": _cols(df, sample_dates, "h2"),
         "o2": [None] * 4,  # 数据集不含
@@ -71,7 +73,7 @@ def build_g1_card(
             "cooling": None,
             "tap_changer": None,
             "oil_protection": None,
-            "nameplate_note": "合成虚拟设备,无铭牌——电压等级为声明前提,出厂序号用合成设备号",
+            "nameplate_note": "演示设备，铭牌字段取可声明项，其余留空",
         },
         "sample": {
             "dates": sample_dates,  # 年、月、日、时 → 合成仅有日
@@ -79,7 +81,7 @@ def build_g1_card(
             "site": [None, None, None, None],
             "oil_temp_c": [None, None, None, None],
             "load_mva": [None, None, None, None],
-            "sample_note": "合成数据无取样原因/部位/油温/负荷",
+            "sample_note": "演示时序无取样原因/部位/油温/负荷",
         },
         "gas_content_pct": [None, None, None, None],  # 含气量%
         "gases": gases,
@@ -87,11 +89,12 @@ def build_g1_card(
         "run_days": run_days,
         # 绝对产气率式1需油重/密度 → 不用;相对速率写在分析意见里
         "thc_gassing_rate_ml_d": [None, None, None, None],
-        "thc_gassing_rate_note": "绝对产气率(mL/天)需油重/油密度,本系统用 722 式2相对产气率(%/月),见分析意见",
+        "thc_gassing_rate_note": None,
         "test_report_nos": [report_no, None, None, None],
         "opinion": opinion,
-        "empty_note": "合成虚拟设备:铭牌/工况/含气量%/O₂/N₂/绝对产气率如实留空,不杜撰",
+        "empty_note": None,
         "cite_ids": cite_ids or [],
+        "cite_map": cite_map or [],
         "device_id": device_id,
         "voltage": voltage,
         "sample_dates": sample_dates,  # 兼容旧前端字段
@@ -100,14 +103,124 @@ def build_g1_card(
     }
 
 
-def build_g2_card() -> dict[str, Any]:
-    """表G.2:台账类,合成环境无真实记录 → 三栏均留空并注明。"""
-    note = "合成环境无真实台账,本栏留空不杜撰(P1)"
+def build_other_tests_blocks(
+    *,
+    trials: list[str] | None = None,
+    trials_appendix_d: list[str] | None = None,
+    trials_1685_items: list[dict] | None = None,
+    trials_basis: list[dict] | None = None,
+    trials_nature: str | None = None,
+    trials_purpose: str | None = None,
+) -> list[dict[str, Any]]:
+    """与监测决策同款：当前状态 / 依据 / 建议试验 结构化块。"""
+    nature = (trials_nature or "").strip() or "—"
+    verify = trials_purpose == "verify"
+    basis_d = next(
+        (
+            b for b in (trials_basis or [])
+            if b.get("cite") == "722-附录D" or b.get("label") == "附录D"
+        ),
+        None,
+    )
+    status = ""
+    if basis_d and basis_d.get("status"):
+        status = str(basis_d["status"]).replace("当前状况：", "", 1).strip()
+    if not status:
+        status = f"故障性质暂定为「{nature}」" if verify else f"故障性质为「{nature}」"
+
+    d_names = [
+        str(t).strip()
+        for t in (trials_appendix_d or [])
+        if t and str(t).strip()
+    ]
+    if not d_names:
+        d_names = [
+            str(t).strip()
+            for t in (trials or [])
+            if t and str(t).strip() and "(B." not in str(t)
+        ]
+
+    blocks: list[dict[str, Any]] = []
+    if d_names:
+        blocks.append({
+            "status": status,
+            "cite": "722-附录D",
+            "cite_label": "722-附录D",
+            "table_hint": f"表D.1「{nature}」列",
+            "items": d_names,
+            "suggest": None,
+            "badge": None,
+        })
+
+    for it in trials_1685_items or []:
+        clause = str(it.get("clause") or "").strip()
+        test = str(it.get("test") or "").strip()
+        if clause:
+            test = test.replace(f"({clause})", "").strip()
+        test = re.sub(r"\(B\.[^)]+\)", "", test).strip()
+        m = re.match(r"^(B\.\d+)", clause, re.I)
+        table_hint = f"表{m.group(1)}" if m else ""
+        blocks.append({
+            "status": it.get("why") or "当日气体组合贴近附录B状态量描述",
+            "cite": "1685-附录B",
+            "cite_label": "1685-附录B",
+            "table_hint": table_hint,
+            "items": None,
+            "suggest": test,
+            "badge": clause or None,
+        })
+    return blocks
+
+
+def _blocks_to_plain(blocks: list[dict[str, Any]]) -> str | None:
+    """纯文本兜底(导出/旧前端)。"""
+    if not blocks:
+        return None
+    parts: list[str] = []
+    for b in blocks:
+        lines = [f"当前状态：{b.get('status') or '—'}"]
+        cite = b.get("cite_label") or b.get("cite") or ""
+        hint = b.get("table_hint") or ""
+        lines.append(f"依据：{cite}" + (f" {hint}" if hint else ""))
+        items = b.get("items") or []
+        if items:
+            lines.append("建议试验：" + "；".join(items))
+        elif b.get("suggest"):
+            badge = b.get("badge") or ""
+            lines.append("建议试验：" + (f"[{badge}] " if badge else "") + str(b["suggest"]))
+        parts.append("\n".join(lines))
+    return "\n\n".join(parts)
+
+
+def build_g2_card(
+    *,
+    other_tests: str | None = None,
+    trials: list[str] | None = None,
+    trials_appendix_d: list[str] | None = None,
+    trials_1685_items: list[dict] | None = None,
+    trials_basis: list[dict] | None = None,
+    trials_purpose: str | None = None,
+    trials_nature: str | None = None,
+    grade: str | None = None,  # noqa: ARG001
+    confidence: str | None = None,  # noqa: ARG001
+    provisional: bool = False,  # noqa: ARG001
+) -> dict[str, Any]:
+    """表G.2:报告栏用文书成稿;结构化块仅供监测决策展示。"""
+    blocks = build_other_tests_blocks(
+        trials=trials,
+        trials_appendix_d=trials_appendix_d,
+        trials_1685_items=trials_1685_items,
+        trials_basis=trials_basis,
+        trials_nature=trials_nature,
+        trials_purpose=trials_purpose,
+    )
+    text = (other_tests or "").strip() or _blocks_to_plain(blocks)
     return {
-        "other_tests": None,
+        "other_tests": text or None,
+        "other_tests_blocks": blocks,
         "maintenance": None,
         "fault_records": None,
-        "note": note,
+        "note": None,
     }
 
 
