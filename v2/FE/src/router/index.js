@@ -22,7 +22,7 @@ const routes = [
         component: () => import('@/views/TrendView.vue'),
         meta: {
           title: '产气趋势预警',
-          sub: '§9.3.2 总烃月环比 · 「预」§9.3.3 a · 辅线不落档',
+          sub: '§9.3.2 总烃月环比 · 涨势预警按 §9.3.3 a 当日超注意',
         },
       },
       {
@@ -31,7 +31,7 @@ const routes = [
         component: () => import('@/views/WarningView.vue'),
         meta: {
           title: '告警记录',
-          sub: '四档全报 · 超标判据 /「预」/ 处置紧急度 / 故障类型',
+          sub: '四档全报 · 涨势预警 · 处置紧急度 · 故障类型摘要',
         },
       },
       {
@@ -49,7 +49,16 @@ const routes = [
         component: () => import('@/views/AgentView.vue'),
         meta: {
           title: 'Agent 分析编排',
-          sub: '七步竖向串联 · §10.3 · 表 G.1/G.2 报告（规则模板降级）',
+          sub: '§10.3 流程串联 · 监测决策 · 表 G.1/G.2 报告',
+        },
+      },
+      {
+        path: 'knowledge',
+        name: 'knowledge',
+        component: () => import('@/views/KnowledgeView.vue'),
+        meta: {
+          title: '判据知识库',
+          sub: '行业标准判据总表 · 条文原图可查',
         },
       },
     ],

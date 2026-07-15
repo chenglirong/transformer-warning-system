@@ -7,7 +7,6 @@ const route = useRoute()
 
 const pageMeta = computed(() => ({
   title: route.meta?.title || 'DGA 分析智能体',
-  sub: route.meta?.sub || '220kV 及以下 · 站端后台',
 }))
 
 const navGroups = [
@@ -24,6 +23,7 @@ const navGroups = [
     label: '智能体',
     items: [
       { path: '/agent', title: 'Agent 分析编排', ready: true, icon: 'agent' },
+      { path: '/knowledge', title: '判据知识库', ready: true, icon: 'knowledge' },
     ],
   },
 ]
@@ -70,6 +70,11 @@ function isActive(path) {
               <svg v-else-if="item.icon === 'alerts'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3l9 16H3L12 3z" /><path d="M12 10v4M12 17v.5" />
               </svg>
+              <svg v-else-if="item.icon === 'knowledge'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                <path d="M8 7h8M8 11h6" />
+              </svg>
               <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="5" y="8" width="14" height="12" rx="2" /><path d="M12 8V4M9 2h6M9 14h.5M14.5 14h.5" />
               </svg>
@@ -85,6 +90,11 @@ function isActive(path) {
               <svg v-else-if="item.icon === 'alerts'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3l9 16H3L12 3z" /><path d="M12 10v4M12 17v.5" />
               </svg>
+              <svg v-else-if="item.icon === 'knowledge'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                <path d="M8 7h8M8 11h6" />
+              </svg>
               <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="5" y="8" width="14" height="12" rx="2" /><path d="M12 8V4M9 2h6M9 14h.5M14.5 14h.5" />
               </svg>
@@ -94,24 +104,14 @@ function isActive(path) {
           </template>
         </div>
       </nav>
-
-      <div class="sidebar-foot">
-        依据 <strong>DL/T 722-2014</strong><br />
-        <strong>DL/T 1498.2-2025</strong> 附录 A
-      </div>
     </aside>
 
     <div class="main">
       <header class="topbar">
         <div class="topbar-title">
           <h1>{{ pageMeta.title }}</h1>
-          <p>{{ pageMeta.sub }}</p>
         </div>
         <div class="topbar-spacer" />
-        <div class="topbar-device">
-          <span class="dot" />
-          设备 <strong>#SYN-001</strong> · 合成 360 天
-        </div>
       </header>
       <main class="content">
         <router-view />

@@ -131,6 +131,54 @@ body {
   color: var(--fg-3);
 }
 
+/* ---------- 日期选择器色标（检测 / 判型共用；写在全局以免弹层吃不到 SFC 样式） ---------- */
+.el-date-table td.det-alarm .el-date-table-cell__text,
+.el-date-table td.det-w2 .el-date-table-cell__text,
+.el-date-table td.det-w1 .el-date-table-cell__text,
+.el-date-table td.det-normal .el-date-table-cell__text,
+.el-date-table td.det-pre .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-alarm .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-w2 .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-w1 .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-normal .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-pre .el-date-table-cell__text {
+  width: 28px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  border-radius: 50% !important;
+  font-weight: 700 !important;
+}
+.el-date-table td.det-alarm .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-alarm .el-date-table-cell__text {
+  background: rgba(239, 68, 68, 0.55) !important;
+  color: #fee2e2 !important;
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.85);
+}
+.el-date-table td.det-w2 .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-w2 .el-date-table-cell__text {
+  background: rgba(249, 115, 22, 0.52) !important;
+  color: #ffedd5 !important;
+  box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.9);
+}
+.el-date-table td.det-w1 .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-w1 .el-date-table-cell__text {
+  background: rgba(234, 179, 8, 0.48) !important;
+  color: #fef9c3 !important;
+  box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.85);
+}
+.el-date-table td.det-normal .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-normal .el-date-table-cell__text {
+  background: rgba(52, 211, 153, 0.42) !important;
+  color: #d1fae5 !important;
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.8);
+}
+.el-date-table td.det-pre .el-date-table-cell__text,
+.dga-cal-popper .el-date-table td.det-pre .el-date-table-cell__text {
+  background: rgba(139, 92, 246, 0.55) !important;
+  color: #f5f3ff !important;
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.95);
+}
+
 /* 侧栏内待搭标签 */
 .nav-item .soon-tag {
   margin-left: auto;
