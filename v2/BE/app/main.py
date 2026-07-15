@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import agent, detect, diagnose, trend, warning
-from app.config import CORS_ORIGINS
+from app.config import CORS_ORIGINS  # noqa: F401 — 顺带触发 .env 加载
 
 app = FastAPI(title="DGA 分析智能体后台", version="0.1.0")
 
