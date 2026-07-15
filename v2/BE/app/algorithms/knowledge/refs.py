@@ -28,6 +28,11 @@ REFS: dict[str, dict[str, str]] = {
         "section": "§5.5.5",
         "summary": "多组分最小检测周期≤2h",
     },
+    "722-表3": {
+        "std": "DL/T 722-2014",
+        "section": "§9.3.1 表3",
+        "summary": "含量注意值;220kV及以下变压器H₂=150/C₂H₂=5/总烃=150;对齐表A.3注意值2",
+    },
     "722-9.3.2": {
         "std": "DL/T 722-2014",
         "section": "§9.3.2",
@@ -51,7 +56,7 @@ REFS: dict[str, dict[str, str]] = {
     "722-表5": {
         "std": "DL/T 722-2014",
         "section": "§10.1 表5",
-        "summary": "特征气体法",
+        "summary": "特征气体法(定性名单+注);偏高门槛/加权为本系统工程实现",
     },
     "722-表6-7": {
         "std": "DL/T 722-2014",
@@ -62,6 +67,21 @@ REFS: dict[str, dict[str, str]] = {
         "std": "DL/T 722-2014",
         "section": "附录C 图C.2",
         "summary": "大卫三角形法",
+    },
+    "722-附录B": {
+        "std": "DL/T 722-2014",
+        "section": "附录B 表B.1/B.2",
+        "summary": "IEC 60599 解释表(交叉印证,非主输出)",
+    },
+    "722-5.4": {
+        "std": "DL/T 722-2014",
+        "section": "§5.4 b)",
+        "summary": "离线缩短检测周期（在线监测见1498.2）",
+    },
+    "722-5.4.5": {
+        "std": "DL/T 1498.2-2025",
+        "section": "§5.4.5",
+        "summary": "预警后二次采样验证（同1498-5.4.5）",
     },
     "722-附录D": {
         "std": "DL/T 722-2014",
@@ -76,7 +96,7 @@ REFS: dict[str, dict[str, str]] = {
     "1685-附录B": {
         "std": "DL/T 1685-2017",
         "section": "附录B 表B.2/B.3",
-        "summary": "状态量描述↔停电试验项目(不下成因)",
+        "summary": "状态量描述与停电试验项目对照",
     },
 }
 
@@ -101,14 +121,12 @@ def expand(cite_ids: list[str]) -> list[dict[str, str]]:
     return out
 
 
-def cites_for_detect(*, is_pre: bool, urgency: Any, scope_exceeded: bool = False) -> list[str]:
+def cites_for_detect(*, is_pre: bool, urgency: Any) -> list[str]:
     ids = ["1498-表A3"]
     if is_pre or (urgency and urgency.get("rising")):
         ids.extend(["722-9.3.2", "722-9.3.3"])
     elif urgency:
         ids.append("722-9.3.3")
-    if scope_exceeded:
-        ids.append("1498-表A3")
     return ids
 
 

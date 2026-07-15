@@ -1,7 +1,7 @@
 """故障类型判断路由(薄层:HTTP + 读库,判型全在 algorithms/diagnose)。
 
 接口:
-  GET /api/diagnose/series      —— 全年可判型日色带(注意值2+ 或 速率超/「预」)
+  GET /api/diagnose/series      —— 全年档位色带(注意值2+ 或 速率超/「预」选默认为可判型日)
   GET /api/diagnose/day/{day}   —— 单日三方法 + 融合结论
 """
 from __future__ import annotations
@@ -37,44 +37,32 @@ def _load_df(db: Session) -> pd.DataFrame:
 
 @router.get("/series")
 def diagnose_series(db: Session = Depends(get_db)):
-    """全年逐日:档位 + 是否可触发判型(供选日色带)。"""
+    """全年逐日:档位 + 涨势预警标记(供日历色带)。"""
     df = _load_df(db)
     if df.empty:
         return fail("无监测数据,请先跑 synthesize_data + import_data")
     results = detect(df)
 
     series = []
-    eligible_count = 0
-    for r, (_, row) in zip(results, df.iterrows()):
+    for r in results:
         rate_rising = bool(r.get("rate_rising"))
-        is_pre = bool(r.get("is_pre"))
-        eligible = can_diagnose(r["grade"], rate_rising=rate_rising)
-        if eligible:
-            eligible_count += 1
         series.append({
             "date": r["date"],
-            "day": len(series) + 1,
             "grade": r["grade"],
-            "eligible": eligible,
-            "is_pre": is_pre,
-            "rate_rising": rate_rising,
-            "total_hydrocarbon": r["total_hydrocarbon"],
-            "gases": {g: round(float(row[g]), 2) for g in GAS_COLS},
-            "fault_state": row["fault_state"],
+            "is_pre": bool(r.get("is_pre")),
+            "eligible": can_diagnose(r["grade"], rate_rising=rate_rising),
         })
 
     # 默认选最近一个可判型日;若无则选最后一天(前端展示门槛提示)
     default = next((s for s in reversed(series) if s["eligible"]), series[-1])
+    # 日历不需要 eligible;仅 summary 留 default_date
+    public = [{"date": s["date"], "grade": s["grade"], "is_pre": s["is_pre"]} for s in series]
 
     return ok({
-        "series": series,
+        "series": public,
         "summary": {
-            "total_days": len(series),
-            "eligible_days": eligible_count,
-            "date_range": [series[0]["date"], series[-1]["date"]],
             "default_date": default["date"],
         },
-        "note": "判型触发=注意值2及以上 **或** 722相对产气速率连续超注意(含「预」);与处置研判双门槛分离",
     })
 
 
@@ -101,17 +89,12 @@ def diagnose_day(day: str, db: Session = Depends(get_db)):
         is_pre=bool(hit.get("is_pre")),
         **gases,
     )
-    day_index = int(df.index[df["date"] == day].tolist()[0]) + 1
     return ok({
         "date": day,
-        "day_index": day_index,
         "grade": hit["grade"],
         "is_pre": bool(hit.get("is_pre")),
-        "rate_rising": bool(hit.get("rate_rising")),
         "gases": {g: round(v, 2) if v is not None else None for g, v in gases.items()},
         "co": round(co, 2) if co is not None else None,
         "co2": round(co2, 2) if co2 is not None else None,
-        "total_hydrocarbon": hit["total_hydrocarbon"],
-        "fault_state": row["fault_state"],  # 合成真值,答辩对照,非诊断输出
         "diagnosis": diagnosis,
     })

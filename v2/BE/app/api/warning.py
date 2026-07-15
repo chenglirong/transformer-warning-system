@@ -55,21 +55,20 @@ def _hits(indicators: list[dict]) -> list[dict]:
     return out
 
 
-def _hits_text(hits: list[dict], grade: str, is_pre: bool) -> str:
+def _hits_text(hits: list[dict], is_pre: bool) -> str:
     if not hits:
         text = "各指标在表 A.3 正常范围内"
     else:
         text = " · ".join(f"{h['item']}({h['basis']})→{h['grade']}" for h in hits)
     if is_pre:
-        text += " · 总烃相对速率连续超阈→「预」"
-    elif grade == "正常":
-        pass
+        text += " · 总烃相对速率超注意值→涨势预警"
     return text
 
 
-def _diagnose_fault(grade: str, row, *, rate_rising: bool = False, is_pre: bool = False) -> tuple[str | None, str | None]:
+def _diagnose_fault(grade: str, row, *, rate_rising: bool = False, is_pre: bool = False) -> dict:
+    empty = {"fault_type": None, "fault_code": None}
     if not can_diagnose(grade, rate_rising=rate_rising):
-        return None, None
+        return empty
     diag = diagnose_sample(
         grade=grade,
         h2=float(row["h2"]),
@@ -83,8 +82,12 @@ def _diagnose_fault(grade: str, row, *, rate_rising: bool = False, is_pre: bool 
         is_pre=is_pre,
     )
     if diag.get("triggered") and diag.get("fusion"):
-        return diag["fusion"].get("primary"), diag["fusion"].get("primary_code")
-    return None, None
+        f = diag["fusion"]
+        return {
+            "fault_type": f.get("primary"),
+            "fault_code": f.get("primary_code"),
+        }
+    return empty
 
 
 @router.get("/records")
@@ -105,9 +108,7 @@ def warning_records(db: Session = Depends(get_db)):
         is_pre = bool(r.get("is_pre"))
         rate_rising = bool(r.get("rate_rising"))
         hits = _hits(indicators)
-        fault_type, fault_code = _diagnose_fault(
-            grade, row, rate_rising=rate_rising, is_pre=is_pre,
-        )
+        fault = _diagnose_fault(grade, row, rate_rising=rate_rising, is_pre=is_pre)
         urg = r.get("urgency")
 
         records.append({
@@ -115,16 +116,13 @@ def warning_records(db: Session = Depends(get_db)):
             "date": r["date"],
             "grade": grade,
             "is_pre": is_pre,
-            "rate_rising": rate_rising,
             "hits": hits,
-            "hits_text": _hits_text(hits, grade, is_pre),
-            "thc_rel_rate": r.get("thc_rel_rate"),  # 722 §9.3.2 %/月
+            "hits_text": _hits_text(hits, is_pre),
+            "thc_rel_rate": r.get("thc_rel_rate"),
             "urgency_level": urg["level"] if urg else None,
             "urgency_rising": urg.get("rising") if urg else None,
-            "scope_exceeded": r.get("scope_exceeded"),
-            "scope_note": r.get("scope_note"),
-            "fault_type": fault_type,
-            "fault_code": fault_code,
+            "fault_type": fault.get("fault_type"),
+            "fault_code": fault.get("fault_code"),
         })
 
     summary = {
@@ -138,7 +136,7 @@ def warning_records(db: Session = Depends(get_db)):
 
 @router.get("/day/{day}")
 def warning_day(day: str, db: Session = Depends(get_db)):
-    """单日详情(报告弹层用)。"""
+    """单日详情(弹层摘要)。"""
     df = _load_df(db)
     if df.empty:
         return fail("无监测数据")
@@ -148,8 +146,7 @@ def warning_day(day: str, db: Session = Depends(get_db)):
         return fail(f"日期不存在:{day}", code=404)
 
     row = df[df["date"] == day].iloc[0]
-    hits = _hits(hit.get("indicators") or [])
-    fault_type, fault_code = _diagnose_fault(
+    fault = _diagnose_fault(
         hit["grade"], row,
         rate_rising=bool(hit.get("rate_rising")),
         is_pre=bool(hit.get("is_pre")),
@@ -159,18 +156,8 @@ def warning_day(day: str, db: Session = Depends(get_db)):
         "date": hit["date"],
         "grade": hit["grade"],
         "is_pre": hit.get("is_pre", False),
-        "rate_rising": bool(hit.get("rate_rising")),
-        "total_hydrocarbon": hit["total_hydrocarbon"],
         "indicators": hit.get("indicators") or [],
-        "hits": hits,
-        "hits_text": _hits_text(hits, hit["grade"], bool(hit.get("is_pre"))),
         "urgency": hit.get("urgency"),
-        "thc_rel_rate": hit.get("thc_rel_rate"),
-        "scope_exceeded": hit.get("scope_exceeded"),
-        "scope_note": hit.get("scope_note"),
-        "non_fault_source_tip": hit.get("non_fault_source_tip"),
-        "fault_type": fault_type,
-        "fault_code": fault_code,
-        "gases": {g: round(float(row[g]), 2) for g in GAS_COLS},
-        "fault_state": row["fault_state"],
+        "fault_type": fault.get("fault_type"),
+        "fault_code": fault.get("fault_code"),
     })
