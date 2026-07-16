@@ -567,6 +567,7 @@ def generate_opinion(
                 {"role": "user", "content": user},
             ],
             temperature=0.45,
+            max_tokens=4096,
         )
         data = _parse_llm_json(raw)
         if not data:
