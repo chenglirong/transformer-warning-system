@@ -21,7 +21,7 @@ from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
 
-router = APIRouter(prefix="/trend", tags=["trend"])
+router = APIRouter(prefix="/trend", tags=["产气趋势预警"])
 
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
 
@@ -35,7 +35,7 @@ def _load_df(db: Session) -> pd.DataFrame:
     ])
 
 
-@router.get("/daily")
+@router.get("/daily", summary="逐日产气速率走势 + 涨势预警点")
 def trend_daily(db: Session = Depends(get_db)):
     """逐日产气速率走势 + 涨势预警点(722 §9.3.2 %/月,当日超注意即认定)。"""
     df = _load_df(db)

@@ -19,7 +19,7 @@ from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
 
-router = APIRouter(prefix="/warning", tags=["warning"])
+router = APIRouter(prefix="/warning", tags=["告警记录"])
 
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
 GRADES = ["正常", "注意值1", "注意值2", "告警值"]
@@ -90,7 +90,7 @@ def _diagnose_fault(grade: str, row, *, rate_rising: bool = False, is_pre: bool 
     return empty
 
 
-@router.get("/records")
+@router.get("/records", summary="全年四档全报流水")
 def warning_records(db: Session = Depends(get_db)):
     """全年四档全报流水(前端筛选/排序/分页)。"""
     df = _load_df(db)
@@ -134,7 +134,7 @@ def warning_records(db: Session = Depends(get_db)):
     return ok({"records": records, "summary": summary})
 
 
-@router.get("/day/{day}")
+@router.get("/day/{day}", summary="单日告警详情(弹层摘要)")
 def warning_day(day: str, db: Session = Depends(get_db)):
     """单日详情(弹层摘要)。"""
     df = _load_df(db)

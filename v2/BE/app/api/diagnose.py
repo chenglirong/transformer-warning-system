@@ -16,7 +16,7 @@ from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
 
-router = APIRouter(prefix="/diagnose", tags=["diagnose"])
+router = APIRouter(prefix="/diagnose", tags=["故障类型判断"])
 
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
 AUX_COLS = ["co", "co2"]
@@ -35,7 +35,7 @@ def _load_df(db: Session) -> pd.DataFrame:
     ])
 
 
-@router.get("/series")
+@router.get("/series", summary="全年逐日:档位 + 涨势预警标记(日历色带)")
 def diagnose_series(db: Session = Depends(get_db)):
     """全年逐日:档位 + 涨势预警标记(供日历色带)。"""
     df = _load_df(db)
@@ -66,7 +66,7 @@ def diagnose_series(db: Session = Depends(get_db)):
     })
 
 
-@router.get("/day/{day}")
+@router.get("/day/{day}", summary="单日故障类型判断")
 def diagnose_day(day: str, db: Session = Depends(get_db)):
     """单日故障类型判断。day = ISO YYYY-MM-DD。"""
     df = _load_df(db)

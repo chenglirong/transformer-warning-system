@@ -16,7 +16,7 @@ from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
 
-router = APIRouter(prefix="/agent", tags=["agent"])
+router = APIRouter(prefix="/agent", tags=["Agent 分析编排"])
 
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
 
@@ -35,7 +35,7 @@ def _load_df(db: Session) -> pd.DataFrame:
     ])
 
 
-@router.get("/series")
+@router.get("/series", summary="选日列表:档位色带 + 默认可判型日")
 def agent_series(db: Session = Depends(get_db)):
     """选日列表:档位色带;默认落最近可进判型日。"""
     df = _load_df(db)
@@ -56,14 +56,14 @@ def agent_series(db: Session = Depends(get_db)):
     })
 
 
-@router.get("/knowledge")
+@router.get("/knowledge", summary="判据库清单(静态)")
 def agent_knowledge():
     """模块5 判据库清单(静态)。"""
     items = [{"id": k, **v} for k, v in REFS.items()]
     return ok({"items": items, "count": len(items)})
 
 
-@router.get("/status")
+@router.get("/status", summary="Agent B LLM 可用状态")
 def agent_status():
     """Agent B LLM 是否可用(答辩演示:强制模板开关旁展示)。"""
     enabled = llm_enabled()
@@ -74,7 +74,7 @@ def agent_status():
     })
 
 
-@router.get("/run")
+@router.get("/run", summary="对指定日跑 Agent 编排")
 def agent_run(
     day: str = Query(..., description="ISO 日期 YYYY-MM-DD"),
     force_template: bool = Query(False, description="强制 Agent B 走规则模板"),

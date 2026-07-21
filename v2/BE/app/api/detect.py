@@ -15,7 +15,7 @@ from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
 
-router = APIRouter(prefix="/detect", tags=["detect"])
+router = APIRouter(prefix="/detect", tags=["气体分级检测"])
 
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
 
@@ -30,7 +30,7 @@ def _load_df(db: Session) -> pd.DataFrame:
     ])
 
 
-@router.get("/series")
+@router.get("/series", summary="全年逐日档位(日历色带)")
 def detect_series(db: Session = Depends(get_db)):
     """全年逐日档位,供日历色带选日。"""
     df = _load_df(db)
@@ -45,7 +45,7 @@ def detect_series(db: Session = Depends(get_db)):
     return ok({"series": series, "summary": summary})
 
 
-@router.get("/day/{day}")
+@router.get("/day/{day}", summary="单日检测详情")
 def detect_day(day: str, db: Session = Depends(get_db)):
     """单日检测详情。day 为 ISO 日期(YYYY-MM-DD)。"""
     df = _load_df(db)
