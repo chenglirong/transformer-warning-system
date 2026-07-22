@@ -65,8 +65,28 @@ def _hits_text(hits: list[dict], is_pre: bool) -> str:
     return text
 
 
+def _method_text(method: dict | None, *, code_key: str | None = None) -> str | None:
+    """单法短文案:优先「代码 · 类型」,否则类型原文。"""
+    if not method:
+        return None
+    fault = method.get("fault")
+    if not fault:
+        return None
+    code = method.get(code_key) if code_key else None
+    if code and str(code) not in str(fault):
+        return f"{code} · {fault}"
+    return str(fault)
+
+
 def _diagnose_fault(grade: str, row, *, rate_rising: bool = False, is_pre: bool = False) -> dict:
-    empty = {"fault_type": None, "fault_code": None}
+    empty = {
+        "fault_type": None,
+        "fault_code": None,
+        "fusion_confidence": None,
+        "diag_key_gas": None,
+        "diag_ratios": None,
+        "diag_duval": None,
+    }
     if not can_diagnose(grade, rate_rising=rate_rising):
         return empty
     diag = diagnose_sample(
@@ -81,13 +101,17 @@ def _diagnose_fault(grade: str, row, *, rate_rising: bool = False, is_pre: bool 
         rate_rising=rate_rising,
         is_pre=is_pre,
     )
-    if diag.get("triggered") and diag.get("fusion"):
-        f = diag["fusion"]
-        return {
-            "fault_type": f.get("primary"),
-            "fault_code": f.get("primary_code"),
-        }
-    return empty
+    if not (diag.get("triggered") and diag.get("fusion")):
+        return empty
+    f = diag["fusion"]
+    return {
+        "fault_type": f.get("primary"),
+        "fault_code": f.get("primary_code"),
+        "fusion_confidence": f.get("confidence"),
+        "diag_key_gas": _method_text(diag.get("key_gas")),
+        "diag_ratios": _method_text(diag.get("ratios"), code_key="duval_code"),
+        "diag_duval": _method_text(diag.get("duval"), code_key="zone"),
+    }
 
 
 @router.get("/records", summary="全年四档全报流水")
@@ -123,6 +147,10 @@ def warning_records(db: Session = Depends(get_db)):
             "urgency_rising": urg.get("rising") if urg else None,
             "fault_type": fault.get("fault_type"),
             "fault_code": fault.get("fault_code"),
+            "fusion_confidence": fault.get("fusion_confidence"),
+            "diag_key_gas": fault.get("diag_key_gas"),
+            "diag_ratios": fault.get("diag_ratios"),
+            "diag_duval": fault.get("diag_duval"),
         })
 
     summary = {
@@ -156,8 +184,14 @@ def warning_day(day: str, db: Session = Depends(get_db)):
         "date": hit["date"],
         "grade": hit["grade"],
         "is_pre": hit.get("is_pre", False),
+        "rate_rising": bool(hit.get("rate_rising")),
+        "thc_rel_rate": hit.get("thc_rel_rate"),
         "indicators": hit.get("indicators") or [],
         "urgency": hit.get("urgency"),
         "fault_type": fault.get("fault_type"),
         "fault_code": fault.get("fault_code"),
+        "fusion_confidence": fault.get("fusion_confidence"),
+        "diag_key_gas": fault.get("diag_key_gas"),
+        "diag_ratios": fault.get("diag_ratios"),
+        "diag_duval": fault.get("diag_duval"),
     })

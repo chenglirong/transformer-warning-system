@@ -20,6 +20,8 @@ const result = ref(null)
 const logs = ref([])
 const reportReady = ref(false)
 const modalOpen = ref(false)
+const fullReportRef = ref(null)
+const downloadBusy = ref(false)
 /** 有密钥默认大模型;对比演示时可强制模板。无密钥则后端自动降模板 */
 const forceTemplateOnce = ref(false)
 const llmStatus = ref({ llm_enabled: false, model: null, hint: '' })
@@ -277,10 +279,11 @@ async function applyReportDeepLink() {
 function periodCiteLabel(id) {
   return ({
     '1498-A.3.1': 'A.3.1',
+    '1498-A.3.2': 'A.3.2',
+    '1498-A.3.3': 'A.3.3',
     '1498-5.5.5': '§5.5.5',
     '1498-5.4.5': '§5.4.5',
     '722-9.3.3': '§9.3.3',
-    '722-5.4.5': '§5.4.5',
     '722-5.4': '§5.4',
     '722-附录D': '附录D',
     '1685-附录B': '1685-B',
@@ -405,6 +408,30 @@ function openReport() {
 }
 function closeReport() {
   modalOpen.value = false
+}
+
+async function downloadReportWord() {
+  if (!g1.value || downloadBusy.value) return
+  downloadBusy.value = true
+  try {
+    await fullReportRef.value?.downloadWord()
+  } catch (e) {
+    window.alert(e?.message || 'Word 导出失败，请重试')
+  } finally {
+    downloadBusy.value = false
+  }
+}
+
+async function downloadReportPdf() {
+  if (!g1.value || downloadBusy.value) return
+  downloadBusy.value = true
+  try {
+    await fullReportRef.value?.downloadPdf()
+  } catch (e) {
+    window.alert(e?.message || 'PDF 导出失败，请重试')
+  } finally {
+    downloadBusy.value = false
+  }
 }
 
 const bootReady = ref(false)
@@ -707,9 +734,21 @@ watch(selectedDate, (d, prev) => {
           <div class="opinion-mode-bar modal-mode" :class="reportMode">
             分析意见 · 其他检查性试验：{{ reportMode === 'llm' ? '大模型撰写' : '固定模板' }}
           </div>
-          <ReportCardG :g1="g1" :g2="g2" mode="full" :show-cites="false" />
+          <ReportCardG
+            ref="fullReportRef"
+            :g1="g1"
+            :g2="g2"
+            mode="full"
+            :show-cites="false"
+          />
         </div>
         <div class="modal-foot">
+          <button type="button" class="btn btn-primary" :disabled="downloadBusy" @click="downloadReportWord">
+            {{ downloadBusy ? '导出中…' : '下载 Word' }}
+          </button>
+          <button type="button" class="btn btn-ghost" :disabled="downloadBusy" @click="downloadReportPdf">
+            {{ downloadBusy ? '导出中…' : '下载 PDF' }}
+          </button>
           <button type="button" class="btn btn-primary" @click="closeReport">关闭</button>
         </div>
       </div>

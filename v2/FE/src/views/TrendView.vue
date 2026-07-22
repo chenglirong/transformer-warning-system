@@ -3,11 +3,14 @@
 // 722 §9.3.2 相对产气速率(%/月)走势 + 「预」提前预警(§9.3.3 a)
 // 与表A.3 周增率两套不换算(D-004);不做预测模型
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import * as echarts from 'echarts'
 import http from '@/service/http'
 import StdCite from '@/components/StdCite.vue'
+import TablePager from '@/components/TablePager.vue'
 
 const loading = ref(true)
+const route = useRoute()
 const series = ref([])
 const summary = ref({})
 const preEvents = ref([])
@@ -16,7 +19,7 @@ const lookback = ref(30)
 
 const windowMode = ref('90') // '90' | 'all'
 const prePage = ref(1)
-const prePageSize = 10
+const prePageSize = ref(10)
 const selectedDay = ref(null)
 
 const rateEl = ref(null)
@@ -45,21 +48,9 @@ const preSorted = computed(() =>
   [...preEvents.value].sort((a, b) => b.day - a.day),
 )
 
-const preTotalPages = computed(() =>
-  Math.max(1, Math.ceil(preSorted.value.length / prePageSize)),
-)
-
 const prePageRows = computed(() => {
-  const start = (prePage.value - 1) * prePageSize
-  return preSorted.value.slice(start, start + prePageSize)
-})
-
-const preRangeText = computed(() => {
-  const n = preSorted.value.length
-  if (!n) return '无涨势预警'
-  const start = (prePage.value - 1) * prePageSize + 1
-  const end = Math.min(prePage.value * prePageSize, n)
-  return `共 ${n} 条 · 第 ${start}–${end} 条 · 第 ${prePage.value} / ${preTotalPages.value} 页`
+  const start = (prePage.value - 1) * prePageSize.value
+  return preSorted.value.slice(start, start + prePageSize.value)
 })
 
 const selected = computed(() => {
@@ -73,25 +64,30 @@ const latestOver = computed(() => {
 })
 
 watch(windowMode, () => nextTick(() => renderRate()))
-watch(preSorted, () => {
-  if (prePage.value > preTotalPages.value) prePage.value = preTotalPages.value
-})
 
-function selectPre(row) {
-  selectedDay.value = row.day
-  // 若当前窗口看不到该点,切到全年
+function focusDay(day) {
+  selectedDay.value = day
+  // 窗口外 → 切全年
   if (windowMode.value === '90' && series.value.length > 90) {
     const startDay = series.value[series.value.length - 90]?.day
-    if (row.day < startDay) windowMode.value = 'all'
+    if (day < startDay) windowMode.value = 'all'
+  }
+  // 若该日在涨势预警列表，翻到对应页
+  const preIdx = preSorted.value.findIndex((r) => r.day === day)
+  if (preIdx >= 0) {
+    prePage.value = Math.floor(preIdx / prePageSize.value) + 1
   }
   nextTick(() => renderRate())
+}
+
+function selectPre(row) {
+  focusDay(row.day)
 }
 
 function selectDayByIndex(idx) {
   const s = viewSeries.value[idx]
   if (!s) return
-  selectedDay.value = s.day
-  nextTick(() => renderRate())
+  focusDay(s.day)
 }
 
 function renderRate() {
@@ -104,6 +100,21 @@ function renderRate() {
   const markX = selected.value && data.some((s) => s.day === selected.value.day)
     ? selected.value.day
     : null
+
+  // 有选中日时，把 dataZoom 拉到该日附近，避免「看似没定位」
+  let zoomRange = { start: 0, end: 100 }
+  if (markX != null && data.length > 1) {
+    const idx = data.findIndex((s) => s.day === markX)
+    if (idx >= 0) {
+      const half = Math.max(8, Math.floor(data.length * 0.08))
+      const lo = Math.max(0, idx - half)
+      const hi = Math.min(data.length - 1, idx + half)
+      zoomRange = {
+        start: (lo / (data.length - 1)) * 100,
+        end: (hi / (data.length - 1)) * 100,
+      }
+    }
+  }
 
   rateChart.setOption({
     backgroundColor: 'transparent',
@@ -150,11 +161,13 @@ function renderRate() {
       splitLine: { lineStyle: { color: colors.split, type: 'dashed' } },
     },
     dataZoom: [
-      { type: 'inside' },
+      { type: 'inside', start: zoomRange.start, end: zoomRange.end },
       {
         type: 'slider',
         bottom: 6,
         height: 14,
+        start: zoomRange.start,
+        end: zoomRange.end,
         borderColor: 'rgba(160,174,192,0.26)',
         backgroundColor: 'rgba(33,43,56,0.8)',
         fillerColor: 'rgba(45,212,191,0.18)',
@@ -184,7 +197,7 @@ function renderRate() {
               yAxis: thcAttention.value,
               lineStyle: { color: colors.attention, type: 'dashed', width: 1.2 },
               label: {
-                formatter: '10%/月',
+                formatter: `${thcAttention.value}%/月`,
                 color: colors.attention,
                 position: 'insideEndTop',
                 fontSize: 10,
@@ -193,8 +206,13 @@ function renderRate() {
             ...(markX != null
               ? [{
                   xAxis: String(markX),
-                  lineStyle: { color: colors.pre, type: 'dotted', width: 1 },
-                  label: { formatter: `D${markX}`, color: colors.pre, fontSize: 10 },
+                  lineStyle: { color: colors.pre, type: 'solid', width: 1.5 },
+                  label: {
+                    formatter: selected.value?.date || `D${markX}`,
+                    color: colors.pre,
+                    fontSize: 11,
+                    fontWeight: 600,
+                  },
                 }]
               : []),
           ],
@@ -228,6 +246,14 @@ function onResize() {
   rateChart?.resize()
 }
 
+function applyDateQuery() {
+  const q = typeof route.query.date === 'string' ? route.query.date : ''
+  if (!q || !series.value.length) return
+  const hit = series.value.find((s) => s.date === q)
+  if (!hit) return
+  focusDay(hit.day)
+}
+
 onMounted(async () => {
   try {
     const daily = await http.get('/trend/daily')
@@ -237,12 +263,15 @@ onMounted(async () => {
     thcAttention.value = daily.thc_attention ?? 10
     lookback.value = daily.lookback_days ?? 30
     await nextTick()
-    renderRate()
+    applyDateQuery()
+    if (!selectedDay.value) renderRate()
     window.addEventListener('resize', onResize)
   } finally {
     loading.value = false
   }
 })
+
+watch(() => route.query.date, () => applyDateQuery())
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
@@ -282,6 +311,15 @@ onBeforeUnmount(() => {
         </div>
         <span class="head-ref">紫点 = 涨势预警 · 虚线 = {{ thcAttention }}%/月</span>
       </div>
+      <div v-if="selected" class="focus-bar">
+        <span class="focus-k">定位</span>
+        <span class="mono">{{ selected.date }}</span>
+        <span class="pill mini" :class="gradeClass(selected.grade)"><i class="d" />{{ selected.grade }}</span>
+        <span class="mono" :class="{ hot: selected.rel_rate != null && selected.rel_rate >= thcAttention }">
+          {{ selected.rel_rate ?? '—' }}%/月
+        </span>
+        <span v-if="selected.is_pre" class="pre-tag">涨势预警</span>
+      </div>
       <div class="gp-body">
         <div ref="rateEl" class="chart-tall" />
         <div class="formula-bar">
@@ -296,8 +334,8 @@ onBeforeUnmount(() => {
           涨势预警列表
           <span class="head-ref">共 {{ preSorted.length }} 条 · 点击同步高亮曲线</span>
         </div>
-        <div class="table-wrap">
-          <table class="pre-table">
+        <div class="table-wrap table-wrap--compact">
+          <table class="dga-table">
             <thead>
               <tr>
                 <th>日期</th>
@@ -311,6 +349,7 @@ onBeforeUnmount(() => {
               <tr
                 v-for="r in prePageRows"
                 :key="r.date"
+                class="clickable"
                 :class="{ on: selectedDay === r.day }"
                 @click="selectPre(r)"
               >
@@ -328,13 +367,13 @@ onBeforeUnmount(() => {
             </tbody>
           </table>
         </div>
-        <div class="foot">
-          <span class="muted">{{ preRangeText }}</span>
-          <div class="pager">
-            <button type="button" class="page-btn" :disabled="prePage <= 1" @click="prePage--">上一页</button>
-            <button type="button" class="page-btn" :disabled="prePage >= preTotalPages" @click="prePage++">下一页</button>
-          </div>
-        </div>
+        <TablePager
+          v-model:page="prePage"
+          v-model:page-size="prePageSize"
+          :total="preSorted.length"
+          :page-size-options="[10, 20, 50]"
+          empty-text="无涨势预警"
+        />
     </section>
   </div>
 </template>
@@ -383,6 +422,19 @@ onBeforeUnmount(() => {
 }
 .head-ref { margin-left: auto; font-size: 11px; color: var(--fg-4); font-weight: 500; }
 
+.focus-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(167, 139, 250, 0.06);
+  font-size: 12px;
+}
+.focus-k {
+  font-size: 10px; font-weight: 700; color: var(--lv-pre-2, #c4b5fd);
+  letter-spacing: 0.04em;
+}
+.focus-bar .hot { color: #fbbf24; font-weight: 700; }
+
 .chart-tall { width: 100%; height: 300px; }
 
 
@@ -404,43 +456,8 @@ onBeforeUnmount(() => {
 .f-mono sub { font-size: 0.75em; }
 
 .pre-panel { display: flex; flex-direction: column; min-height: 0; }
-.table-wrap { overflow: auto; max-height: 420px; }
-.pre-table {
-  width: 100%; border-collapse: collapse; font-size: 12px;
-}
-.pre-table th {
-  position: sticky; top: 0; z-index: 1;
-  text-align: left; padding: 8px 10px;
-  font-size: 11px; font-weight: 600; color: var(--fg-4);
-  background: var(--bg-2); border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-}
-.pre-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid rgba(160,174,192,0.1);
-  color: var(--fg-2); vertical-align: middle;
-}
-.pre-table tbody tr { cursor: pointer; }
-.pre-table tbody tr:hover td { background: rgba(45,212,191,0.04); }
-.pre-table tbody tr.on td { background: rgba(251,191,36,0.08); }
-.pre-table .num { text-align: right; }
 .mono { font-family: 'JetBrains Mono', monospace; }
-.muted { color: var(--fg-4); }
 .hot { color: #fbbf24; font-weight: 700; }
-.empty { text-align: center; color: var(--fg-4); padding: 24px !important; }
 .pill.mini { font-size: 10px; padding: 2px 8px; }
-
-.foot {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; flex-wrap: wrap;
-  padding: 10px 12px; border-top: 1px solid var(--line); background: var(--bg-3);
-}
-.pager { display: flex; gap: 4px; }
-.page-btn {
-  min-width: 64px; height: 28px; padding: 0 10px;
-  border-radius: 6px; border: 1px solid var(--line);
-  background: var(--bg-2); color: var(--fg-2); font-size: 12px; cursor: pointer;
-}
-.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 </style>

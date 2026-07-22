@@ -1,5 +1,5 @@
 <script setup>
-// 故障类型判断页 —— 三方法对标参考页信息密度:
+// 故障判型页 —— 三方法对标参考页信息密度:
 // 三比值表+编码块 / 大卫三角图 / 特征气体雷达+含量表 → 一致性结论
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -139,7 +139,7 @@ const measuresHook = computed(() => {
   const clauses = (f.measures_1685_items || []).map((x) => x.clause).filter(Boolean)
   let s = `当前状况：${typeTag}${code} → 对应 722 表D.1「${nature}」列`
   if (clauses.length) s += `、1685 表${clauses.join('/')}`
-  s += ' · 其他检查性试验见分析编排'
+  s += ' · 其他检查性试验见 Agent 分析'
   return s
 })
 
@@ -426,7 +426,7 @@ function onResize() {
       <template v-if="detail && !triggered">
         <div class="idle-banner">
           <div>
-            <div class="idle-title">当日不做故障类型判断</div>
+            <div class="idle-title">当日不做故障判型</div>
             <p>
               当前档位「{{ detail.grade }}」。进判型须满足其一：
               <strong>注意值2 / 告警</strong>，或
@@ -657,7 +657,7 @@ function onResize() {
               />
             </p>
             <button type="button" class="btn btn-primary" @click="goAgentTrials">
-              去分析编排查看其他检查性试验
+              去 Agent 分析查看其他检查性试验
             </button>
           </div>
         </section>

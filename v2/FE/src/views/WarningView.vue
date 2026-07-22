@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import http from '@/service/http'
 import StdCite from '@/components/StdCite.vue'
 import ReportCardG from '@/components/ReportCardG.vue'
+import TablePager from '@/components/TablePager.vue'
 
 const router = useRouter()
 const loading = ref(true)
@@ -26,6 +27,8 @@ const modalDate = ref('')
 
 /** 在告警页直接打开完整报告（不跳 Agent） */
 const fullReportOpen = ref(false)
+const fullReportRef = ref(null)
+const downloadBusy = ref(false)
 const fullReportLoading = ref(false)
 const fullReportErr = ref('')
 const fullG1 = ref(null)
@@ -49,6 +52,10 @@ const gradeClass = (g) => ({
 
 const urgClass = (lv) => ({ 高: 'high', 中: 'mid', 低: 'low' }[lv] || '')
 
+function confClass(c) {
+  return { 高: 'high', 中: 'mid', 低: 'low' }[c] || ''
+}
+
 const counts = computed(() => summary.value.grade_counts || {})
 
 const filteredRows = computed(() => {
@@ -67,6 +74,8 @@ const filteredRows = computed(() => {
       const blob = [
         r.date, r.hits_text, r.grade, String(r.day),
         r.fault_type || '', r.fault_code || '',
+        r.fusion_confidence || '',
+        r.diag_key_gas || '', r.diag_ratios || '', r.diag_duval || '',
         r.urgency_level || '',
       ].join(' ').toLowerCase()
       return blob.includes(q)
@@ -84,39 +93,12 @@ const filteredRows = computed(() => {
   return rows
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredRows.value.length / pageSize.value)))
-
 const pageRows = computed(() => {
   const start = (page.value - 1) * pageSize.value
   return filteredRows.value.slice(start, start + pageSize.value)
 })
 
-const rangeText = computed(() => {
-  const n = filteredRows.value.length
-  if (!n) return '无匹配记录'
-  const start = (page.value - 1) * pageSize.value + 1
-  const end = Math.min(page.value * pageSize.value, n)
-  return `共 ${n} 条 · 第 ${start}–${end} 条 · 第 ${page.value} / ${totalPages.value} 页`
-})
-
-const pageNums = computed(() => {
-  const max = totalPages.value
-  const cur = page.value
-  if (max <= 7) return Array.from({ length: max }, (_, i) => i + 1)
-  const pages = [1]
-  const start = Math.max(2, cur - 1)
-  const end = Math.min(max - 1, cur + 1)
-  if (start > 2) pages.push('…')
-  for (let p = start; p <= end; p++) pages.push(p)
-  if (end < max - 1) pages.push('…')
-  pages.push(max)
-  return pages
-})
-
 watch([filter, searchText, sortBy, pageSize], () => { page.value = 1 })
-watch(filteredRows, () => {
-  if (page.value > totalPages.value) page.value = totalPages.value
-})
 
 // 表A.3 三组判据短名 —— 芯片必须带组别,否则「总烃」会重复三次分不清
 const BASIS_SHORT = {
@@ -139,7 +121,7 @@ function rateText(r) {
 function rateTone(r) {
   // 涨势预警优先紫；注意值2+ 急涨用橙；刚过阈用黄
   if (r.is_pre) return 'pre'
-  if (r.urgency_rising) return 'hot'
+  if (r.urgency_rising || r.rate_rising || r.urgency?.rising) return 'hot'
   if (r.thc_rel_rate != null && r.thc_rel_rate >= 10) return 'warn'
   return ''
 }
@@ -226,11 +208,35 @@ function closeFullReport() {
   fullG2.value = null
 }
 
+async function downloadFullReportWord() {
+  if (!fullG1.value || downloadBusy.value) return
+  downloadBusy.value = true
+  try {
+    await fullReportRef.value?.downloadWord()
+  } catch (e) {
+    window.alert(e?.message || 'Word 导出失败，请重试')
+  } finally {
+    downloadBusy.value = false
+  }
+}
+
+async function downloadFullReportPdf() {
+  if (!fullG1.value || downloadBusy.value) return
+  downloadBusy.value = true
+  try {
+    await fullReportRef.value?.downloadPdf()
+  } catch (e) {
+    window.alert(e?.message || 'PDF 导出失败，请重试')
+  } finally {
+    downloadBusy.value = false
+  }
+}
+
 onMounted(loadRecords)
 </script>
 
 <template>
-  <div v-loading="loading" class="alerts">
+  <div v-loading="loading" class="alerts page-list">
     <div class="kpis">
       <div class="kpi">
         <div class="kpi-k">正常</div>
@@ -259,7 +265,7 @@ onMounted(loadRecords)
       </div>
     </div>
 
-    <section class="gp">
+    <section class="gp list-panel">
       <div class="gp-head toolbar">
         <div class="toolbar-left">
           <div class="chips">
@@ -290,23 +296,22 @@ onMounted(loadRecords)
           </label>
         </div>
         <span class="head-ref">
-          共 {{ filteredRows.length }} 条
-          <template v-if="searchText.trim()"> · 已筛选</template>
           <StdCite ref-id="1498-表A3" label="表A.3" />
         </span>
       </div>
 
       <div class="table-wrap">
-        <table class="alert-table">
+        <table class="dga-table">
           <thead>
             <tr>
               <th class="col-date">日期</th>
               <th class="col-level">当日最高档</th>
+              <th class="col-urg" title="注意值2+ 结合月环比判急不急">处置紧急度</th>
               <th class="col-hits">超标判据（表A.3）</th>
               <th class="col-rate" title="DL/T 722 §9.3.2 总烃相对产气速率；与表A.3 周增率不是同一套">总烃月环比</th>
               <th class="col-pre" title="档位正常/注意值1 且月环比超 10%/月">涨势预警</th>
-              <th class="col-urg" title="注意值2+ 结合月环比判急不急">处置紧急度</th>
-              <th class="col-diag">故障类型</th>
+              <th class="col-diag" title="特征气体法 / 三比值法 / 大卫三角 → 融合结论">故障类型</th>
+              <th class="col-conf">可信度</th>
               <th class="col-actions">操作</th>
             </tr>
           </thead>
@@ -322,8 +327,14 @@ onMounted(loadRecords)
                   <i class="d" />{{ r.grade }}
                 </span>
               </td>
+              <td class="col-urg">
+                <span v-if="urgencyLabel(r)" class="urg-tag" :class="urgClass(urgencyLabel(r))">
+                  {{ urgencyLabel(r) }}
+                </span>
+                <span v-else class="muted">—</span>
+              </td>
               <td class="col-hits">
-                <template v-if="r.hits?.length">
+                <div v-if="r.hits?.length" class="hit-grid">
                   <span
                     v-for="(h, i) in r.hits"
                     :key="i"
@@ -331,7 +342,7 @@ onMounted(loadRecords)
                     :class="gradeClass(h.grade)"
                     :title="`${h.basis} · ${h.item} ${h.value ?? '—'} ${h.unit || ''}`"
                   >{{ hitLabel(h) }}</span>
-                </template>
+                </div>
                 <span v-else class="muted">—</span>
               </td>
               <td class="num col-rate" :class="rateTone(r)">
@@ -346,16 +357,30 @@ onMounted(loadRecords)
                 >涨势预警</span>
                 <span v-else class="muted">—</span>
               </td>
-              <td class="col-urg">
-                <span v-if="urgencyLabel(r)" class="urg-tag" :class="urgClass(urgencyLabel(r))">
-                  {{ urgencyLabel(r) }}
-                </span>
+              <td class="col-diag">
+                <div
+                  v-if="r.fault_type || r.diag_key_gas || r.diag_ratios || r.diag_duval"
+                  class="fault-block"
+                >
+                  <div class="fault-methods">
+                    <span class="fault-k">特征气体法</span>{{ r.diag_key_gas || '—' }}
+                    <span class="fault-sep">·</span>
+                    <span class="fault-k">三比值法</span>{{ r.diag_ratios || '—' }}
+                    <span class="fault-sep">·</span>
+                    <span class="fault-k">大卫三角</span>{{ r.diag_duval || '—' }}
+                  </div>
+                  <div class="fault-conclusion">
+                    <span class="fault-verdict-k">结论</span>{{ faultLabel(r.fault_type, r.fault_code) || '—' }}
+                  </div>
+                </div>
                 <span v-else class="muted">—</span>
               </td>
-              <td class="col-diag">
-                <template v-if="r.fault_type">
-                  {{ faultLabel(r.fault_type, r.fault_code) }}
-                </template>
+              <td class="col-conf">
+                <span
+                  v-if="r.fusion_confidence"
+                  class="conf-tag"
+                  :class="confClass(r.fusion_confidence)"
+                >{{ r.fusion_confidence }}</span>
                 <span v-else class="muted">—</span>
               </td>
               <td class="col-actions">
@@ -363,42 +388,17 @@ onMounted(loadRecords)
               </td>
             </tr>
             <tr v-if="!pageRows.length">
-              <td colspan="8" class="empty">无匹配记录</td>
+              <td colspan="9" class="empty">无匹配记录</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="foot">
-        <div class="foot-meta">
-          <label class="page-size">
-            每页
-            <select v-model.number="pageSize">
-              <option :value="20">20</option>
-              <option :value="50">50</option>
-              <option :value="100">100</option>
-            </select>
-            条
-          </label>
-          <span class="muted">{{ rangeText }}</span>
-        </div>
-        <div class="pager">
-          <button type="button" class="page-btn" :disabled="page <= 1" @click="page--">上一页</button>
-          <template v-for="(n, i) in pageNums" :key="i">
-            <span v-if="n === '…'" class="ellipsis">…</span>
-            <button
-              v-else
-              type="button"
-              class="page-btn"
-              :class="{ on: n === page }"
-              @click="page = n"
-            >
-              {{ n }}
-            </button>
-          </template>
-          <button type="button" class="page-btn" :disabled="page >= totalPages" @click="page++">下一页</button>
-        </div>
-      </div>
+      <TablePager
+        v-model:page="page"
+        v-model:page-size="pageSize"
+        :total="filteredRows.length"
+      />
     </section>
 
     <div v-if="modalOpen" class="modal" @keydown.esc="closeReport">
@@ -406,55 +406,84 @@ onMounted(loadRecords)
       <div class="modal-dialog" role="dialog" aria-modal="true">
         <div class="modal-head">
           <div>
-            <h3>当日告警摘要</h3>
-            <div class="modal-meta mono">
-              {{ modalDetail?.date || '…' }}
-              <template v-if="modalDetail"> · {{ modalDetail.grade }}</template>
-              · 当日告警摘要（非表 G.1）
-            </div>
+            <h3>{{ jumpDate() || '…' }} 告警摘要</h3>
           </div>
           <button type="button" class="modal-x" aria-label="关闭" @click="closeReport">×</button>
         </div>
         <div v-loading="modalLoading" class="modal-body">
-          <template v-if="modalDetail">
-            <!-- 顶栏只扫列表不重复的结论；超标气体看下方明细 -->
-            <div class="sum-strip">
-              <span class="pill" :class="gradeClass(modalDetail.grade)">
-                <i class="d" />{{ modalDetail.grade }}
-              </span>
-              <span
-                v-if="modalDetail.is_pre"
-                class="pre-tag"
-                title="档未到注意值2，月环比已超注意值 → 缩短检测周期"
-              >涨势预警</span>
-              <span
-                v-if="modalDetail.urgency?.level"
-                class="urg-tag"
-                :class="urgClass(modalDetail.urgency.level)"
-              >紧急度 {{ modalDetail.urgency.level }}</span>
-              <span v-if="modalDetail.fault_type" class="sum-fault">
-                {{ faultLabel(modalDetail.fault_type, modalDetail.fault_code) }}
-              </span>
-              <span v-else class="sum-fault muted">未触发判型</span>
-            </div>
-            <p class="sum-hint">措施与处置文案见完整分析报告</p>
-
-            <div class="sum-sec">
-              <div class="sum-k">表 A.3 指标明细</div>
-              <div class="ind-list">
-                <div
-                  v-for="ind in modalDetail.indicators"
-                  :key="ind.basis + ind.item"
-                  class="ind-line"
-                  :class="gradeClass(ind.grade)"
-                >
-                  <span>{{ ind.basis }} · {{ ind.item }}</span>
-                  <span class="mono">{{ ind.value == null ? '—' : ind.value }} {{ ind.unit }}</span>
+          <table v-if="modalDetail" class="sum-table">
+            <tbody>
+              <tr class="sum-group basis">
+                <th colspan="3">分析结论</th>
+              </tr>
+              <tr>
+                <th>当日最高档</th>
+                <td colspan="2">
+                  <span class="pill mini" :class="gradeClass(modalDetail.grade)">
+                    <i class="d" />{{ modalDetail.grade }}
+                  </span>
+                  <span
+                    v-if="modalDetail.urgency?.level"
+                    class="urg-tag"
+                    :class="urgClass(modalDetail.urgency.level)"
+                  >紧急度 {{ modalDetail.urgency.level }}</span>
+                </td>
+              </tr>
+              <tr>
+                <th>总烃月环比</th>
+                <td colspan="2">
+                  <span class="mono" :class="rateTone(modalDetail)">
+                    {{ modalDetail.thc_rel_rate != null ? `${modalDetail.thc_rel_rate}%/月` : '—' }}
+                  </span>
+                  <span
+                    v-if="modalDetail.is_pre"
+                    class="pre-tag"
+                    title="档未到注意值2，月环比已超注意值 → 缩短检测周期"
+                  >涨势预警</span>
+                </td>
+              </tr>
+              <tr>
+                <th>故障类型</th>
+                <td colspan="2">
+                  <template v-if="modalDetail.fault_type || modalDetail.diag_key_gas || modalDetail.diag_ratios || modalDetail.diag_duval">
+                    <div class="fault-block">
+                      <div class="fault-methods">
+                        <span class="fault-k">特征气体法</span>{{ modalDetail.diag_key_gas || '—' }}
+                        <span class="fault-sep">·</span>
+                        <span class="fault-k">三比值法</span>{{ modalDetail.diag_ratios || '—' }}
+                        <span class="fault-sep">·</span>
+                        <span class="fault-k">大卫三角</span>{{ modalDetail.diag_duval || '—' }}
+                      </div>
+                      <div class="fault-conclusion">
+                        <span class="fault-verdict-k">结论</span>{{ faultLabel(modalDetail.fault_type, modalDetail.fault_code) || '—' }}
+                      </div>
+                    </div>
+                    <span
+                      v-if="modalDetail.fusion_confidence"
+                      class="conf-tag block"
+                      :class="confClass(modalDetail.fusion_confidence)"
+                    >可信度 {{ modalDetail.fusion_confidence }}</span>
+                  </template>
+                  <span v-else class="muted">未触发判型</span>
+                </td>
+              </tr>
+              <tr class="sum-group detail">
+                <th colspan="3">表 A.3 指标</th>
+              </tr>
+              <tr
+                v-for="ind in modalDetail.indicators"
+                :key="ind.basis + ind.item"
+                class="ind-row"
+                :class="gradeClass(ind.grade)"
+              >
+                <th>{{ ind.basis }} · {{ ind.item }}</th>
+                <td class="mono">{{ ind.value == null ? '—' : ind.value }} {{ ind.unit || '' }}</td>
+                <td class="col-grade">
                   <span class="pill mini" :class="gradeClass(ind.grade)"><i class="d" />{{ ind.grade }}</span>
-                </div>
-              </div>
-            </div>
-          </template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <div class="modal-foot">
           <button type="button" class="btn btn-ghost" @click="goDetect">分级检测</button>
@@ -465,7 +494,7 @@ onMounted(loadRecords)
             :disabled="fullReportLoading || !jumpDate()"
             @click="openFullReport"
           >
-            {{ fullReportLoading ? '生成报告中…' : '打开完整分析报告' }}
+            {{ fullReportLoading ? '生成中…' : '分析报告' }}
           </button>
           <button type="button" class="btn btn-ghost" @click="closeReport">关闭</button>
         </div>
@@ -493,6 +522,7 @@ onMounted(loadRecords)
           <p v-if="fullReportErr" class="report-err">{{ fullReportErr }}</p>
           <ReportCardG
             v-else-if="fullG1"
+            ref="fullReportRef"
             :g1="fullG1"
             :g2="fullG2"
             mode="full"
@@ -507,7 +537,23 @@ onMounted(loadRecords)
             :disabled="fullReportLoading"
             @click="router.push({ path: '/agent', query: { date: jumpDate() } })"
           >
-            去分析编排
+            去 Agent 分析
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            :disabled="fullReportLoading || !fullG1 || downloadBusy"
+            @click="downloadFullReportWord"
+          >
+            {{ downloadBusy ? '导出中…' : '下载 Word' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            :disabled="fullReportLoading || !fullG1 || downloadBusy"
+            @click="downloadFullReportPdf"
+          >
+            {{ downloadBusy ? '导出中…' : '下载 PDF' }}
           </button>
           <button type="button" class="btn btn-primary" @click="closeFullReport">关闭</button>
         </div>
@@ -517,7 +563,6 @@ onMounted(loadRecords)
 </template>
 
 <style scoped>
-.alerts { display: flex; flex-direction: column; gap: 12px; }
 
 .kpis {
   display: grid;
@@ -595,117 +640,99 @@ onMounted(loadRecords)
   font-size: 11px; color: var(--fg-4);
 }
 
-.table-wrap {
-  padding: 0;
-  max-height: calc(100vh - 320px);
-  overflow: auto;
-}
-.alert-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.alert-table thead th {
-  position: sticky; top: 0; z-index: 2;
-  text-align: left;
-  padding: 10px 12px;
-  font-size: 11px; font-weight: 600; color: var(--fg-4);
-  background: var(--bg-2);
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-}
-.alert-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(160,174,192,0.1);
-  color: var(--fg-2);
-  vertical-align: middle;
-}
 .col-date { width: 100px; white-space: nowrap; }
 .col-level { width: 96px; }
-.col-hits { min-width: 240px; line-height: 1.55; }
-.col-rate { width: 100px; text-align: right !important; white-space: nowrap; }
-.col-pre { min-width: 88px; text-align: center; white-space: nowrap; }
-.col-urg { width: 72px; text-align: center; }
-.col-diag { min-width: 140px; color: var(--fg-3); }
-.col-actions { width: 96px; text-align: center; }
-.num { font-family: 'JetBrains Mono', monospace; text-align: right; }
-.num.warn { color: var(--lv-w1); }
-.num.hot { color: var(--lv-w2); font-weight: 700; }
-.num.pre { color: var(--lv-pre-2); font-weight: 700; }
-.muted { color: var(--fg-4); }
-.pill.mini { font-size: 10px; padding: 2px 8px; }
+.col-hits { min-width: 280px; }
+.hit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 4px;
+  align-items: start;
+  justify-content: start;
+}
 .hit-chip {
-  display: inline-block;
-  margin: 0 4px 4px 0;
+  display: block;
+  margin: 0;
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 10px;
   font-weight: 600;
-  background: var(--bg-3);
+  line-height: 1.4;
+  text-align: center;
+  background: transparent;
   border: 1px solid var(--line);
   color: var(--fg-2);
+  white-space: nowrap;
 }
+.col-rate { width: 100px; text-align: right !important; white-space: nowrap; }
+.col-pre { min-width: 88px; text-align: center; white-space: nowrap; }
+.col-urg { width: 72px; text-align: center; }
+.col-diag {
+  min-width: 260px;
+  max-width: 420px;
+  color: var(--fg-3);
+  white-space: normal;
+}
+.fault-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.45;
+  font-size: 11px;
+}
+.fault-methods { color: var(--fg-3); }
+.fault-sep { margin: 0 5px; color: var(--fg-4); }
+.fault-k {
+  color: var(--fg-4);
+  margin-right: 2px;
+}
+.fault-k::after { content: '：'; }
+.fault-verdict-k {
+  margin-right: 2px;
+  font-weight: 700;
+}
+.fault-verdict-k::after { content: '：'; }
+.fault-conclusion {
+  color: var(--fg-1, var(--fg));
+  font-weight: 600;
+}
+.col-conf { width: 72px; text-align: center; white-space: nowrap; }
+.conf-tag,
+.urg-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.conf-tag.high { background: var(--lv-normal-bg); color: var(--lv-normal); }
+.conf-tag.mid { background: var(--lv-w1-bg); color: var(--lv-w1); }
+.conf-tag.low { background: var(--lv-alarm-bg); color: var(--lv-alarm); }
+
+/* 操作列右侧固定，表格横向滑动 */
+.table-wrap { overflow: auto; }
+.dga-table { min-width: 1100px; }
+.dga-table th.col-actions,
+.dga-table td.col-actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: var(--bg-2);
+  box-shadow: -6px 0 8px rgba(0, 0, 0, 0.18);
+}
+.dga-table thead th.col-actions { z-index: 3; }
+.dga-table tbody tr:hover td.col-actions { background: var(--bg-3); }
+.num.warn { color: var(--lv-w1); }
+.num.hot { color: var(--lv-w2); font-weight: 700; }
+.num.pre { color: var(--lv-pre-2); font-weight: 700; }
+.pill.mini { font-size: 10px; padding: 2px 8px; }
 .hit-chip.w1 { border-color: rgba(251,191,36,0.35); color: var(--lv-w1); }
 .hit-chip.w2 { border-color: rgba(251,146,60,0.4); color: var(--lv-w2); }
 .hit-chip.alarm { border-color: rgba(245,85,90,0.4); color: var(--lv-alarm); }
-.urg-tag {
-  display: inline-block;
-  padding: 2px 8px; border-radius: 4px;
-  font-size: 11px; font-weight: 700;
-}
 .urg-tag.high { background: rgba(245,85,90,0.15); color: var(--lv-alarm); }
 .urg-tag.mid { background: rgba(251,146,60,0.15); color: var(--lv-w2); }
 .urg-tag.low { background: rgba(45,212,191,0.12); color: var(--teal-2); }
-.code {
-  margin-left: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; color: var(--fg-4);
-}
-.alert-table tr.lv-w2 td { background: rgba(251,146,60,0.04); }
-.alert-table tr.lv-alarm td { background: rgba(245,85,90,0.05); }
-.empty { text-align: center; color: var(--fg-4); padding: 28px !important; }
-
-.act-btn {
-  height: 28px; padding: 0 10px; border-radius: 6px;
-  border: 1px solid rgba(217,164,65,0.4);
-  background: rgba(217,164,65,0.12);
-  color: var(--amber-2);
-  font-size: 11px; font-weight: 600; cursor: pointer;
-}
-.act-btn:hover { border-color: rgba(217,164,65,0.6); color: var(--fg); }
-
-.foot {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; flex-wrap: wrap;
-  padding: 12px 14px;
-  border-top: 1px solid var(--line);
-  background: var(--bg-3);
-}
-.foot-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.page-size {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--fg-3);
-}
-.page-size select {
-  padding: 4px 8px; border-radius: 6px;
-  border: 1px solid var(--line-2);
-  background: var(--bg-2); color: var(--fg);
-  font-size: 12px;
-}
-.pager { display: flex; align-items: center; gap: 4px; }
-.page-btn {
-  min-width: 32px; height: 30px; padding: 0 8px;
-  border-radius: 6px; border: 1px solid var(--line);
-  background: var(--bg-2); color: var(--fg-2);
-  font-size: 12px; cursor: pointer;
-}
-.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.page-btn.on {
-  border-color: rgba(45,212,191,0.45);
-  color: var(--teal-2);
-  background: rgba(45,212,191,0.1);
-}
-.ellipsis { color: var(--fg-4); padding: 0 4px; }
 
 .modal {
   position: fixed; inset: 0; z-index: 80;
@@ -737,39 +764,61 @@ onMounted(loadRecords)
   font-size: 22px; cursor: pointer; line-height: 1;
 }
 .modal-body { padding: 14px 16px; overflow-y: auto; }
-.sum-strip {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--bg-3);
+.sum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
   border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
 }
-.sum-rate { font-size: 12.5px; color: var(--fg-2); }
-.sum-fault {
-  font-size: 13px; font-weight: 650; color: var(--amber-2);
-  margin-left: auto;
+.sum-table th,
+.sum-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  text-align: left;
 }
-.sum-hint {
-  margin: 6px 0 12px;
-  font-size: 11px; color: var(--fg-4);
+.sum-table tr:last-child th,
+.sum-table tr:last-child td { border-bottom: none; }
+.sum-table tr:not(.sum-group) > th {
+  width: 148px;
+  font-weight: 500;
+  color: var(--fg-4);
+  background: var(--bg-3);
 }
-.sum-sec { margin-bottom: 4px; }
-.sum-k {
-  font-size: 11px; font-weight: 700; color: var(--fg-4);
-  letter-spacing: 0.04em; margin-bottom: 6px;
+.sum-table tr:not(.sum-group) td {
+  color: var(--fg-2);
+  line-height: 1.45;
 }
-.ind-list { display: flex; flex-direction: column; gap: 6px; }
-.ind-line {
-  display: grid; grid-template-columns: 1.2fr 1fr auto; gap: 8px; align-items: center;
-  padding: 8px 10px; border-radius: 6px; background: var(--bg-3);
-  border-left: 3px solid var(--line); font-size: 12px;
+.sum-table tr.sum-group th {
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
-.ind-line.normal { border-left-color: var(--lv-normal); }
-.ind-line.w1 { border-left-color: var(--lv-w1); }
-.ind-line.w2 { border-left-color: var(--lv-w2); }
-.ind-line.alarm { border-left-color: var(--lv-alarm); }
+.sum-table tr.sum-group.basis th {
+  color: #93c5fd;
+  background: rgba(147, 197, 253, 0.1);
+}
+.sum-table tr.sum-group.detail th {
+  color: var(--teal-2);
+  background: rgba(45, 212, 191, 0.1);
+}
+.sum-table .col-grade { width: 88px; text-align: right; white-space: nowrap; }
+.sum-table td .pre-tag,
+.sum-table td .urg-tag { margin-left: 6px; }
+.sum-table .conf-tag.block { display: inline-block; margin-top: 6px; margin-left: 0; }
+.sum-table .fault-block { margin-bottom: 2px; }
+.sum-table .pre { color: var(--lv-pre-2, #c4b5fd); font-weight: 700; }
+.sum-table .hot { color: #fb923c; font-weight: 700; }
+.sum-table .warn { color: #fbbf24; }
+.sum-table tr.ind-row.w1 > th { border-left: 3px solid var(--lv-w1); }
+.sum-table tr.ind-row.w2 > th { border-left: 3px solid var(--lv-w2); }
+.sum-table tr.ind-row.alarm > th { border-left: 3px solid var(--lv-alarm); }
+.sum-table tr.ind-row.normal > th { border-left: 3px solid var(--lv-normal); }
 .modal-foot {
-  display: flex; justify-content: flex-end; gap: 8px;
+  display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
   padding: 12px 16px; border-top: 1px solid var(--line);
 }
 .report-dialog {
