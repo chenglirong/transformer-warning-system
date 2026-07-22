@@ -11,6 +11,10 @@ axios.defaults.timeout = 60000; // 超时时间 60秒
 // 响应拦截:data 是后端统一信封 { status, code, message, data, timestamp }
 axios.interceptors.response.use(
   (response) => {
+    // 文件流下载不走 JSON 信封解包
+    if (response.config?.responseType === 'blob' || response.config?.responseType === 'arraybuffer') {
+      return response
+    }
     const { data } = response;
     // 业务失败判定:信封内 status 非 200
     if (data.status && data.status !== 200) {

@@ -122,6 +122,43 @@ body {
   color: var(--fg-2) !important;
 }
 
+.dga-tip {
+  max-width: 320px;
+  line-height: 1.55;
+  font-size: 12px;
+}
+
+/* EP 默认箭头是旋转方块(像菱形);改为三角 */
+.dga-tip .el-popper__arrow {
+  width: 10px;
+  height: 6px;
+}
+.dga-tip .el-popper__arrow::before {
+  width: 10px !important;
+  height: 6px !important;
+  background: var(--bg-4) !important;
+  border: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.dga-tip[data-popper-placement^='top'] .el-popper__arrow::before {
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+.dga-tip[data-popper-placement^='bottom'] .el-popper__arrow::before {
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+}
+.dga-tip[data-popper-placement^='left'] .el-popper__arrow::before {
+  width: 6px !important;
+  height: 10px !important;
+  clip-path: polygon(100% 50%, 0 0, 0 100%);
+}
+.dga-tip[data-popper-placement^='right'] .el-popper__arrow::before {
+  width: 6px !important;
+  height: 10px !important;
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+
 .el-tag {
   border: none;
 }

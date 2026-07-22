@@ -6,6 +6,7 @@
  */
 import { computed } from 'vue'
 import StdCite from '@/components/StdCite.vue'
+import { downloadReportFile } from '@/utils/reportDownload'
 
 const props = defineProps({
   g1: { type: Object, required: true },
@@ -77,6 +78,16 @@ function col(arr, i) {
   return Array.isArray(arr) ? arr[i] : null
 }
 
+async function downloadWord() {
+  await downloadReportFile('word', { g1: props.g1, g2: props.g2 })
+}
+
+async function downloadPdf() {
+  await downloadReportFile('pdf', { g1: props.g1, g2: props.g2 })
+}
+
+defineExpose({ downloadWord, downloadPdf })
+
 const GAS_ROWS = [
   { key: 'h2', label: 'H₂' },
   { key: 'o2', label: 'O₂' },
@@ -93,7 +104,6 @@ const GAS_ROWS = [
 
 <template>
   <div class="rcg" :class="mode">
-    <!-- 表 G.1 -->
     <div class="g1-sheet">
       <div class="g1-title">油中溶解气体分析档案卡片</div>
       <div class="g1-meta">
@@ -274,34 +284,31 @@ const GAS_ROWS = [
             </div>
           </td>
         </tr>
+
+        <!-- 表 G.2 栏并入同一张表 -->
+        <template v-if="showG2 && g2">
+          <tr>
+            <td class="g1-lbl" colspan="2">其他检查性试验</td>
+            <td class="g1-val g2-ot" colspan="8" :class="{ empty: !g2.other_tests }">
+              <div class="g2-ot-prose">{{ cell(g2.other_tests) }}</div>
+            </td>
+          </tr>
+          <tr v-if="g2.maintenance || mode === 'full'">
+            <td class="g1-lbl" colspan="2">检修情况</td>
+            <td class="g1-val" colspan="8" :class="{ empty: !g2.maintenance }">{{ cell(g2.maintenance) }}</td>
+          </tr>
+          <tr v-if="g2.fault_records || mode === 'full'">
+            <td class="g1-lbl" colspan="2">故障记录</td>
+            <td class="g1-val" colspan="8" :class="{ empty: !g2.fault_records }">{{ cell(g2.fault_records) }}</td>
+          </tr>
+        </template>
       </table>
 
-      <p v-if="g1.empty_note || g1.thc_gassing_rate_note" class="g1-foot-note">
+      <p v-if="g1.empty_note || g1.thc_gassing_rate_note || (showG2 && g2?.note)" class="g1-foot-note">
         {{ g1.empty_note }}
         <template v-if="g1.thc_gassing_rate_note"> · {{ g1.thc_gassing_rate_note }}</template>
+        <template v-if="showG2 && g2?.note"> · {{ g2.note }}</template>
       </p>
-    </div>
-
-    <!-- 表 G.2 -->
-    <div v-if="showG2 && g2" class="g2-sheet">
-      <div class="g2-title">档案卡片（续）</div>
-      <table class="g2-table">
-        <tr>
-          <td class="g2-lbl">其他检查性试验</td>
-          <td class="g2-val" :class="{ empty: !g2.other_tests }">
-            <div class="g2-ot-prose">{{ cell(g2.other_tests) }}</div>
-          </td>
-        </tr>
-        <tr v-if="g2.maintenance || mode === 'full'">
-          <td class="g2-lbl">检修情况</td>
-          <td class="g2-val" :class="{ empty: !g2.maintenance }">{{ cell(g2.maintenance) }}</td>
-        </tr>
-        <tr v-if="g2.fault_records || mode === 'full'">
-          <td class="g2-lbl">故障记录</td>
-          <td class="g2-val" :class="{ empty: !g2.fault_records }">{{ cell(g2.fault_records) }}</td>
-        </tr>
-      </table>
-      <p v-if="g2.note" class="g1-foot-note">{{ g2.note }}</p>
     </div>
   </div>
 </template>
@@ -313,13 +320,12 @@ const GAS_ROWS = [
   background: #fff;
 }
 
-.g1-sheet, .g2-sheet {
+.g1-sheet {
   border: 2px solid #111;
   background: #fff;
 }
-.g2-sheet { margin-top: 16px; }
 
-.g1-title, .g2-title {
+.g1-title {
   text-align: center;
   font-weight: 700;
   font-size: 15px;
@@ -349,12 +355,12 @@ const GAS_ROWS = [
   text-align: center;
 }
 
-.g1-table, .g2-table {
+.g1-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
-.g1-table td, .g2-table td {
+.g1-table td {
   border: 1px solid #111;
   padding: 3px 5px;
   font-size: 11px;
@@ -362,7 +368,7 @@ const GAS_ROWS = [
   vertical-align: middle;
   word-break: break-all;
 }
-.g1-lbl, .g1-sub, .g1-section, .g2-lbl {
+.g1-lbl, .g1-sub, .g1-section {
   background: #fafafa;
   font-weight: 600;
   text-align: center;
@@ -374,7 +380,7 @@ const GAS_ROWS = [
   width: 28px;
   padding: 6px 2px;
 }
-.g1-val.empty, .g2-val.empty { color: #888; }
+.g1-val.empty { color: #888; }
 .g1-val.warn { color: #b45309; font-weight: 700; }
 .g1-val.over { color: #b91c1c; font-weight: 700; }
 .g1-opinion {
@@ -406,8 +412,7 @@ const GAS_ROWS = [
   line-height: 1.4;
 }
 
-.g2-lbl { width: 22%; }
-.g2-val { min-height: 0; vertical-align: top; text-align: left; }
+.g2-ot { vertical-align: top; text-align: left; }
 .g2-ot-prose {
   white-space: pre-wrap;
   line-height: 1.55;
@@ -415,13 +420,10 @@ const GAS_ROWS = [
 }
 
 /* 预览缩略 */
-.rcg.compact .g1-title,
-.rcg.compact .g2-title { font-size: 12px; letter-spacing: 1px; padding: 5px; }
+.rcg.compact .g1-title { font-size: 12px; letter-spacing: 1px; padding: 5px; }
 .rcg.compact .g1-meta { font-size: 10px; padding: 2px 6px 4px; }
-.rcg.compact .g1-table td,
-.rcg.compact .g2-table td { font-size: 9px; padding: 1px 3px; }
+.rcg.compact .g1-table td { font-size: 9px; padding: 1px 3px; }
 .rcg.compact .g1-opinion { font-size: 9px; min-height: 40px; }
 .rcg.compact .g1-section { width: 18px; letter-spacing: 1px; }
-.rcg.compact .g2-sheet { margin-top: 8px; }
 .rcg.compact .g1-foot-note { font-size: 9px; margin: 4px 6px; }
 </style>

@@ -89,7 +89,212 @@
 .tag.teal { background: var(--teal-dim); color: var(--teal-2); }
 .tag.amber { background: var(--amber-dim); color: var(--amber-2); }
 
-/* ---------- 表格 ---------- */
+/* ---------- 数据列表表格(dga-table) ---------- */
+.table-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 320px);
+}
+.table-wrap--compact { max-height: 420px; }
+.table-wrap--bordered {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-height: calc(100vh - 280px);
+}
+
+.dga-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.dga-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-4);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.dga-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(160, 174, 192, 0.1);
+  color: var(--fg-2);
+  vertical-align: middle;
+}
+.dga-table tbody tr.clickable { cursor: pointer; }
+.dga-table tbody tr.clickable:hover td,
+.dga-table tbody tr:hover td { background: rgba(45, 212, 191, 0.04); }
+.dga-table tbody tr.on td { background: rgba(45, 212, 191, 0.08); }
+.dga-table .num {
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+}
+.dga-table td.empty,
+.dga-table .empty {
+  text-align: center;
+  color: var(--fg-4);
+  padding: 28px !important;
+}
+
+.dga-table .col-actions {
+  width: 96px;
+  text-align: center;
+  white-space: nowrap;
+}
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(217, 164, 65, 0.4);
+  background: rgba(217, 164, 65, 0.12);
+  color: var(--amber-2);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.act-btn:hover {
+  border-color: rgba(217, 164, 65, 0.6);
+  color: var(--fg);
+}
+.act-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.act-btn.teal {
+  border-color: rgba(45, 212, 191, 0.28);
+  background: rgba(45, 212, 191, 0.08);
+  color: var(--teal-2);
+}
+.act-btn.teal:hover {
+  background: rgba(45, 212, 191, 0.16);
+  border-color: rgba(45, 212, 191, 0.45);
+  color: var(--teal);
+}
+
+.dga-table thead .group-row th {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-3);
+  vertical-align: middle;
+}
+.dga-table thead .group-basis {
+  color: #93c5fd;
+  background: rgba(147, 197, 253, 0.1);
+  border-left: 2px solid rgba(147, 197, 253, 0.45);
+}
+.dga-table thead .group-decision {
+  color: var(--teal-2);
+  background: rgba(45, 212, 191, 0.12);
+  border-left: 2px solid rgba(45, 212, 191, 0.5);
+}
+.dga-table thead .col-row th.group-edge-basis {
+  border-left: 2px solid rgba(147, 197, 253, 0.25);
+}
+.dga-table thead .col-row th.group-edge-decision {
+  border-left: 2px solid rgba(45, 212, 191, 0.35);
+}
+
+.table-foot,
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-3);
+}
+.foot-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.page-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-3);
+}
+.page-size select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 12px;
+}
+.pager { display: flex; align-items: center; gap: 4px; }
+.page-btn {
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-btn.on {
+  border-color: rgba(45, 212, 191, 0.45);
+  color: var(--teal-2);
+  background: rgba(45, 212, 191, 0.1);
+}
+.ellipsis { color: var(--fg-4); padding: 0 4px; }
+.muted { color: var(--fg-4); }
+
+/* ---------- 列表页：中间表格滚动 + 底部分页固定 ---------- */
+.page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.page-list > .kpis,
+.page-list > .gp:not(.list-panel) {
+  flex-shrink: 0;
+}
+.page-list .list-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.page-list .list-panel > .gp-head,
+.page-list .list-panel > .toolbar {
+  flex-shrink: 0;
+}
+.page-list .list-panel > .table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  max-height: none;
+}
+.page-list .list-panel > .foot {
+  flex-shrink: 0;
+}
+
+/* 旧 .table 保留兼容 */
 .table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .table th {
   text-align: left; font-size: 11px; font-weight: 600; color: var(--fg-3);
