@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.algorithms.detect.grade import detect
+from app.algorithms.detect.thresholds import THC_REL_RATE_ATTENTION
 from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
@@ -62,6 +63,7 @@ def detect_day(day: str, db: Session = Depends(get_db)):
         "is_pre": bool(hit.get("is_pre")),
         "rate_rising": bool(hit.get("rate_rising")),
         "thc_rel_rate": hit.get("thc_rel_rate"),
+        "thc_rel_rate_attention": THC_REL_RATE_ATTENTION,
         "urgency": hit.get("urgency"),
         "indicators": hit.get("indicators") or [],
     })

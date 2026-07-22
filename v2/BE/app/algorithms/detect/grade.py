@@ -30,6 +30,15 @@ from app.algorithms.detect.thresholds import (
 HYDROCARBONS = ["ch4", "c2h4", "c2h6", "c2h2"]  # 总烃 = 四烃类之和
 
 
+def _bounds_payload(bounds: list[float | None]) -> dict[str, float | None]:
+    """表 A.3 各档下限,供前端对照展示。"""
+    return {
+        "注意值1": bounds[0] if len(bounds) > 0 else None,
+        "注意值2": bounds[1] if len(bounds) > 1 else None,
+        "告警值": bounds[2] if len(bounds) > 2 else None,
+    }
+
+
 def _grade_by_thresholds(value: float, bounds: list[float | None]) -> str:
     """给定值与 [注意1,注意2,告警] 下限,返回所在档(达下限即升档)。"""
     grade = NORMAL
@@ -102,10 +111,11 @@ def detect(df: pd.DataFrame) -> list[dict]:
             indicators.append({
                 "basis": "绝对浓度",
                 "gas": gas,
-                "item": f"{gas_label[gas]}值",
+                "item": gas_label[gas],
                 "unit": "μL/L",
                 "value": round(metrics[gas], 2),
                 "grade": g,
+                "bounds": _bounds_payload(bounds),
                 "note": None,
             })
 
@@ -134,10 +144,12 @@ def detect(df: pd.DataFrame) -> list[dict]:
                     "value": round(inc, 2),
                     "grade": g,
                     "baseline": round(base, 2),
+                    "bounds": _bounds_payload(bounds),
                     "note": note,
                 })
             # ③ 相对增长速率(仅总烃)
             if base_thc is None or base_thc < REL_GROWTH_MIN_BASE:
+                rel_bounds = REL_GROWTH["total_hydrocarbon"]
                 indicators.append({
                     "basis": "相对增长速率",
                     "gas": "total_hydrocarbon",
@@ -145,11 +157,13 @@ def detect(df: pd.DataFrame) -> list[dict]:
                     "unit": "%/周",
                     "value": None,
                     "grade": NORMAL,
+                    "bounds": _bounds_payload(rel_bounds),
                     "note": "总烃参比 <30 μL/L，不计算相对增长速率",
                 })
             else:
                 rate = (thc - base_thc) / base_thc * 100.0
-                g = _grade_by_thresholds(rate, REL_GROWTH["total_hydrocarbon"])
+                rel_bounds = REL_GROWTH["total_hydrocarbon"]
+                g = _grade_by_thresholds(rate, rel_bounds)
                 indicators.append({
                     "basis": "相对增长速率",
                     "gas": "total_hydrocarbon",
@@ -158,11 +172,12 @@ def detect(df: pd.DataFrame) -> list[dict]:
                     "value": round(rate, 1),
                     "grade": g,
                     "baseline": round(base_thc, 2),
+                    "bounds": _bounds_payload(rel_bounds),
                     "note": None,
                 })
         else:
             # 序列开头不足参比窗:增量/增长率仍报「正常」并注明未计算
-            for gas in ABS_INCREMENT:
+            for gas, bounds in ABS_INCREMENT.items():
                 indicators.append({
                     "basis": "绝对增量",
                     "gas": gas,
@@ -170,8 +185,10 @@ def detect(df: pd.DataFrame) -> list[dict]:
                     "unit": "μL/L·周",
                     "value": None,
                     "grade": NORMAL,
+                    "bounds": _bounds_payload(bounds),
                     "note": "参比窗不足（前14天），暂不计算",
                 })
+            rel_bounds = REL_GROWTH["total_hydrocarbon"]
             indicators.append({
                 "basis": "相对增长速率",
                 "gas": "total_hydrocarbon",
@@ -179,6 +196,7 @@ def detect(df: pd.DataFrame) -> list[dict]:
                 "unit": "%/周",
                 "value": None,
                 "grade": NORMAL,
+                "bounds": _bounds_payload(rel_bounds),
                 "note": "参比窗不足（前14天），暂不计算",
             })
 
