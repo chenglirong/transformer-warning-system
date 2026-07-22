@@ -13,16 +13,23 @@ const navGroups = [
   {
     label: '分析链路',
     items: [
-      { path: '/detect', title: '气体分级检测', ready: true, icon: 'detection' },
-      { path: '/diagnose', title: '故障类型判断', ready: true, icon: 'diagnosis' },
-      { path: '/trend', title: '产气趋势预警', ready: true, icon: 'trend' },
-      { path: '/warning', title: '告警记录', ready: true, icon: 'alerts' },
+      { path: '/dataset', title: '数据集', ready: true, icon: 'dataset' },
+      { path: '/detect', title: '分级检测', ready: true, icon: 'detection' },
+      { path: '/diagnose', title: '故障判型', ready: true, icon: 'diagnosis' },
+      { path: '/trend', title: '产气趋势', ready: true, icon: 'trend' },
+    ],
+  },
+  {
+    label: '告警记录',
+    items: [
+      { path: '/warning', title: '告警流水', ready: true, icon: 'alerts' },
+      { path: '/decision', title: '监测决策', ready: true, icon: 'decision' },
     ],
   },
   {
     label: '智能体',
     items: [
-      { path: '/agent', title: 'Agent 分析编排', ready: true, icon: 'agent' },
+      { path: '/agent', title: 'Agent 分析', ready: true, icon: 'agent' },
       { path: '/knowledge', title: '判据知识库', ready: true, icon: 'knowledge' },
     ],
   },
@@ -61,6 +68,9 @@ function isActive(path) {
               <svg v-if="item.icon === 'trend'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 17l6-6 4 4 8-8" /><path d="M17 7h4v4" />
               </svg>
+              <svg v-else-if="item.icon === 'dataset'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" /><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
+              </svg>
               <svg v-else-if="item.icon === 'detection'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                 <circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" />
               </svg>
@@ -69,6 +79,9 @@ function isActive(path) {
               </svg>
               <svg v-else-if="item.icon === 'alerts'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3l9 16H3L12 3z" /><path d="M12 10v4M12 17v.5" />
+              </svg>
+              <svg v-else-if="item.icon === 'decision'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M8 10h8M8 14h5" /><path d="M12 2v2" />
               </svg>
               <svg v-else-if="item.icon === 'knowledge'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
