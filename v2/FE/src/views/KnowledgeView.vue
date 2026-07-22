@@ -259,8 +259,8 @@ watch(() => route.query.id, () => {
       </div>
 
       <div class="gp-body kb-layout">
-        <div class="table-wrap">
-          <table class="kb-table">
+        <div class="table-wrap table-wrap--bordered">
+          <table class="dga-table">
             <thead>
               <tr>
                 <th style="width:9em">id</th>
@@ -274,6 +274,7 @@ watch(() => route.query.id, () => {
               <tr
                 v-for="r in filtered"
                 :key="r.id"
+                class="clickable"
                 :class="{ on: active && active.id === r.id }"
                 @click="selectRow(r.id)"
               >
@@ -434,40 +435,11 @@ watch(() => route.query.id, () => {
   .kb-layout { grid-template-columns: 1fr; }
 }
 
-.table-wrap {
-  overflow: auto;
-  max-height: calc(100vh - 280px);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-.kb-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.kb-table thead th {
-  position: sticky; top: 0; z-index: 1;
-  background: var(--bg-3);
-  text-align: left;
-  padding: 8px 10px;
-  color: var(--fg-3);
-  font-weight: 650;
-  border-bottom: 1px solid var(--line);
-}
-.kb-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
-  color: var(--fg-2);
-}
-.kb-table tbody tr { cursor: pointer; }
-.kb-table tbody tr:hover td { background: rgba(45, 212, 191, 0.05); }
-.kb-table tbody tr.on td { background: rgba(45, 212, 191, 0.1); }
+.dga-table td { vertical-align: top; }
 .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
 .cite-id { color: var(--teal-2); font-weight: 650; }
 .nowrap { white-space: nowrap; }
 .sum { line-height: 1.45; color: var(--fg-3); }
-.empty { text-align: center; color: var(--fg-4); padding: 24px !important; }
 
 .detail {
   border: 1px solid var(--line);

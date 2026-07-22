@@ -18,6 +18,16 @@ REFS: dict[str, dict[str, str]] = {
         "section": "A.3.1",
         "summary": "数据采集周期:220kV及以下≤12h",
     },
+    "1498-A.3.2": {
+        "std": "DL/T 1498.2-2025",
+        "section": "A.3.2",
+        "summary": "绝对增量(式A.1)与相对增长速率(式A.2);Ci,1见A.3.3",
+    },
+    "1498-A.3.3": {
+        "std": "DL/T 1498.2-2025",
+        "section": "A.3.3",
+        "summary": "参比值Ci,1:前14～前7天均值(剔奇异值);新投/检修另有规定",
+    },
     "1498-5.4.5": {
         "std": "DL/T 1498.2-2025",
         "section": "§5.4.5",
@@ -78,11 +88,6 @@ REFS: dict[str, dict[str, str]] = {
         "section": "§5.4 b)",
         "summary": "离线缩短检测周期（在线监测见1498.2）",
     },
-    "722-5.4.5": {
-        "std": "DL/T 1498.2-2025",
-        "section": "§5.4.5",
-        "summary": "预警后二次采样验证（同1498-5.4.5）",
-    },
     "722-附录D": {
         "std": "DL/T 722-2014",
         "section": "附录D 表D.1",
@@ -122,7 +127,7 @@ def expand(cite_ids: list[str]) -> list[dict[str, str]]:
 
 
 def cites_for_detect(*, is_pre: bool, urgency: Any) -> list[str]:
-    ids = ["1498-表A3"]
+    ids = ["1498-表A3", "1498-A.3.2", "1498-A.3.3"]
     if is_pre or (urgency and urgency.get("rising")):
         ids.extend(["722-9.3.2", "722-9.3.3"])
     elif urgency:
