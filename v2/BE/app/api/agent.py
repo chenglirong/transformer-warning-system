@@ -2,13 +2,22 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.algorithms.agent.llm_client import llm_enabled
 from app.algorithms.agent.pipeline import run_agent
+from app.algorithms.agent.report_export import (
+    build_docx_bytes,
+    build_pdf_bytes,
+    build_report_filename,
+    content_disposition,
+)
 from app.algorithms.detect.grade import detect
 from app.algorithms.diagnose.pipeline import can_diagnose
 from app.algorithms.knowledge.refs import REFS
@@ -19,6 +28,11 @@ from app.db.session import get_db
 router = APIRouter(prefix="/agent", tags=["Agent 分析编排"])
 
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
+
+
+class ReportExportIn(BaseModel):
+    g1: dict[str, Any] = Field(..., description="表 G.1 卡片数据")
+    g2: dict[str, Any] | None = Field(None, description="表 G.2 卡片数据")
 
 
 def _load_df(db: Session) -> pd.DataFrame:
@@ -89,3 +103,87 @@ def agent_run(
     except ValueError as e:
         return fail(str(e), code=404)
     return ok(result)
+
+
+@router.post("/report/export/word", summary="导出分析报告 Word（已有 g1/g2，秒级）")
+def agent_export_word(body: ReportExportIn):
+    g1 = body.g1
+    if not g1:
+        return fail("缺少报告数据")
+    filename = f"{build_report_filename(g1)}.docx"
+    content = build_docx_bytes(g1, body.g2)
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": content_disposition(filename),
+            "Content-Length": str(len(content)),
+        },
+    )
+
+
+@router.post("/report/export/pdf", summary="导出分析报告 PDF（已有 g1/g2，秒级）")
+def agent_export_pdf(body: ReportExportIn):
+    g1 = body.g1
+    if not g1:
+        return fail("缺少报告数据")
+    filename = f"{build_report_filename(g1)}.pdf"
+    content = build_pdf_bytes(g1, body.g2)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": content_disposition(filename),
+            "Content-Length": str(len(content)),
+        },
+    )
+
+
+@router.get("/report/word", summary="下载分析报告 Word（按日重跑 Agent，较慢）")
+def agent_report_word(
+    day: str = Query(..., description="ISO 日期 YYYY-MM-DD"),
+    force_template: bool = Query(False, description="强制 Agent B 走规则模板"),
+    db: Session = Depends(get_db),
+):
+    df = _load_df(db)
+    if df.empty:
+        return fail("无监测数据")
+    try:
+        result = run_agent(df, day, force_template=force_template)
+    except ValueError as e:
+        return fail(str(e), code=404)
+    g1 = result.get("g1")
+    if not g1:
+        return fail("未生成报告卡片")
+    filename = f"{build_report_filename(g1, day)}.docx"
+    content = build_docx_bytes(g1, result.get("g2"))
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": content_disposition(filename)},
+    )
+
+
+@router.get("/report/pdf", summary="下载分析报告 PDF")
+def agent_report_pdf(
+    day: str = Query(..., description="ISO 日期 YYYY-MM-DD"),
+    force_template: bool = Query(False, description="强制 Agent B 走规则模板"),
+    db: Session = Depends(get_db),
+):
+    df = _load_df(db)
+    if df.empty:
+        return fail("无监测数据")
+    try:
+        result = run_agent(df, day, force_template=force_template)
+    except ValueError as e:
+        return fail(str(e), code=404)
+    g1 = result.get("g1")
+    if not g1:
+        return fail("未生成报告卡片")
+    filename = f"{build_report_filename(g1, day)}.pdf"
+    content = build_pdf_bytes(g1, result.get("g2"))
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": content_disposition(filename)},
+    )

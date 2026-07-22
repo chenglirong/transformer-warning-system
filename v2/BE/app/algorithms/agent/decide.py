@@ -7,6 +7,46 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+# decide_c 输出档位（监测决策页 KPI / 筛选用）
+PERIOD_KINDS: dict[str, str] = {
+    "baseline": "按在线基线周期(≤12h)",
+    "fast": "缩短至快速采样周期(下限≤2h)",
+    "baseline_watch": "保持基线并加强监视(≤12h)",
+    "approach_fast": "缩短采集周期并加强监视(建议逼近≤2h)",
+}
+
+RESAMPLE_KINDS: dict[str, str] = {
+    "none": "不需要",
+    "suggest": "建议二次采样验证",
+    "defer": "暂不建议二次采样",
+}
+
+
+def classify_period_kind(period: str) -> str:
+    for kind, text in PERIOD_KINDS.items():
+        if period == text:
+            return kind
+    if period.startswith("缩短至快速"):
+        return "fast"
+    if "保持基线" in period:
+        return "baseline_watch"
+    if "逼近" in period or period.startswith("缩短采集"):
+        return "approach_fast"
+    return "baseline"
+
+
+def classify_resample_kind(resample: str) -> str:
+    for kind, text in RESAMPLE_KINDS.items():
+        if resample == text:
+            return kind
+    if resample == "不需要":
+        return "none"
+    if "暂不建议" in resample:
+        return "defer"
+    if "建议" in resample:
+        return "suggest"
+    return "defer"
+
 
 def decide_c(
     *,
