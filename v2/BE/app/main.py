@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse
 from app.api import agent, dataset, decision, detect, diagnose, trend, warning
 from app.config import CORS_ORIGINS  # noqa: F401 — 顺带触发 .env 加载
 
-app = FastAPI(title="DGA 分析智能体后台", version="0.1.0")
+app = FastAPI(title="设备状态分析智能体", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

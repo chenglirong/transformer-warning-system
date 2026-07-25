@@ -6,7 +6,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const pageMeta = computed(() => ({
-  title: route.meta?.title || 'DGA 分析智能体',
+  title: route.meta?.title || '设备状态分析智能体',
 }))
 
 const navGroups = [
@@ -20,10 +20,10 @@ const navGroups = [
     ],
   },
   {
-    label: '告警记录',
+    label: '分析记录',
     items: [
-      { path: '/warning', title: '告警流水', ready: true, icon: 'alerts' },
-      { path: '/decision', title: '监测决策', ready: true, icon: 'decision' },
+      { path: '/warning', title: '告警列表', ready: true, icon: 'alerts' },
+      { path: '/decision', title: '决策列表', ready: true, icon: 'decision' },
     ],
   },
   {
@@ -50,8 +50,8 @@ function isActive(path) {
           </svg>
         </div>
         <div>
-          <div class="brand-name">DGA 分析智能体</div>
-          <div class="brand-sub">220kV 及以下 · 站端后台</div>
+          <div class="brand-name">设备状态分析智能体</div>
+          <div class="brand-sub">油中溶解气体 · 220kV 及以下</div>
         </div>
       </div>
 
