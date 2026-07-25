@@ -1,7 +1,10 @@
 """Agent 监测决策 —— 规则决策表 + 可解释轨迹。
 
-输入:档位/「预」/紧急度/融合可信度;输出:周期/二次采样/试验 + trajectory。
+输入:档位/涨势预警/紧急度/交叉研判可信度;输出:周期/二次采样/试验 + trajectory。
 依据用标准条目 id(前端 StdCite),why 用人话一句说清「为何这么做」。
+
+§5.4.5 二次采样验证为装置级动作(由在线监测装置或运维人员执行),
+本系统输出建议指令,不模拟自动采样流程。
 """
 from __future__ import annotations
 
@@ -90,7 +93,7 @@ def decide_c(
         period_why = "已触发提前预警或速率超注意值，宜缩至最小检测周期"
         cite_period = "1498-5.5.5"
         resample = "建议二次采样验证"
-        resample_why = "先验证数据再固化周期调整"
+        resample_why = "建议由装置或运维执行二次采样验证，确认后缩短周期"
         cond = "触发涨势预警" if is_pre else "注意值1 且速率超注意值"
         fire(cond, period, cite_period, "period")
         fire(cond, resample, cite_resample, "resample")
@@ -130,7 +133,7 @@ def decide_c(
 
         if conf == "低":
             resample = "建议二次采样验证"
-            resample_why = "判型可信度低（分歧或暂定），先二次采样核实再定结论"
+            resample_why = "判型可信度低（分歧或暂定），建议由装置或运维执行二次采样核实"
             fire(
                 "判型可信度低（分歧/暂定）",
                 resample,
@@ -179,6 +182,7 @@ def decide_c(
         "cite_resample": cite_resample,
         "log": log,
         "offline_note": "722 §5.3 表1 / §5.4 b(月/周/天)为离线例行对照,不写入在线主规则",
+        "resample_note": "二次采样验证由在线监测装置或运维人员执行，本系统输出建议指令",
         "trajectory": trajectory,
         "rules_fired": [t["condition"] + " → " + t["action"] for t in trajectory],
     }
