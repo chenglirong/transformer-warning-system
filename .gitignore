@@ -65,4 +65,5 @@ V1/中期报告PPT大纲.md
 V1/开题报告PPT大纲.md
 
 # V1 归档文档(不入库)
-V1/docs/
+V1/docs/*
+!V1/docs/05-decisions-log.md
