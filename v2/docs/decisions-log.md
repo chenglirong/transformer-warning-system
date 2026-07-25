@@ -89,7 +89,7 @@
 
 ## 2026-07-14 D-007 Agent B LLM(可选)+ 模块5 依据绑定
 
-- **怎么定**:Agent B=`report_b`：有 `LLM_API_KEY` 则 OpenAI 兼容接口写人话(只复述事实包),失败/越界校验 → 规则模板降级;`force_template` 可强制降级。模块5=`knowledge/refs.py` 结构化判据 + 结论绑 `cite_ids`,前端 `StdCite` 展示。未装 langchain。
+- **怎么定**:Agent B=`report_b`：有 `LLM_API_KEY` 则调阿里云 MaaS 通义千问 `qwen-max` 写人话(只复述事实包),失败/越界校验 → 规则模板降级;`force_template` 可强制降级。模块5=`knowledge/refs.py` 结构化判据 + 结论绑 `cite_ids`,前端 `StdCite` 展示。未装 langchain。
 - **配置**:`v2/BE/.env.example`。
 
 ---

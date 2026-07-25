@@ -1,9 +1,9 @@
-"""OpenAI 兼容 Chat Completions 客户端(stdlib,无强制 langchain 依赖)。
+"""通义千问 Chat Completions 客户端(stdlib,无强制 langchain 依赖)。
 
 环境变量:
   LLM_API_KEY   必填才启用 LLM
-  LLM_BASE_URL  默认 https://api.openai.com/v1
-  LLM_MODEL     默认 gpt-4o-mini
+  LLM_BASE_URL  默认阿里云 DashScope compatible-mode
+  LLM_MODEL     默认 qwen-max
 
 部分阿里云 MaaS 网关回包不是标准 choices[].message.content,
 而是扁平 {finish_reason, text};本客户端两种都认。
@@ -75,8 +75,11 @@ def chat_completion(
     if not api_key:
         raise RuntimeError("未配置 LLM_API_KEY")
 
-    base = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-    model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+    base = os.environ.get(
+        "LLM_BASE_URL",
+        "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    ).rstrip("/")
+    model = os.environ.get("LLM_MODEL", "qwen-max")
     url = f"{base}/chat/completions"
     body = json.dumps({
         "model": model,
