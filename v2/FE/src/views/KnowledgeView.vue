@@ -33,7 +33,7 @@ const STD_CATALOG = [
   {
     code: 'DL/T 1685-2017',
     title: '油浸式变压器（电抗器）状态评价导则',
-    role: '附录B：过热/放电缺陷对应停电试验项目',
+    role: '附录B：过热/放电缺陷对应停电试验；附录D：状态评价典型案例（油色谱长时序验证）',
   },
 ]
 
@@ -255,7 +255,7 @@ watch(() => route.query.id, () => {
           class="search"
           placeholder="搜索 id / 章节 / 摘要…"
         />
-        <span class="head-ref">共 {{ filtered.length }} 条</span>
+        <span class="head-ref">筛选 {{ filtered.length }} / {{ rows.length }}</span>
       </div>
 
       <div class="gp-body kb-layout">

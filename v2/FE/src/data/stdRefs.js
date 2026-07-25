@@ -11,9 +11,13 @@ import imgTable3p2 from '@/assets/standards/table3-attention-part2.png'
 import imgSec932 from '@/assets/standards/section-9.3.2-rate.png'
 import imgSec933 from '@/assets/standards/section-9.3.3.png'
 import imgSec1024a from '@/assets/standards/section-10.2.4a.png'
+import imgAuxCo2Co from '@/assets/standards/722-10.2.3.1-co2-co.png'
+import imgAuxC2h2H2 from '@/assets/standards/722-10.2.3.2-c2h2-h2.png'
+import imgAuxO2N2 from '@/assets/standards/722-10.2.3.3-o2-n2.png'
 import imgAppD from '@/assets/standards/appendix-d-table-d1.png'
 import img1685B2 from '@/assets/standards/1685-table-b2.png'
 import img1685B3 from '@/assets/standards/1685-table-b3.png'
+import img1685AppD from '@/assets/standards/1685-appendix-d-case.png'
 import imgAppG1 from '@/assets/standards/appendix-g-table-g1.png'
 import imgAppG2 from '@/assets/standards/appendix-g-table-g2.png'
 import img1498A31 from '@/assets/standards/1498-a3.1.png'
@@ -58,9 +62,24 @@ export const STD_REFS = {
     body: '以 CH₄、C₂H₄、C₂H₂ 相对百分含量落于等边三角分区：PD / D1 / D2 / T1 / T2 / T3 / D+T。',
     image: imgDuval,
   },
+  '722-10.2.3.1': {
+    title: 'DL/T 722-2014 §10.2.3.1 CO₂/CO 辅助比值',
+    body: 'CO₂/CO <3 时故障可能涉及固体绝缘；>7 属正常老化。宜用增量计算。本系统仅将 <3 写入油/纸附注，不改主结论。',
+    image: imgAuxCo2Co,
+  },
+  '722-10.2.3.2': {
+    title: 'DL/T 722-2014 §10.2.3.2 C₂H₂/H₂ 辅助比值',
+    body: '特征气体超注意值且 C₂H₂/H₂ >2（宜用增量）时，可能是有载分接开关油/气渗入本体。仅作辅助附注，不改主结论。',
+    image: imgAuxC2h2H2,
+  },
+  '722-10.2.3.3': {
+    title: 'DL/T 722-2014 §10.2.3.3 O₂/N₂ 辅助比值',
+    body: '油中 O₂/N₂ 约 0.5；开放式设备 <0.3 提示氧耗过大宜关注，密封良好设备可正常低于 0.05。在线监测一般不测；有数据时仅作辅助附注。',
+    image: imgAuxO2N2,
+  },
   '722-附录B': {
     title: 'DL/T 722-2014 附录B 表B.1/B.2 解释表',
-    body: '援引 IEC 60599 的比值限值分类（PD/D1/D2/T1/T2/T3）及简表，可与表6/7交叉印证。',
+    body: '援引 IEC 60599 的气体组合解释表（表B.1/B.2），按主气体组合定性判断故障类型。标准仅做定性描述，未给出量化阈值，本项目未做代码实现。',
     image: imgAppB,
   },
   '1498-表A3': {
@@ -107,6 +126,7 @@ export const STD_REFS = {
       'Ci,1 为在线监测装置测得的对应特征气体含量（μL/L）。',
       'a) 正常情况：前14天～前7天测量数据的算术平均值，计算前先剔除奇异值。',
       'b) 新投运或校准/检修后恢复运行：运行不足14天取实际运行日至前7天的均值；不足7天取第1天均值（相对增长速率不折算为周）。',
+      '本系统合成数据声明为已稳定运行的在运设备，参比只走 a)；序列开头不足参比窗时增量/增长率暂不计算。',
     ].join('\n'),
     image: img1498A33,
   },
@@ -124,6 +144,11 @@ export const STD_REFS = {
     title: 'DL/T 1685-2017 附录B 表B.2/B.3',
     body: '过热/放电缺陷：状态量描述与停电测试项目对照，用于补充试验建议。',
     images: [img1685B2, img1685B3],
+  },
+  '1685-附录D': {
+    title: 'DL/T 1685-2017 附录D 状态评价典型案例',
+    body: '表D.1 给出一台 220kV 变压器近两年油色谱长时序（10 个取样点）。本系统用该组真实色谱做分级/判型/1685 细条款验证；附录D 原文中的部件扣分与「异常状态」评价不在本系统输出范围内。',
+    image: img1685AppD,
   },
   '722-附录G': {
     title: 'DL/T 722-2014 附录 G 表 G.1 / G.2',
@@ -162,6 +187,7 @@ export const STD_LABEL_TO_ID = {
   '附录D': '722-附录D',
   '附录G': '722-附录G',
   '1685 附录B': '1685-附录B',
+  '1685 附录D': '1685-附录D',
 }
 
 export function resolveStd(idOrLabel) {

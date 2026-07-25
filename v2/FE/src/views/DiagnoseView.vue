@@ -139,7 +139,7 @@ const measuresHook = computed(() => {
   const clauses = (f.measures_1685_items || []).map((x) => x.clause).filter(Boolean)
   let s = `当前状况：${typeTag}${code} → 对应 722 表D.1「${nature}」列`
   if (clauses.length) s += `、1685 表${clauses.join('/')}`
-  s += ' · 其他检查性试验见 Agent 分析'
+  s += '。其他检查性试验清单见 Agent 分析。'
   return s
 })
 
@@ -147,7 +147,9 @@ function goAgentTrials() {
   router.push({ name: 'agent', query: selectedDate.value ? { date: selectedDate.value } : {} })
 }
 
-/** 研判链路：进入门槛 + 三法依表结论（不含综合，右侧独占） */
+/** 研判链路：进入门槛 + 三法依表；辅助比值改到右侧专区，避免左右重复 */
+const AUX_LABELS = new Set(['CO₂/CO', 'C₂H₂/H₂', 'O₂/N₂'])
+
 const reasoningSteps = computed(() => {
   const f = fusion.value
   if (!f) return []
@@ -160,7 +162,8 @@ const reasoningSteps = computed(() => {
     })
   }
   if (Array.isArray(f.reasoning) && f.reasoning.length) {
-    return [...head, ...f.reasoning]
+    const core = f.reasoning.filter((s) => !AUX_LABELS.has(s.label))
+    return [...head, ...core]
   }
   const steps = [...head]
   methodResults.value.forEach((m, i) => {
@@ -168,6 +171,34 @@ const reasoningSteps = computed(() => {
     steps.push({ label: m.name, text: m.value, cite: cites[i] })
   })
   return steps
+})
+
+/** §10.2.3 辅助比值：alert + info 都展示；3~7 等无 note 的正常区间不占版 */
+const AUX_RATIO_META = [
+  { key: 'co2_co', label: 'CO₂/CO', cite: '722-10.2.3.1', band: '3~7 正常' },
+  { key: 'c2h2_h2', label: 'C₂H₂/H₂', cite: '722-10.2.3.2', band: '≤2 正常' },
+  { key: 'o2_n2', label: 'O₂/N₂', cite: '722-10.2.3.3', band: '≥0.3 正常' },
+]
+
+const auxPack = computed(() => {
+  const a = fusion.value?.aux_ratios
+  if (!a) return null
+  const byLabel = Object.fromEntries((a.notes || []).map((n) => [n.ratio, n]))
+  const rows = AUX_RATIO_META.map((m) => {
+    const value = a[m.key]
+    const note = byLabel[m.label] || null
+    return {
+      ...m,
+      value: value == null ? null : value,
+      level: note?.level || null,
+      text: note?.text || null,
+    }
+  }).filter((r) => r.text)
+  if (!rows.length) return null
+  return {
+    rows,
+    hasAlert: rows.some((r) => r.level === 'alert'),
+  }
 })
 
 const GAS_GRID = [
@@ -338,7 +369,7 @@ function disposeRadar() {
 }
 
 async function loadSeries() {
-  const res = await http.get('/diagnose/series')
+  const res = await http.get('/detect/series')
   series.value = res.series || []
   summary.value = res.summary || {}
   const q = typeof route.query.date === 'string' ? route.query.date : ''
@@ -443,7 +474,7 @@ function onResize() {
       <template v-else-if="detail && triggered && !fusion">
         <div class="idle-banner">
           <div>
-            <div class="idle-title">已触发判型，但融合结论缺失</div>
+            <div class="idle-title">已触发判型，但交叉研判结论缺失</div>
             <p>{{ diagnosis?.reason || diagnosis?.trigger_note || '请换日重试或检查算法输出' }}</p>
           </div>
         </div>
@@ -454,7 +485,7 @@ function onResize() {
         <section class="gp sample">
           <div class="gp-head">
             当日监测样含量
-            <span class="head-ref">μL/L · 7 种特征气体 · 三比值 / 大卫三角 / 特征气体共用</span>
+            <span class="head-ref">μL/L</span>
           </div>
           <div class="gp-body sample-body">
             <div class="trigger-bar">
@@ -486,9 +517,7 @@ function onResize() {
               </div>
             </div>
             <p class="gas-src-hint">
-              含量取自 {{ selectedDate }} 当日监测值；
-              <span class="hint-hot">标红</span>
-              表示特征气体法认为该组分偏高（工程门槛，非表5数值；亦不是分级档位颜色）。
+              系统按特征气体法自动标红偏高组分（非手动标注，也不是分级档位颜色）。
             </p>
           </div>
         </section>
@@ -592,9 +621,6 @@ function onResize() {
               <span class="step-k">表5 判据</span>
               {{ keyGas.note }}
             </div>
-            <p v-if="keyGas?.ok" class="method-impl-note">
-              {{ keyGas.impl_note || '表5定性匹配;偏高门槛与加权得分为本系统工程实现,非国标数值' }}
-            </p>
 
             <div class="verdict" :class="keyGas?.ok ? 'hot' : ''">
               <span class="verdict-k">故障类型</span>
@@ -602,11 +628,10 @@ function onResize() {
             </div>
           </article>
         </section>
-        <!-- 研判链路 + 综合结论（去重：左依表，右结论） -->
+        <!-- 研判链路 + 综合结论（去重：左依表，右结论）；辅助比值附于结论，不作第四方法卡 -->
         <section class="gp conclude">
           <div class="gp-head">
             研判结论
-            <span class="head-ref">可信度低 = 暂定 · 试验只核实</span>
           </div>
           <div class="gp-body conclude-body">
             <div class="conclude-col chain-col">
@@ -636,8 +661,31 @@ function onResize() {
                 <span class="conf-tag" :class="confidenceClass">{{ fusion.confidence }}</span>
               </div>
               <p class="judge-sum">{{ fusion.confidence_reason }}</p>
-              <p v-if="fusion.paper_note" class="paper-note">{{ fusion.paper_note }}</p>
-              <p v-if="isProvisional" class="warn-line">可信度低 · 暂定，不作确诊。</p>
+              <p v-if="fusion.paper_note" class="paper-note">
+                <span class="paper-k">油/纸附注</span>
+                {{ fusion.paper_note }}
+              </p>
+
+              <div v-if="auxPack" class="aux-box" :class="{ alert: auxPack.hasAlert, info: !auxPack.hasAlert }">
+                <div class="aux-head">
+                  <span class="aux-title">辅助比值</span>
+                  <StdCite inline ref-id="722-10.2.3.1" label="§10.2.3" />
+                </div>
+                <ul class="aux-rows">
+                  <li v-for="r in auxPack.rows" :key="r.key" :class="r.level || 'idle'">
+                    <div class="aux-top">
+                      <span class="aux-lab">{{ r.label }}</span>
+                      <span class="aux-val mono">{{ r.value == null ? '—' : r.value }}</span>
+                      <span v-if="r.level === 'alert'" class="aux-tag alert">提示</span>
+                      <span v-else-if="r.level === 'info'" class="aux-tag info">参考</span>
+                      <span v-else class="aux-tag idle">{{ r.band }}</span>
+                      <StdCite inline :ref-id="r.cite" :label="r.cite" />
+                    </div>
+                    <p v-if="r.text" class="aux-text">{{ r.text }}</p>
+                  </li>
+                </ul>
+              </div>
+
               <p v-if="diagnosis.low_concentration" class="warn-line">§10.2.4 c 低浓度，比值慎用。</p>
             </div>
           </div>
@@ -657,7 +705,7 @@ function onResize() {
               />
             </p>
             <button type="button" class="btn btn-primary" @click="goAgentTrials">
-              去 Agent 分析查看其他检查性试验
+              去 Agent 分析
             </button>
           </div>
         </section>
@@ -819,13 +867,6 @@ function onResize() {
   color: #fca5a5;
 }
 .verdict.hot .verdict-k { color: rgba(252,165,165,0.75); }
-
-.method-impl-note {
-  margin: 8px 0 0;
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--fg-4);
-}
 
 /* 大卫三角 */
 .zone-legend {
@@ -1011,8 +1052,16 @@ function onResize() {
   line-height: 1.45; text-align: center;
 }
 .paper-note {
-  margin: 6px 0 0; font-size: 12px; color: var(--lv-w2);
-  line-height: 1.45; text-align: center;
+  margin: 8px 0 0; font-size: 12px; color: var(--lv-w2);
+  line-height: 1.45; text-align: left;
+}
+.paper-k {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--fg-4);
+  letter-spacing: 0.04em;
 }
 .conf-tag {
   font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
@@ -1020,6 +1069,86 @@ function onResize() {
 .conf-tag.high { background: var(--lv-normal-bg); color: var(--lv-normal); }
 .conf-tag.mid { background: var(--lv-w1-bg); color: var(--lv-w1); }
 .conf-tag.low { background: var(--lv-alarm-bg); color: var(--lv-alarm); }
+
+.aux-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-3);
+  text-align: left;
+}
+.aux-box.alert {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.06);
+}
+.aux-box.info {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: rgba(52, 211, 153, 0.05);
+}
+.aux-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-bottom: 8px;
+}
+.aux-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg-2);
+  letter-spacing: 0.04em;
+}
+.aux-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.aux-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.aux-lab {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fg);
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 4.5em;
+}
+.aux-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fg-2);
+}
+.aux-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.aux-tag.alert {
+  background: rgba(251, 191, 36, 0.18);
+  color: var(--lv-w1);
+}
+.aux-tag.info {
+  background: var(--lv-normal-bg);
+  color: var(--lv-normal);
+}
+.aux-tag.idle {
+  background: var(--bg-2);
+  color: var(--fg-4);
+}
+.aux-text {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--fg-3);
+}
 
 .warn-line {
   margin: 6px 0 0; font-size: 11.5px;
