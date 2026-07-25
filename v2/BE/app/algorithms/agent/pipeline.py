@@ -142,8 +142,16 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
         trigger_by=diagnosis.get("trigger_by"),
         fusion=fusion,
     )
-    # 运行日志故障类型只挂判断流程 §10.3；细则角标留给报告/知识区
+    # 步骤日志：§10.3 + 本轮实际触发的辅助比值；三法细则仍主要进报告 cite_map
     diag_log_cites = ["722-10.3"]
+    if fusion:
+        for n in (fusion.get("aux_ratios") or {}).get("notes") or []:
+            clause = n.get("clause")
+            if not clause:
+                continue
+            cid = clause if str(clause).startswith("722-") else f"722-{clause}"
+            if cid not in diag_log_cites:
+                diag_log_cites.append(cid)
     obs_diag = make_observation(
         tool="diagnose.fusion",
         status="ok" if diagnosis.get("triggered") else "skip",
@@ -392,7 +400,7 @@ def _diag_log(diagnosis: dict, fusion: dict | None) -> str:
     if not diagnosis.get("triggered"):
         return "未启动"
     if not fusion:
-        return "已触发但融合无结论"
+        return "已触发但交叉研判无结论"
     primary = fusion.get("primary") or ""
     code = fusion.get("primary_code") or ""
     conf = fusion.get("confidence") or "—"
@@ -400,10 +408,17 @@ def _diag_log(diagnosis: dict, fusion: dict | None) -> str:
     stance = "暂定" if provisional else ""
     conf_r = fusion.get("confidence_reason") or ""
     code_bit = f" · {code}" if code and code not in str(primary) else ""
+    aux_notes = (fusion.get("aux_ratios") or {}).get("notes") or []
+    # 非油纸通道的辅助提示（C₂H₂/H₂、O₂/N₂）；CO₂/CO 已可能在 paper_note
+    aux_extra = [
+        n.get("text") for n in aux_notes
+        if n.get("level") == "alert" and n.get("ratio") != "CO₂/CO" and n.get("text")
+    ]
     return (
         f"{stance}{primary}{code_bit} · 可信度{conf}"
         + (f" · {conf_r}" if conf_r else "")
         + (f" · {fusion.get('paper_note')}" if fusion.get("paper_note") else "")
+        + (f" · {aux_extra[0]}" if aux_extra else "")
         + (" · 不作确诊" if provisional else "")
     )
 

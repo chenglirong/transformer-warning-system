@@ -73,7 +73,9 @@ _SYSTEM = """你是电力试验室高级工程师,负责撰写《油中溶解气
 【other_tests——必须由你撰写,不得空或只写「见档案卡片」】
 无 measures 时输出空串。
 有 measures 时写 3～5 句完整中文:
-1) 用 report_nature + fault_primary/fault_code 说明当前故障性质(暂定用「暂定为」);
+1) 首句须写明故障性质:事实包「故障性质」原词必须**原样出现**于正文
+   (如性质为「过热」则正文须含「过热」二字;仅写「热故障」「T2」「中温过热」而不含「过热」不算);
+   暂定结论用「暂定为「…」」,非暂定用「判为「…」」或「性质为「…」」;
 2) 点明依据 DL/T 722-2014 附录D 表D.1(has_1685_detail 为真时并提 DL/T 1685-2017 附录B);
 3) 将 measures 中**全部原名**自然写入(可用顿号/分号分隔),并各用半句说明建议核验指向(不得发明清单外项目);
 4) 收句保持「建议开展」语气。
@@ -389,6 +391,15 @@ def _facts_for_llm(facts: dict[str, Any]) -> dict[str, Any]:
         "是否含1685附录B细则": "是" if facts.get("has_1685_detail") else "否",
         "篇幅要求": facts.get("opinion_length_hint"),
     }
+    # 试验成稿硬约束外显,降低模型漏写性质原词
+    nature = (facts.get("report_nature") or "").strip()
+    if (facts.get("measures") or []) and nature and nature not in ("—", "性质不明"):
+        out["other_tests必须原样出现的性质词"] = nature
+        out["other_tests性质写法提示"] = (
+            f"other_tests 正文必须包含「{nature}」原词"
+            + ("（写作：暂定为「" + nature + "」）" if provisional else f"（写作：判为「{nature}」）")
+        )
+
     tip = facts.get("non_fault_source_tip")
     if tip:
         out["非故障气源提示"] = tip
@@ -414,6 +425,30 @@ def _ensure_non_fault_tip(opinion: str, facts: dict[str, Any]) -> str:
             parts[i] = p.rstrip() + tip_s
             return "\n\n".join(parts)
     return t + "\n\n【处置建议】" + tip_s
+
+
+def _ensure_report_nature(other: str, facts: dict[str, Any]) -> str:
+    """LLM 常写「热故障/T2」而漏性质原词;校验前补一句,避免整段降级模板。"""
+    measures = facts.get("measures") or []
+    nature = (facts.get("report_nature") or "").strip()
+    t = (other or "").strip()
+    if not measures or not t or not nature or nature in ("—",):
+        return t
+    if nature in t:
+        return t
+    head = "暂定为" if facts.get("provisional") else "判为"
+    primary = (facts.get("fault_primary") or "").strip()
+    code = (facts.get("fault_code") or "").strip()
+    type_bit = ""
+    if primary:
+        if code and code not in primary:
+            type_bit = f"（{primary}，{code}）"
+        else:
+            type_bit = f"（{primary}）"
+    elif code:
+        type_bit = f"（{code}）"
+    prefix = f"综合色谱判型,当前故障性质{head}「{nature}」{type_bit}。"
+    return prefix + t
 
 
 def _normalize_section_breaks(text: str) -> str:
@@ -554,7 +589,8 @@ def generate_opinion(
         "请基于下列「中文事实包」同时撰写 opinion 与 other_tests。\n"
         "故障类型主结论、故障编码、当日最高档、建议采集周期、二次采样安排、故障性质、建议试验项目只许照抄,不许改判。\n"
         "档位依据标准=1498.2表A.3;产气速率依据标准=722§9.3.2;禁止把四档写成722。\n"
-        "有「建议试验项目」时 other_tests 必须写成完整中文段落并覆盖全部试验原名。\n"
+        "有「建议试验项目」时 other_tests 必须写成完整中文段落并覆盖全部试验原名;"
+        "若事实包含「other_tests必须原样出现的性质词」,该词须原样写入 other_tests(近义写法不够)。\n"
         "有「非故障气源提示」时须写入【处置建议】末尾。\n"
         "严禁在正文出现英文键名或 true/false/confidence/provisional 等字样。\n"
         "返回 JSON: {\"opinion\":\"...\",\"other_tests\":\"...\"}\n\n"
@@ -581,6 +617,8 @@ def generate_opinion(
         other = str(data.get("other_tests") or "").strip()
         if not (facts.get("measures") or []):
             other = ""
+        else:
+            other = _ensure_report_nature(other, facts)
 
         err_o = _validate_opinion(opinion, facts)
         err_t = _validate_other_tests(other, facts) if (facts.get("measures") or []) else None

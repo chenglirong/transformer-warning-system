@@ -25,8 +25,8 @@ TOOL_SPECS: dict[str, dict[str, str]] = {
         "layer": "analyze",
     },
     "diagnose.fusion": {
-        "label": "故障类型融合",
-        "description": "特征气体 + 三比值 + Duval 融合判型（注意值2+或速率超才触发）",
+        "label": "故障类型研判",
+        "description": "特征气体 + 三比值 + Duval 多方法交叉研判（注意值2+或速率超才触发）",
         "layer": "analyze",
     },
     "trend.rate": {
