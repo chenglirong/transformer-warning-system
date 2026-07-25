@@ -26,7 +26,7 @@ REFS: dict[str, dict[str, str]] = {
     "1498-A.3.3": {
         "std": "DL/T 1498.2-2025",
         "section": "A.3.3",
-        "summary": "参比值Ci,1:前14～前7天均值(剔奇异值);新投/检修另有规定",
+        "summary": "参比值Ci,1:a)前14～前7天均值(剔奇异值)。本系统声明在运设备，只走a)；b)新投运特殊取法未启用",
     },
     "1498-5.4.5": {
         "std": "DL/T 1498.2-2025",
@@ -81,7 +81,7 @@ REFS: dict[str, dict[str, str]] = {
     "722-附录B": {
         "std": "DL/T 722-2014",
         "section": "附录B 表B.1/B.2",
-        "summary": "IEC 60599 解释表(交叉印证,非主输出)",
+        "summary": "IEC 60599 解释表(仅定性描述,未量化实现)",
     },
     "722-5.4": {
         "std": "DL/T 722-2014",
@@ -102,6 +102,31 @@ REFS: dict[str, dict[str, str]] = {
         "std": "DL/T 1685-2017",
         "section": "附录B 表B.2/B.3",
         "summary": "状态量描述与停电试验项目对照",
+    },
+    "722-10.2.3.1": {
+        "std": "DL/T 722-2014",
+        "section": "§10.2.3.1",
+        "summary": "CO₂/CO比值辅助判断:故障涉及固体绝缘时<3;绝缘老化时>7",
+    },
+    "722-10.2.3.2": {
+        "std": "DL/T 722-2014",
+        "section": "§10.2.3.2",
+        "summary": "C₂H₂/H₂比值辅助判断:>2可能是有载分接开关油污染",
+    },
+    "722-10.2.3.3": {
+        "std": "DL/T 722-2014",
+        "section": "§10.2.3.3",
+        "summary": "O₂/N₂比值辅助判断:<0.3提示密封可能有问题(在线监测一般不测)",
+    },
+    "722-附录E": {
+        "std": "DL/T 722-2014",
+        "section": "附录E 表E.4",
+        "summary": "典型故障实例(17组真实色谱数据),用于算法验证",
+    },
+    "1685-附录D": {
+        "std": "DL/T 1685-2017",
+        "section": "附录D",
+        "summary": "状态评价典型案例:油色谱异常长时序(10条近2年),用于算法验证",
     },
 }
 
@@ -143,6 +168,14 @@ def cites_for_diagnosis(*, triggered: bool, trigger_by: Optional[str], fusion: A
         ids.append("1685-附录B")
     if trigger_by == "rate":
         ids.append("722-9.3.2")
+    if fusion:
+        for n in (fusion.get("aux_ratios") or {}).get("notes") or []:
+            clause = n.get("clause")
+            if not clause:
+                continue
+            cid = clause if str(clause).startswith("722-") else f"722-{clause}"
+            if cid not in ids:
+                ids.append(cid)
     return ids
 
 

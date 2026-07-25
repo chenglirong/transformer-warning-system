@@ -119,8 +119,8 @@ def detect(df: pd.DataFrame) -> list[dict]:
                 "note": None,
             })
 
-        # ② 绝对增量 ③ 相对增长速率:当前值 − 参比值(A.3.3)
-        # 窗=前14~前7(两端含);Python 切片左闭右开 → [i-14, i-6)
+        # ② 绝对增量 ③ 相对增长速率:当前值 − 参比值(A.3.3 a)
+        # 在运声明：只走 a) 前14~前7(两端含);切片 [i-14, i-6)；不走 b)
         lo = i - BASELINE_WINDOW_START
         hi = i - BASELINE_WINDOW_END + 1
         if lo >= 0:

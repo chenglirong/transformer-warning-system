@@ -1,4 +1,4 @@
-"""多方法融合 + 可信度 + 试验建议(附录D / 1685 附录B)。
+"""多方法交叉研判 + 可信度 + 试验建议(附录D / 1685 附录B)。
 
 一致性规则(蓝图已定):
   - 三比值 ↔ 大卫三角:比六代码是否同格/相邻
@@ -6,11 +6,13 @@
   - 表5 油/纸维度以 paper_note 附注补进结论层(D-019),不抢主名
   - 三方一致性拉到「放电 vs 过热」性质大类
   - 只荐试验、不下成因
+  - §10.2.3 辅助比值(CO₂/CO, C₂H₂/H₂, O₂/N₂)作为附注,不改变主结论
 """
 from __future__ import annotations
 
 from typing import Optional
 
+from app.algorithms.diagnose.auxiliary_ratios import check_auxiliary_ratios
 from app.algorithms.diagnose.duval import DuvalResult
 from app.algorithms.diagnose.key_gas import KeyGasResult
 from app.algorithms.diagnose.measures import build_measures
@@ -96,7 +98,7 @@ def fuse(
     low_concentration: bool = False,
     gases: Optional[dict] = None,
 ) -> dict:
-    """三方融合 → 结论 / 可信度 / 试验建议(不下成因)。"""
+    """三方交叉研判 → 结论 / 可信度 / 试验建议(不下成因)。"""
     ratio_code = ratios.duval_code if ratios.ok else None
     duval_zone = duval.zone if duval.ok else None
     pair_ok = _codes_consistent(ratio_code, duval_zone)
@@ -144,9 +146,24 @@ def fuse(
         key_gas, nature=nature, nature_agree=nature_agree,
     )
 
+    # ── §10.2.3 辅助比值 ──────────────────────────────────────
+    # 仅 CO₂/CO<3 可增强油纸附注；C₂H₂/H₂、O₂/N₂ 只进 notes/reasoning
+    aux = check_auxiliary_ratios(gases)
+    paper_alerts = [
+        n["text"] for n in aux.notes
+        if n.get("ratio") == "CO₂/CO" and n.get("level") == "alert"
+    ]
+    if paper_alerts and nature_agree is not False:
+        if paper_note:
+            paper_note = paper_note + "；" + "；".join(paper_alerts)
+        else:
+            paper_note = "；".join(paper_alerts)
+        if paper_scope is None and aux.co2_co is not None and aux.co2_co < 3:
+            paper_scope = "oil_paper"
+
+    # 可信度(基础判据)
     if low_concentration:
         confidence = "低"
-# 可信度文案也压短
         confidence_reason = "低浓度<10μL/L(§10.2.4 c)"
     elif nature_agree is False:
         confidence = "低"
@@ -209,6 +226,14 @@ def fuse(
     elif key_gas.fault:
         reasoning.append({"label": "特征气体", "text": key_gas.fault, "cite": "722-表5"})
 
+    # ── §10.2.3 辅助比值推理链 ───────────────────────────────
+    for n in aux.notes:
+        reasoning.append({
+            "label": n["ratio"],
+            "text": n["text"],
+            "cite": f"722-{n['clause']}",
+        })
+
     # 一句话摘要(Agent/日志用)，页面右侧只用 confidence_reason
     head = f"{'暂定' if provisional else ''}{primary}".strip() or primary
     if nature_agree is False:
@@ -245,5 +270,11 @@ def fuse(
         "measures_nature": measure_pack.get("measure_nature"),
         "measures_nature_label": measure_pack.get("measure_nature_label"),
         "measures_purpose": "verify" if provisional else "recommend",
+        "aux_ratios": {
+            "co2_co": aux.co2_co,
+            "c2h2_h2": aux.c2h2_h2,
+            "o2_n2": aux.o2_n2,
+            "notes": aux.notes,
+        },
         "summary": summary + "。",
     }
