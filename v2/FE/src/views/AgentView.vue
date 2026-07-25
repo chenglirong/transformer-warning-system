@@ -247,7 +247,7 @@ function decisionTone() {
 }
 
 async function loadSeries() {
-  const res = await http.get('/agent/series')
+  const res = await http.get('/detect/series')
   series.value = res.series || []
   summary.value = res.summary || {}
   const q = typeof route.query.date === 'string' ? route.query.date : ''
@@ -266,6 +266,11 @@ async function loadLlmStatus() {
 
 function wantsOpenReport() {
   return route.query.report === '1' || route.query.report === 'true'
+}
+
+/** 带 ?date= 从别的页跳入 → 自动跑选中日；从左菜单进(无 date)则需手点 */
+function wantsAutoRun() {
+  return typeof route.query.date === 'string' && route.query.date !== ''
 }
 
 /** 告警弹窗跳入：切日 + 静默出结果并打开完整报告 */
@@ -443,10 +448,14 @@ onMounted(async () => {
     loading.value = false
   }
   bootReady.value = true
-  // 仅告警弹窗深链（?date=&report=1）静默出报告；平常进页不自动跑
+  // 告警弹窗深链（?date=&report=1）静默出报告并打开完整报告
   if (wantsOpenReport()) {
     await applyReportDeepLink()
+  } else if (wantsAutoRun()) {
+    // 其它页带 ?date= 跳入：自动跑选中日（不打开报告弹窗）
+    await runAgent()
   }
+  // 从左菜单进页（无 date）：不自动跑，需手点
 })
 
 watch(
@@ -504,9 +513,9 @@ watch(selectedDate, (d, prev) => {
           <span
             v-else-if="llmStatus.llm_enabled"
             class="mode-hint"
-            :title="`模型 ${llmStatus.model || '—'}`"
-          >默认大模型写报告 · 失败自动降模板</span>
-          <span v-else class="mode-hint" :title="llmStatus.hint || ''">未配置密钥 · 固定模板</span>
+            :title="`模型 ${llmStatus.model || '—'} · 失败自动降模板`"
+          >大模型可用</span>
+          <span v-else class="mode-hint" :title="llmStatus.hint || ''">固定模板</span>
           <button type="button" class="btn btn-ghost" :disabled="!reportReady" @click="openReport">
             完整报告
           </button>
@@ -530,7 +539,6 @@ watch(selectedDate, (d, prev) => {
       <section class="gp flow-panel">
         <div class="gp-head">
           分析流程
-          <span class="head-hint-flow">§10.3</span>
         </div>
         <div class="gp-body flow-body">
           <div class="v-pipeline">
@@ -614,9 +622,6 @@ watch(selectedDate, (d, prev) => {
             </div>
             <div class="gp-body g1-body">
               <div class="g1-preview" :class="reportReady ? 'unlocked' : 'locked'">
-                <div v-if="g1" class="opinion-mode-bar" :class="reportMode">
-                  分析意见 · 其他检查性试验：{{ reportMode === 'llm' ? '大模型撰写' : '固定模板' }}
-                </div>
                 <ReportCardG
                   v-if="g1"
                   :g1="g1"
@@ -731,9 +736,6 @@ watch(selectedDate, (d, prev) => {
           <button type="button" class="modal-x" @click="closeReport">×</button>
         </div>
         <div class="modal-body">
-          <div class="opinion-mode-bar modal-mode" :class="reportMode">
-            分析意见 · 其他检查性试验：{{ reportMode === 'llm' ? '大模型撰写' : '固定模板' }}
-          </div>
           <ReportCardG
             ref="fullReportRef"
             :g1="g1"

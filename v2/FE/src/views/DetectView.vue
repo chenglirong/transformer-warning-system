@@ -104,23 +104,22 @@ function tierBoundLabel(row, tierKey, shortLabel) {
   return `${shortLabel}≥${val}`;
 }
 
-/** 右侧三格下方一句人话，给值班员看懂「这是啥、为啥是这个值」 */
+/** 右侧三格下方短注：常态也写清含义，异常时点出状态 */
 const rateHint = computed(() => {
   const r = thcRel.value;
   const attn = thcRelAttention.value;
-  if (r == null)
-    return `相对产气速率；总烃参比不足时暂不计（注意值 ${attn}%/月）`;
+  if (r == null) return `总烃参比不足，暂不计（注意值 ${attn}%/月）`;
   if (r >= attn) return `已超注意值 ${attn}%/月`;
   return `未超注意值 ${attn}%/月`;
 });
 const preHint = computed(() => {
   if (isPre.value) {
-    return "含量档仍为正常/注意值1，但月环比已超注意值约 10%/月";
+    return "档位仍为正常/注意值1，但月环比已超 → 涨势预警";
   }
   if (rateRising.value) {
-    return "月环比已超，但当日档已达注意值2/告警 → 改看处置紧急度";
+    return "月环比已超，档已达注意值2/告警 → 改看处置紧急度";
   }
-  return `触发条件：档位仍为正常/注意值1，且月环比 ≥${thcRelAttention.value}%/月`;
+  return `触发需：档为正常/注意值1，且月环比 ≥${thcRelAttention.value}%/月`;
 });
 const urgencyLabel = computed(() => {
   if (urgency.value?.level) return urgency.value.level;
@@ -130,9 +129,9 @@ const urgencyLabel = computed(() => {
 const urgencyHint = computed(() => {
   if (urgency.value?.advice) return urgency.value.advice;
   if (["注意值2", "告警值"].includes(dayGrade.value)) {
-    return "已达注意值2/告警，正在研判急缓（涨势快→高，暂稳→中，仅H₂→低）";
+    return "已达注意值2/告警，按涨势快/暂稳/仅H₂判急缓";
   }
-  return "仅注意值2/告警时才判急缓；当前档位更低，故不适用";
+  return "仅注意值2/告警时研判；当前档更低，故不适用";
 });
 
 /** 抬到当日最高档的判据（可能多项并列） */
@@ -178,10 +177,10 @@ const gradeGuide = computed(() => {
         title: "告警 — 进入故障判型",
         tone: "alarm",
         lines: [
-          `当日最高档「告警值」，须查看三比值 / 大卫三角 / 特征气体结论。`,
+          "当日最高档「告警值」，已达故障判型门槛。",
           urgency.value?.level
-            ? `处置紧急度「${urgency.value.level}」等完整链路见 Agent 分析。`
-            : "完整监测链路与报告见 Agent 分析。",
+            ? `处置紧急度「${urgency.value.level}」。请查看三法结论，完整链路也可在 Agent 分析。`
+            : "请查看三比值 / 大卫三角 / 特征气体结论；完整链路也可在 Agent 分析。",
         ],
         cites: ["1498-表A3", "722-10.3"],
         action: { label: "去故障判型", name: "diagnose" },
@@ -193,10 +192,10 @@ const gradeGuide = computed(() => {
         title: "注意值2 — 进入故障判型",
         tone: "w2",
         lines: [
-          `当日最高档「注意值2」，已达故障判型门槛。`,
+          "当日最高档「注意值2」，已达故障判型门槛。",
           isPre.value || rateRising.value
             ? "月环比亦已偏高，请先查看三法结论。"
-            : "请进入故障判型查看三法结论。",
+            : "请进入故障判型查看三法结论；监测决策与报告见 Agent。",
         ],
         cites: ["1498-表A3", "722-10.3"],
         action: { label: "去故障判型", name: "diagnose" },
@@ -208,7 +207,7 @@ const gradeGuide = computed(() => {
       tone: "pre",
       lines: [
         `含量档「${g}」，但总烃月环比 ≥${thcRelAttention.value}%/月。`,
-        "已达故障判型门槛，可进入故障判型。",
+        "档未到注意值2也按双门槛进入故障判型，请查看三法结论。",
       ],
       cites: ["722-9.3.2", "722-10.3"],
       action: { label: "去故障判型", name: "diagnose" },
@@ -221,8 +220,8 @@ const gradeGuide = computed(() => {
       title: "注意值1 — 加强监视",
       tone: "w1",
       lines: [
-        "已达注意1，尚未达故障判型门槛（注意值2 / 告警 / 涨势预警）。",
-        "当日不做故障判型，可在 Agent 分析查看完整监测链路。",
+        "已达注意值1，尚未达故障判型门槛（注意值2 / 告警 / 涨势预警）。",
+        "当日不做故障判型；可在 Agent 分析查看监测决策与报告。",
       ],
       cites: ["1498-表A3", "722-9.3.3"],
       action: { label: "去 Agent 分析", name: "agent" },
@@ -234,8 +233,8 @@ const gradeGuide = computed(() => {
     title: "正常 — 维持常规监视",
     tone: "normal",
     lines: [
-      "七项均在正常范围，未触发涨势预警。",
-      "当日不做故障判型，可在 Agent 分析查看完整监测链路。",
+      "七项均在正常范围，且未触发涨势预警。",
+      "当日不做故障判型；可在 Agent 分析查看完整监测链路。",
     ],
     cites: ["1498-表A3", "722-10.2.4a"],
     action: { label: "去 Agent 分析", name: "agent" },
@@ -305,7 +304,7 @@ async function loadSeries() {
       return;
     }
     const q = typeof route.query.date === "string" ? route.query.date : "";
-    const fallback = res.summary?.date_range?.[1] || series.value.at(-1)?.date;
+    const fallback = res.summary?.default_date || series.value.at(-1)?.date;
     selectedDate.value =
       q && series.value.some((s) => s.date === q) ? q : fallback;
   } catch (e) {

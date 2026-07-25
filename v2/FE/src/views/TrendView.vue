@@ -289,12 +289,12 @@ onBeforeUnmount(() => {
         <div class="kpi-v" :class="{ hot: latestOver }">
           {{ summary.latest_rate ?? '—' }}<span class="u">%/月</span>
         </div>
-        <div class="kpi-s">最新日 · 注意线 {{ thcAttention }}%/月 <StdCite ref-id="722-9.3.2" label="§9.3.2" inline /></div>
+        <div class="kpi-s">注意线 {{ thcAttention }}%/月 <StdCite ref-id="722-9.3.2" label="§9.3.2" inline /></div>
       </div>
       <div class="kpi">
         <div class="kpi-k">涨势预警</div>
         <div class="kpi-v pre">{{ summary.pre_count ?? 0 }}<span class="u">次</span></div>
-        <div class="kpi-s">全年触发次数（档位正常/注意值1，且月环比超注意值）</div>
+        <div class="kpi-s">全年触发</div>
       </div>
     </div>
 
@@ -322,17 +322,13 @@ onBeforeUnmount(() => {
       </div>
       <div class="gp-body">
         <div ref="rateEl" class="chart-tall" />
-        <div class="formula-bar">
-          <span class="f-label">相对产气速率</span>
-          <span class="f-mono">γ<sub>r</sub> = (C<sub>2</sub> − C<sub>1</sub>) / C<sub>1</sub> × 100%　·　Δt = 1 月（今 vs {{ lookback }} 天前）</span>
-        </div>
       </div>
     </section>
 
     <section class="gp pre-panel">
         <div class="gp-head">
           涨势预警列表
-          <span class="head-ref">共 {{ preSorted.length }} 条 · 点击同步高亮曲线</span>
+          <span class="head-ref">{{ preSorted.length }} 条</span>
         </div>
         <div class="table-wrap table-wrap--compact">
           <table class="dga-table">

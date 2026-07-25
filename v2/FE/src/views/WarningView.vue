@@ -241,27 +241,22 @@ onMounted(loadRecords)
       <div class="kpi">
         <div class="kpi-k">正常</div>
         <div class="kpi-v normal">{{ counts['正常'] ?? 0 }}</div>
-        <div class="kpi-s">天 · 共 {{ summary.total_days ?? 0 }} 天流水</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">注意值 1</div>
         <div class="kpi-v w1">{{ counts['注意值1'] ?? 0 }}</div>
-        <div class="kpi-s">天</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">注意值 2</div>
         <div class="kpi-v w2">{{ counts['注意值2'] ?? 0 }}</div>
-        <div class="kpi-s">天 · 达注意值2，结合产气速率研判</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">告警值</div>
         <div class="kpi-v alarm">{{ counts['告警值'] ?? 0 }}</div>
-        <div class="kpi-s">天</div>
       </div>
       <div class="kpi">
         <div class="kpi-k">涨势预警</div>
         <div class="kpi-v pre">{{ summary.pre_count ?? 0 }}</div>
-        <div class="kpi-s">档位正常/注意值1，且总烃月环比超注意值</div>
       </div>
     </div>
 
@@ -307,10 +302,10 @@ onMounted(loadRecords)
               <th class="col-date">日期</th>
               <th class="col-level">当日最高档</th>
               <th class="col-urg" title="注意值2+ 结合月环比判急不急">处置紧急度</th>
-              <th class="col-hits">超标判据（表A.3）</th>
+              <th class="col-hits">超标判据</th>
               <th class="col-rate" title="DL/T 722 §9.3.2 总烃相对产气速率；与表A.3 周增率不是同一套">总烃月环比</th>
               <th class="col-pre" title="档位正常/注意值1 且月环比超 10%/月">涨势预警</th>
-              <th class="col-diag" title="特征气体法 / 三比值法 / 大卫三角 → 融合结论">故障类型</th>
+              <th class="col-diag" title="特征气体法 / 三比值法 / 大卫三角 → 交叉研判结论">故障类型</th>
               <th class="col-conf">可信度</th>
               <th class="col-actions">操作</th>
             </tr>

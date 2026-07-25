@@ -116,6 +116,7 @@ const GAS_ROWS = [
       </div>
 
       <table class="g1-table">
+        <tbody>
         <!-- 铭牌行 1 -->
         <tr>
           <td class="g1-lbl">型号</td>
@@ -302,6 +303,7 @@ const GAS_ROWS = [
             <td class="g1-val" colspan="8" :class="{ empty: !g2.fault_records }">{{ cell(g2.fault_records) }}</td>
           </tr>
         </template>
+        </tbody>
       </table>
 
       <p v-if="g1.empty_note || g1.thc_gassing_rate_note || (showG2 && g2?.note)" class="g1-foot-note">
