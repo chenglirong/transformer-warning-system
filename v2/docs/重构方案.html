@@ -136,7 +136,7 @@
     <tbody>
       <tr><td class="k">主线</td><td class="old">时序预测（LSTM / ARIMA）</td><td class="new"><b>检测 + 辅助诊断 + 告警</b>（成链）</td></tr>
       <tr><td class="k">数据适配</td><td class="old">743 条<b>无时间戳</b>快照，难支撑预测</td><td class="new">快照天然适合分析</td></tr>
-      <tr><td class="k">方法论</td><td class="old">单一模型精度比拼</td><td class="new"><b>多方法融合</b>：诊断三方交叉（三比值/Duval/特征气体）</td></tr>
+      <tr><td class="k">方法论</td><td class="old">单一模型精度比拼</td><td class="new"><b>多方法交叉研判</b>：诊断三方交叉（三比值/Duval/特征气体）</td></tr>
       <tr><td class="k">创新点</td><td class="old">算法对比</td><td class="new"><b>Agent 编排</b>整条分析全链路</td></tr>
     </tbody>
   </table>
@@ -159,7 +159,7 @@
     <div class="agentbox" style="width:auto; flex:1.1;">
       <div class="hd">Agent 对每一天</div>
       <div class="step"><span class="k">① 检测 = 分级</span>　表A.3 四档全报 + 处置紧急度研判（产气速率 §9.3.3）</div>
-      <div class="step"><span class="k">② 辅助诊断</span>　三比值/Duval/特征气体 三方融合看倾向（仅注意值2及以上触发）</div>
+      <div class="step"><span class="k">② 辅助诊断</span>　三比值/Duval/特征气体 多方法交叉研判（仅注意值2及以上触发）</div>
       <div class="step"><span class="k">③ 趋势</span>　产气速率展示 +「预」的提前预警</div>
       <div class="out">四档档位 + 处置紧急度研判 + 辅助倾向 + 趋势</div>
     </div>
@@ -285,7 +285,7 @@
       <tr><td class="k">油和纸中电弧</td><td>H₂、C₂H₂、C₂H₄、CO</td><td>CH₄、C₂H₆、CO₂</td></tr>
     </tbody>
   </table>
-  <div class="fn"><b>三种诊断方法之一</b>　辅助诊断=<b>多方融合</b>看倾向是否一致（特征气体法 + 三比值 + Duval），「多方法融合」是贯穿全系统的方法论主线。输出「倾向XXX特征」</div>
+  <div class="fn"><b>三种诊断方法之一</b>　辅助诊断=<b>多方法交叉研判</b>看倾向是否一致（特征气体法 + 三比值 + Duval），「多方法交叉研判」是贯穿全系统的方法论主线。输出「倾向XXX特征」</div>
   <div class="std">DL/T 722-2014 §10.1 表5（原文逐格）</div>
 </section>
 

@@ -50,3 +50,7 @@ htmlcov/
 # 运行日志
 v2/BE/backend.log
 v2/FE/frontend.log
+
+# 论文/总结产出(不入库)
+v2/docs/论文初稿.docx
+v2/docs/项目总结/
