@@ -1,7 +1,7 @@
 """检测模块路由(薄层:HTTP + 读库,业务判定全在 algorithms/detect)。
 
 接口:
-  GET /api/detect/series   —— 全年逐日档位(日历色带)
+  GET /api/detect/series   —— 全年日历色带(检测/判型/Agent 共用)
   GET /api/detect/day/{date} —— 单日检测详情(档位 + 判据 + 产气速率研判)
 """
 from __future__ import annotations
@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.algorithms.detect.grade import detect
 from app.algorithms.detect.thresholds import THC_REL_RATE_ATTENTION
+from app.algorithms.diagnose.pipeline import can_diagnose
 from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
@@ -31,19 +32,31 @@ def _load_df(db: Session) -> pd.DataFrame:
     ])
 
 
-@router.get("/series", summary="全年逐日档位(日历色带)")
+@router.get("/series", summary="全年日历色带(检测/判型/Agent 共用)")
 def detect_series(db: Session = Depends(get_db)):
-    """全年逐日档位,供日历色带选日。"""
+    """全年逐日档位 + 涨势预警;供检测/判型/Agent 日历色带共用。"""
     df = _load_df(db)
     if df.empty:
         return fail("无监测数据,请先跑 synthesize_data + import_data")
     results = detect(df)
 
-    series = [{"date": r["date"], "grade": r["grade"]} for r in results]
-    summary = {
-        "date_range": [series[0]["date"], series[-1]["date"]],
-    }
-    return ok({"series": series, "summary": summary})
+    series = []
+    eligible_dates = []
+    for r in results:
+        rate_rising = bool(r.get("rate_rising"))
+        series.append({
+            "date": r["date"],
+            "grade": r["grade"],
+            "is_pre": bool(r.get("is_pre")),
+        })
+        if can_diagnose(r["grade"], rate_rising=rate_rising):
+            eligible_dates.append(r["date"])
+
+    default_date = eligible_dates[-1] if eligible_dates else series[-1]["date"]
+    return ok({
+        "series": series,
+        "summary": {"default_date": default_date},
+    })
 
 
 @router.get("/day/{day}", summary="单日检测详情")

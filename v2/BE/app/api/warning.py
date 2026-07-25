@@ -154,10 +154,8 @@ def warning_records(db: Session = Depends(get_db)):
         })
 
     summary = {
-        "total_days": len(results),
         "grade_counts": {g: counts.get(g, 0) for g in GRADES},
         "pre_count": pre_n,
-        "date_range": [results[0]["date"], results[-1]["date"]] if results else None,
     }
     return ok({"records": records, "summary": summary})
 

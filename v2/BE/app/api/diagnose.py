@@ -1,8 +1,9 @@
 """故障类型判断路由(薄层:HTTP + 读库,判型全在 algorithms/diagnose)。
 
 接口:
-  GET /api/diagnose/series      —— 全年档位色带(注意值2+ 或 速率超/「预」选默认为可判型日)
-  GET /api/diagnose/day/{day}   —— 单日三方法 + 融合结论
+  GET /api/diagnose/day/{day}   —— 单日三方法 + 交叉研判结论
+
+日历色带共用 GET /api/detect/series。
 """
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.algorithms.detect.grade import detect
-from app.algorithms.diagnose.pipeline import can_diagnose, diagnose_sample
+from app.algorithms.diagnose.pipeline import diagnose_sample
 from app.core.response import fail, ok
 from app.db.models import Monitoring
 from app.db.session import get_db
@@ -33,37 +34,6 @@ def _load_df(db: Session) -> pd.DataFrame:
         }
         for r in rows
     ])
-
-
-@router.get("/series", summary="全年逐日:档位 + 涨势预警标记(日历色带)")
-def diagnose_series(db: Session = Depends(get_db)):
-    """全年逐日:档位 + 涨势预警标记(供日历色带)。"""
-    df = _load_df(db)
-    if df.empty:
-        return fail("无监测数据,请先跑 synthesize_data + import_data")
-    results = detect(df)
-
-    series = []
-    for r in results:
-        rate_rising = bool(r.get("rate_rising"))
-        series.append({
-            "date": r["date"],
-            "grade": r["grade"],
-            "is_pre": bool(r.get("is_pre")),
-            "eligible": can_diagnose(r["grade"], rate_rising=rate_rising),
-        })
-
-    # 默认选最近一个可判型日;若无则选最后一天(前端展示门槛提示)
-    default = next((s for s in reversed(series) if s["eligible"]), series[-1])
-    # 日历不需要 eligible;仅 summary 留 default_date
-    public = [{"date": s["date"], "grade": s["grade"], "is_pre": s["is_pre"]} for s in series]
-
-    return ok({
-        "series": public,
-        "summary": {
-            "default_date": default["date"],
-        },
-    })
 
 
 @router.get("/day/{day}", summary="单日故障类型判断")

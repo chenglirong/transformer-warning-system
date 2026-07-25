@@ -18,8 +18,6 @@ from app.algorithms.agent.report_export import (
     build_report_filename,
     content_disposition,
 )
-from app.algorithms.detect.grade import detect
-from app.algorithms.diagnose.pipeline import can_diagnose
 from app.algorithms.knowledge.refs import REFS
 from app.core.response import fail, ok
 from app.db.models import Monitoring
@@ -49,32 +47,11 @@ def _load_df(db: Session) -> pd.DataFrame:
     ])
 
 
-@router.get("/series", summary="选日列表:档位色带 + 默认可判型日")
-def agent_series(db: Session = Depends(get_db)):
-    """选日列表:档位色带;默认落最近可进判型日。"""
-    df = _load_df(db)
-    if df.empty:
-        return fail("无监测数据,请先跑 synthesize_data + import_data")
-    results = detect(df)
-    series = []
-    eligible_dates = []
-    for r in results:
-        rate_rising = bool(r.get("rate_rising"))
-        series.append({"date": r["date"], "grade": r["grade"]})
-        if can_diagnose(r["grade"], rate_rising=rate_rising):
-            eligible_dates.append(r["date"])
-    default_date = eligible_dates[-1] if eligible_dates else series[-1]["date"]
-    return ok({
-        "series": series,
-        "summary": {"default_date": default_date},
-    })
-
-
 @router.get("/knowledge", summary="判据库清单(静态)")
 def agent_knowledge():
     """模块5 判据库清单(静态)。"""
     items = [{"id": k, **v} for k, v in REFS.items()]
-    return ok({"items": items, "count": len(items)})
+    return ok({"items": items})
 
 
 @router.get("/status", summary="Agent B LLM 可用状态")
@@ -136,54 +113,4 @@ def agent_export_pdf(body: ReportExportIn):
             "Content-Disposition": content_disposition(filename),
             "Content-Length": str(len(content)),
         },
-    )
-
-
-@router.get("/report/word", summary="下载分析报告 Word（按日重跑 Agent，较慢）")
-def agent_report_word(
-    day: str = Query(..., description="ISO 日期 YYYY-MM-DD"),
-    force_template: bool = Query(False, description="强制 Agent B 走规则模板"),
-    db: Session = Depends(get_db),
-):
-    df = _load_df(db)
-    if df.empty:
-        return fail("无监测数据")
-    try:
-        result = run_agent(df, day, force_template=force_template)
-    except ValueError as e:
-        return fail(str(e), code=404)
-    g1 = result.get("g1")
-    if not g1:
-        return fail("未生成报告卡片")
-    filename = f"{build_report_filename(g1, day)}.docx"
-    content = build_docx_bytes(g1, result.get("g2"))
-    return Response(
-        content=content,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": content_disposition(filename)},
-    )
-
-
-@router.get("/report/pdf", summary="下载分析报告 PDF")
-def agent_report_pdf(
-    day: str = Query(..., description="ISO 日期 YYYY-MM-DD"),
-    force_template: bool = Query(False, description="强制 Agent B 走规则模板"),
-    db: Session = Depends(get_db),
-):
-    df = _load_df(db)
-    if df.empty:
-        return fail("无监测数据")
-    try:
-        result = run_agent(df, day, force_template=force_template)
-    except ValueError as e:
-        return fail(str(e), code=404)
-    g1 = result.get("g1")
-    if not g1:
-        return fail("未生成报告卡片")
-    filename = f"{build_report_filename(g1, day)}.pdf"
-    content = build_pdf_bytes(g1, result.get("g2"))
-    return Response(
-        content=content,
-        media_type="application/pdf",
-        headers={"Content-Disposition": content_disposition(filename)},
     )

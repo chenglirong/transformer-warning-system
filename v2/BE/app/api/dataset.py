@@ -29,8 +29,4 @@ def dataset_records(db: Session = Depends(get_db)):
         }
         for r in reversed(rows)
     ]
-    return ok({
-        "records": records,
-        "total": len(records),
-        "date_range": [records[0]["date"], records[-1]["date"]],
-    })
+    return ok({"records": records})

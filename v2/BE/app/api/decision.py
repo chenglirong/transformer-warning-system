@@ -109,7 +109,6 @@ def decision_overview(db: Session = Depends(get_db)):
             rate_rising=rate_rising,
         )
 
-        trials = decision.get("trials") or []
         pk = classify_period_kind(decision["period"])
         rk = classify_resample_kind(decision["resample"])
         urg = urgency or {}
@@ -120,7 +119,6 @@ def decision_overview(db: Session = Depends(get_db)):
             "date": r["date"],
             "grade": grade,
             "is_pre": is_pre,
-            "rate_rising": rate_rising,
             "thc_rel_rate": r.get("thc_rel_rate"),
             "urgency_level": urg.get("level"),
             "urgency_rising": urg.get("rising"),
@@ -133,7 +131,6 @@ def decision_overview(db: Session = Depends(get_db)):
             "resample": decision["resample"],
             "resample_kind": rk,
             "other_tests": _other_tests_list(decision),
-            "trials_count": len(trials),
             "decision_log": decision["log"],
         })
 
@@ -146,8 +143,6 @@ def decision_overview(db: Session = Depends(get_db)):
         "period_counts": {k: period_counts.get(k, 0) for k in PERIOD_KINDS},
         "resample_counts": {k: resample_counts.get(k, 0) for k in RESAMPLE_KINDS},
         "trials_count": trials_n,
-        "date_range": [records[0]["date"], records[-1]["date"]] if records else None,
-        "latest_date": records[-1]["date"] if records else None,
     }
 
     return ok({
