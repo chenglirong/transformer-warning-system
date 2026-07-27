@@ -102,7 +102,7 @@ def decide_c(
         # 注意值2 / 告警值
         if urgency and urgency.get("level") == "低":
             period = "保持基线并加强监视(≤12h)"
-            period_why = "紧急度低（如仅氢气偏高且未上涨），暂不强制缩周期"
+            period_why = "紧急度低：仅 H₂ 超标且产气速率未超，档位如实，加强监视"
             cite_period = "722-9.3.3"
             fire(
                 f"档位={grade} 且紧急度低",
@@ -150,15 +150,21 @@ def decide_c(
                 "resample",
             )
 
-        trials_note = f" · 其他检查性试验 {len(measures)} 项" if measures else ""
-        if measures:
+        trials_note = ""
+        log = f"采集周期 {period} · 二次采样：{resample}"
+
+    if measures:
+        action = f"其他检查性试验 {len(measures)} 项"
+        if not any(t.get("field") == "trials" for t in trajectory):
             fire(
-                f"已进入判型 · 性质={(fusion or {}).get('measures_nature_label') or '—'}",
-                f"其他检查性试验 {len(measures)} 项",
+                f"试验建议",
+                action,
                 "722-附录D",
                 "trials",
             )
-        log = f"采集周期 {period} · 二次采样：{resample}{trials_note}"
+        trials_note = f" · 检查性试验 {len(measures)} 项"
+        if trials_note not in log:
+            log += trials_note
 
     measures_purpose = (fusion or {}).get("measures_purpose") or (
         "verify" if conf == "低" else "recommend"

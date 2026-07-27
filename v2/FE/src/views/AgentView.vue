@@ -22,9 +22,6 @@ const reportReady = ref(false)
 const modalOpen = ref(false)
 const fullReportRef = ref(null)
 const downloadBusy = ref(false)
-/** 有密钥默认大模型;对比演示时可强制模板。无密钥则后端自动降模板 */
-const forceTemplateOnce = ref(false)
-const llmStatus = ref({ llm_enabled: false, model: null, hint: '' })
 
 const STEPS_META = [
   { icon: '1' },
@@ -116,11 +113,9 @@ const agentTrials = computed(() => {
 const reportMode = computed(() => result.value?.mode || 'rule_template')
 const modeLabel = computed(() => (reportMode.value === 'llm' ? '大模型撰写' : '固定模板'))
 const modeHint = computed(() => {
-  if (reportMode.value === 'llm') {
-    return `分析意见由大模型撰写 · ${llmStatus.value.model || '已配置模型'}`
-  }
+  if (reportMode.value === 'llm') return '分析意见由大模型撰写'
   const note = result.value?.opinion_note || result.value?.note
-  return note || '规则模板成稿（未配置密钥、强制对比或校验降级）'
+  return note || '规则模板成稿（未配置密钥或校验降级）'
 })
 
 const progressPct = computed(() => {
@@ -196,49 +191,21 @@ function nowTs() {
   return `${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`
 }
 
-/** 日志结论：标签已表流程类型，正文只展示结果 */
-function logResult(msg) {
-  return String(msg || '').replace(/^(→|->)\s*/, '').trim()
-}
-
-/** 仅「未启动/不适用」(skipped) 置灰；涨势相关(预警/涨势快)统一紫色 */
-function inferSeverity(step) {
-  if (step?.skipped) return 'muted'
-  const id = step?.id || ''
-  const d = step?.detail || {}
-  if (id === 'input') return 'detect'
-  if (id === 'grade') return gradeTone(d.grade)
-  if (id === 'urgency') {
-    const lv = d.urgency?.level
-    if (lv === '高') return 'alarm'
-    if (lv === '中') return 'w2'
-    if (lv === '低') return 'w1'
-    return 'detect'
+/** 后端 log_lines → 前端展示行（补 ts，统一 camelCase） */
+function normalizeLogLine(line) {
+  return {
+    id: line.id,
+    tag: line.tag,
+    severity: line.severity || 'muted',
+    cite: line.cite ?? null,
+    citeIds: line.cite_ids ?? line.citeIds ?? [],
+    cat: line.cat,
+    msg: line.msg,
+    highlight: Boolean(line.highlight),
+    conclusionTone: line.conclusion_tone ?? line.conclusionTone,
+    showCite: line.show_cite ?? line.showCite ?? false,
+    ts: nowTs(),
   }
-  if (id === 'diagnose') {
-    const diag = d.diagnosis || {}
-    if (!diag.triggered) return 'muted'
-    const conf = diag.fusion?.confidence || d.fusion?.confidence
-    if (conf === '低') return 'w1'
-    if (conf === '高') return 'w2'
-    return 'diag'
-  }
-  if (id === 'trend') {
-    // 产气趋势固定紫色，不跟档位/紧急度变色
-    return 'trend'
-  }
-  if (id === 'decide') {
-    // 监测决策固定色,不跟档位/涨势变
-    return 'agent'
-  }
-  if (id === 'report') return 'report'
-  return 'detect'
-}
-
-function gradeTone(g) {
-  return ({
-    正常: 'normal', 注意值1: 'w1', 注意值2: 'w2', 告警值: 'alarm',
-  })[g] || 'muted'
 }
 
 /** 监测决策面板固定色 */
@@ -253,15 +220,6 @@ async function loadSeries() {
   const q = typeof route.query.date === 'string' ? route.query.date : ''
   const fallback = res.summary?.default_date || series.value.at(-1)?.date
   selectedDate.value = (q && series.value.some((s) => s.date === q)) ? q : fallback
-}
-
-async function loadLlmStatus() {
-  try {
-    const res = await http.get('/agent/status')
-    llmStatus.value = res || { llm_enabled: false }
-  } catch {
-    llmStatus.value = { llm_enabled: false, hint: '状态接口不可用' }
-  }
 }
 
 function wantsOpenReport() {
@@ -308,12 +266,6 @@ function resetUi() {
  * @param {{ animate?: boolean, openReport?: boolean }} opts
  * animate=false：跳过逐步播放，立刻铺满步骤/日志（告警深链用）
  */
-async function runWithTemplate() {
-  if (running.value || !selectedDate.value) return
-  forceTemplateOnce.value = true
-  await runAgent()
-}
-
 async function runAgent(opts = {}) {
   const animate = opts.animate !== false
   const openAfter = Boolean(opts.openReport)
@@ -321,86 +273,101 @@ async function runAgent(opts = {}) {
   running.value = true
   resetUi()
   try {
-    const forceTpl = forceTemplateOnce.value
-    forceTemplateOnce.value = false
     const data = await http.get('/agent/run', {
       day: selectedDate.value,
-      force_template: forceTpl,
     })
-    result.value = data
-    if (animate) {
-      await playSteps(data.steps || [])
-    } else {
-      applyStepsInstant(data.steps || [])
-    }
-    reportReady.value = true
-    if (openAfter) modalOpen.value = true
+    await applyAgentPayload(data, { animate, openReport: openAfter })
   } catch (e) {
     result.value = null
     reportReady.value = false
     logs.value.push({
       ts: nowTs(),
-      label: '错误',
+      cat: '错误',
       tag: 'agent',
+      severity: 'alarm',
       msg: e?.message || String(e),
       cite: null,
       citeIds: [],
+      showCite: false,
     })
   } finally {
     running.value = false
   }
 }
 
-function applyStepsInstant(list) {
-  logs.value = []
-  for (const s of list) {
-    logs.value.push(makeLogLine(s))
+/** 将编排结果灌入主界面 */
+async function applyAgentPayload(data, opts = {}) {
+  const animate = opts.animate !== false
+  const openAfter = Boolean(opts.openReport)
+  if (!data) return
+  if (data.date) selectedDate.value = data.date
+  result.value = data
+  if (animate) {
+    await playSteps(data.steps || [], data.log_lines || [])
+  } else {
+    applyStepsInstant(data.log_lines || [])
   }
-  doneUpTo.value = list.length
+  reportReady.value = true
+  if (openAfter) modalOpen.value = true
+}
+
+function applyStepsInstant(logLines) {
+  logs.value = (logLines || []).map(normalizeLogLine)
+  doneUpTo.value = (result.value?.steps || []).length
   activeIdx.value = -1
 }
 
-async function playSteps(list) {
-  for (let i = 0; i < list.length; i++) {
+async function playSteps(steps, logLines) {
+  const all = logLines || []
+  for (let i = 0; i < steps.length; i++) {
     if (i > 0) doneUpTo.value = i
     activeIdx.value = i
-    logs.value.push(makeLogLine(list[i]))
-    await nextTick()
-    const el = document.getElementById('agent-log')
-    if (el) el.scrollTop = el.scrollHeight
-    await sleep(i === list.length - 1 ? 700 : 550)
+    const stepId = steps[i].id
+    const subLines = all.filter((l) => l.id === stepId).map(normalizeLogLine)
+    for (let j = 0; j < subLines.length; j++) {
+      logs.value.push({ ...subLines[j], ts: nowTs() })
+      await nextTick()
+      const el = document.getElementById('agent-log')
+      if (el) el.scrollTop = el.scrollHeight
+      const lastSub = j === subLines.length - 1
+      const lastStep = i === steps.length - 1
+      const delay = lastSub ? (lastStep ? 450 : 320) : 90
+      await sleep(delay)
+    }
   }
-  doneUpTo.value = list.length
+  doneUpTo.value = steps.length
   activeIdx.value = -1
 }
 
-function makeLogLine(s) {
-  const citeIds = s.skipped
-    ? []
-    : (Array.isArray(s.cite_ids) && s.cite_ids.length
-      ? [...new Set(s.cite_ids)]
-      : (s.cite?.id ? [s.cite.id] : []))
-  return {
-    ts: nowTs(),
-    id: s.id,
-    label: s.label,
-    tag: s.tag,
-    severity: inferSeverity(s),
-    msg: logResult(s.log),
-    cite: s.skipped ? null : s.cite,
-    citeIds,
-  }
+/** 行级色调（后端 conclusion_tone / severity） */
+function logRowTone(line) {
+  return line?.conclusionTone || line?.severity || 'muted'
 }
 
-/** 气体日志：单位缩小挂在数值后 */
+/** 流式日志 HTML：前缀置灰，结论加亮（v-html 内用 tone-*，配合 :deep） */
 function formatLogHtml(line) {
   const raw = String(line?.msg || '')
   const esc = raw
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-  if (line?.id !== 'input' && line?.label !== '当日气体') return esc
-  return esc.replace(/µL\/L|μL\/L/g, '<span class="gas-unit">µL/L</span>')
+  const withUnit = (line?.id === 'input' || line?.cat === '气体')
+    ? esc.replace(/µL\/L|μL\/L/g, '<span class="gas-unit">µL/L</span>')
+    : esc
+  const isGas = line?.id === 'input' || line?.cat === '气体'
+  const toneCls = isGas ? '' : ` tone-${logRowTone(line)}`
+
+  const arrowIdx = withUnit.indexOf('→')
+  if (arrowIdx >= 0) {
+    const head = withUnit.slice(0, arrowIdx)
+    const tail = withUnit.slice(arrowIdx + 1).trim()
+    return `<span class="msg-dim">${head}</span><span class="msg-arrow">→</span><span class="msg-result${toneCls}">${tail}</span>`
+  }
+
+  if (line?.highlight) {
+    return `<span class="msg-result${toneCls}">${withUnit}</span>`
+  }
+  return withUnit
 }
 
 function sleep(ms) {
@@ -443,7 +410,7 @@ const bootReady = ref(false)
 
 onMounted(async () => {
   try {
-    await Promise.all([loadSeries(), loadLlmStatus()])
+    await loadSeries()
   } finally {
     loading.value = false
   }
@@ -472,8 +439,6 @@ watch(selectedDate, (d, prev) => {
   if (wantsOpenReport()) return // 深链流程自己会跑
   resetUi()
 })
-
-// 大模型开关变更：不自动跑；已有结果时提示需手动重跑即可（开关旁按钮）
 </script>
 
 <template>
@@ -507,29 +472,12 @@ watch(selectedDate, (d, prev) => {
           </div>
         </div>
         <div class="actions">
-          <span v-if="reportReady" class="mode-pill" :class="reportMode" :title="modeHint">
-            {{ reportMode === 'llm' ? '大模型撰写' : '固定模板' }}
-          </span>
-          <span
-            v-else-if="llmStatus.llm_enabled"
-            class="mode-hint"
-            :title="`模型 ${llmStatus.model || '—'} · 失败自动降模板`"
-          >大模型可用</span>
-          <span v-else class="mode-hint" :title="llmStatus.hint || ''">固定模板</span>
-          <button type="button" class="btn btn-ghost" :disabled="!reportReady" @click="openReport">
+          <button type="button" class="btn btn-action" :disabled="!reportReady" @click="openReport">
             完整报告
           </button>
           <button type="button" class="btn btn-primary" :disabled="running || !selectedDate" @click="runAgent()">
             {{ running ? '运行中…' : reportReady ? '重新运行' : '运行分析' }}
           </button>
-          <button
-            v-if="llmStatus.llm_enabled"
-            type="button"
-            class="btn-link"
-            :disabled="running || !selectedDate"
-            title="答辩对比用：强制走规则模板文书"
-            @click="runWithTemplate"
-          >固定模板对比</button>
         </div>
       </div>
     </div>
@@ -544,13 +492,13 @@ watch(selectedDate, (d, prev) => {
           <div class="v-pipeline">
             <div
               v-for="(s, i) in (steps.length ? steps : [
-                { label: '当日气体', sub: '七气浓度（μL/L）' },
-                { label: '四档分级', sub: 'DL/T 1498.2 表 A.3' },
-                { label: '产气趋势', sub: '722 §9.3.2 总烃月环比' },
-                { label: '处置紧急度', sub: '注意值2+/告警 · §9.3.3' },
-                { label: '故障类型', sub: '三比值法 · Duval · 特征气体' },
+                { label: '当日气体', sub: '七气浓度' },
+                { label: '分级检测', sub: '浓度 · 增量 · 增速综合分档' },
+                { label: '产气趋势', sub: '总烃月环比与涨势判断' },
+                { label: '处置紧急度', sub: '高 / 中 / 低紧急度' },
+                { label: '故障判型', sub: '三法交叉研判' },
                 { label: '监测决策', sub: '检测周期 · 二次采样 · 试验建议' },
-                { label: '生成报告', sub: '附录 G 档案卡片 · 分析意见' },
+                { label: '生成报告', sub: '档案卡片与分析意见' },
               ])"
               :key="i"
               class="v-step"
@@ -586,21 +534,23 @@ watch(selectedDate, (d, prev) => {
         <section class="gp log-panel">
           <div class="gp-head">
             运行日志
+            <span class="head-hint-flow">依据</span>
           </div>
-          <div id="agent-log" class="gp-body log-body">
+          <div id="agent-log" class="gp-body log-body log-stream">
             <div v-if="!logs.length" class="log-empty">点击「运行分析」查看逐步结论</div>
-            <div v-for="(line, i) in logs" :key="i" class="log-line" :class="'sev-' + (line.severity || 'muted')">
+            <div
+              v-for="(line, i) in logs"
+              :key="i"
+              class="log-row"
+              :class="[
+                'sev-' + logRowTone(line),
+                { 'log-gas': line.cat === '气体' },
+              ]"
+            >
               <span class="ts">{{ line.ts }}</span>
-              <span class="tag" :class="line.tag">{{ line.label }}</span>
-              <span class="msg">
-                <span class="msg-arrow">→</span>
-                <span
-                  class="msg-result"
-                  :class="'tone-' + (line.severity || 'muted')"
-                  v-html="formatLogHtml(line)"
-                />
-              </span>
-              <span v-if="line.citeIds?.length" class="log-cites">
+              <span class="cat">[{{ line.cat }}]</span>
+              <span class="msg" v-html="formatLogHtml(line)" />
+              <span v-if="line.showCite && line.citeIds?.length" class="log-cites">
                 <StdCite
                   v-for="cid in line.citeIds"
                   :key="cid"
@@ -779,6 +729,16 @@ watch(selectedDate, (d, prev) => {
 .cal-legend .lg.normal { background: var(--lv-normal); }
 .meta { font-size: 12px; color: var(--fg-3); }
 .actions { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+.btn-action {
+  background: rgba(45, 212, 191, 0.08);
+  color: var(--teal-2);
+  border-color: rgba(45, 212, 191, 0.45);
+}
+.btn-action:hover:not(:disabled) {
+  background: rgba(45, 212, 191, 0.14);
+  color: var(--teal-2);
+  box-shadow: 0 0 12px rgba(45, 212, 191, 0.2);
+}
 .btn.mini { padding: 2px 8px; font-size: 10px; height: auto; }
 
 .agent-layout {
@@ -792,7 +752,12 @@ watch(selectedDate, (d, prev) => {
   .agent-layout { grid-template-columns: 1fr; }
 }
 
-.flow-panel { display: flex; flex-direction: column; min-height: 0; }
+.flow-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: calc(100vh - 200px);
+}
 .flow-body {
   display: flex; flex-direction: column; gap: 12px;
   padding: 14px 12px !important;
@@ -897,80 +862,79 @@ watch(selectedDate, (d, prev) => {
   font-family: 'JetBrains Mono', monospace;
 }
 .log-body {
-  max-height: 360px; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 8px;
-  font-size: 12px;
+  max-height: 360px;
+  overflow-y: auto;
 }
-.log-empty { color: var(--fg-4); padding: 20px 0; text-align: center; }
-.log-line {
+.log-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  line-height: 1.45;
+  background: var(--bg-2);
+}
+.log-empty {
+  color: var(--fg-4);
+  padding: 20px 0;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+.log-row {
   display: grid;
-  grid-template-columns: 54px auto 1fr minmax(7em, auto);
-  gap: 8px; align-items: start;
-  padding: 8px 10px; border-radius: 6px; background: var(--bg-3);
-  border-left: 3px solid transparent;
+  grid-template-columns: 54px auto 1fr minmax(6em, auto);
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 4px;
+  border-left: 2px solid transparent;
 }
-.log-line.sev-normal { border-left-color: var(--lv-normal); }
-.log-line.sev-w1 { border-left-color: var(--lv-w1); }
-.log-line.sev-w2 { border-left-color: var(--lv-w2); }
-.log-line.sev-alarm { border-left-color: var(--lv-alarm); }
-.log-line.sev-pre { border-left-color: var(--lv-pre); }
-.log-line.sev-trend { border-left-color: var(--lv-pre); }
-.log-line.sev-diag { border-left-color: #f0c674; }
-.log-line.sev-agent { border-left-color: #c4b5fd; }
-.log-line.sev-report { border-left-color: #fda4af; }
-.log-line.sev-muted { border-left-color: rgba(160,174,192,0.35); }
-.ts { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--fg-4); }
-.tag {
-  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;
-  background: var(--bg-2); color: var(--fg-3); white-space: nowrap;
+.log-row:hover { background: rgba(255, 255, 255, 0.02); }
+.log-row.sev-muted { opacity: 0.72; }
+/* 一行 severity → 左边框 + [分类] + 结论 同色 */
+.log-row.sev-detect  { border-left-color: rgba(45, 212, 191, 0.45); --log-tone: var(--teal-2); }
+.log-row.sev-normal  { border-left-color: var(--lv-normal); --log-tone: var(--lv-normal); }
+.log-row.sev-w1      { border-left-color: var(--lv-w1); --log-tone: var(--lv-w1); }
+.log-row.sev-w2      { border-left-color: var(--lv-w2); --log-tone: var(--lv-w2); }
+.log-row.sev-alarm   { border-left-color: var(--lv-alarm); --log-tone: var(--lv-alarm); }
+.log-row.sev-pre,
+.log-row.sev-trend   { border-left-color: var(--lv-pre); --log-tone: var(--lv-pre-2); }
+.log-row.sev-diag    { border-left-color: #f0c674; --log-tone: #f0c674; }
+.log-row.sev-agent   { border-left-color: #c4b5fd; --log-tone: #93c5fd; }
+.log-row.sev-report  { border-left-color: #fda4af; --log-tone: #fda4af; }
+.log-row.sev-muted   { border-left-color: rgba(160, 174, 192, 0.25); --log-tone: var(--fg-4); }
+/* 气体行：[分类] 与数值同为正文色，左边框略提亮 */
+.log-row.log-gas {
+  --log-tone: var(--fg-2);
+  border-left-color: rgba(160, 174, 192, 0.35);
 }
-.tag.detect { color: var(--teal-2); }
-.tag.diag { color: #f0c674; }
-.tag.trend { color: var(--lv-pre-2); }
-.tag.agent { color: #93c5fd; }
-.tag.report { color: #fda4af; }
-.msg { color: var(--fg-3); line-height: 1.45; }
-.msg-head { color: var(--fg-3); }
-.msg-arrow { margin-right: 6px; color: var(--fg-4); font-weight: 700; }
-.msg-result { font-weight: 700; }
-.tone-detect { color: var(--teal-2) !important; }
-.tone-trend { color: var(--lv-pre-2) !important; }
-.tone-normal { color: var(--lv-normal); }
-.tone-w1 { color: var(--lv-w1); }
-.tone-w2 { color: var(--lv-w2); }
-.tone-alarm { color: var(--lv-alarm); }
-.tone-pre { color: var(--lv-pre-2) !important; }
-.tone-diag { color: #f0c674; }
-.tone-agent { color: #93c5fd; }
-.tone-report { color: #fda4af; }
-.tone-muted { color: var(--fg-4); font-weight: 500; }
-.log-line.sev-muted .tag { color: var(--fg-4); }
-.log-line.sev-muted .msg-result { color: var(--fg-4); font-weight: 500; }
-.log-line.sev-detect .tag { color: var(--teal-2); }
-.log-line.sev-trend .tag { color: var(--lv-pre-2); }
-.log-line.sev-normal .tag { color: var(--lv-normal); }
-.log-line.sev-w1 .tag { color: var(--lv-w1); }
-.log-line.sev-w2 .tag { color: var(--lv-w2); }
-.log-line.sev-alarm .tag { color: var(--lv-alarm); }
-.log-line.sev-pre .tag { color: var(--lv-pre-2); }
-.log-line.sev-diag .tag { color: #f0c674; }
-.log-line.sev-agent .tag { color: #93c5fd; }
-.log-line.sev-report .tag { color: #fda4af; }
-.gas-unit {
-  font-size: 0.72em;
-  font-weight: 500;
-  opacity: 0.72;
-  margin-left: 1px;
-  letter-spacing: 0;
-}
+.log-row .ts { font-size: 10px; color: var(--fg-4); }
+.log-row .cat { color: var(--log-tone, var(--fg-3)); font-weight: 650; white-space: nowrap; }
+.log-row .msg { color: var(--fg-2); min-width: 0; word-break: break-word; }
+/* v-html 内节点无 scoped 标记，必须 :deep */
+.log-row .msg :deep(.msg-dim) { color: var(--fg-4); font-weight: 500; }
+.log-row .msg :deep(.msg-arrow) { margin: 0 4px; color: var(--fg-4); font-weight: 700; }
+.log-row .msg :deep(.msg-result) { font-weight: 650; color: var(--fg-2); }
+.log-row .msg :deep(.tone-detect) { color: var(--teal-2); }
+.log-row .msg :deep(.tone-normal) { color: var(--lv-normal); }
+.log-row .msg :deep(.tone-w1) { color: var(--lv-w1); }
+.log-row .msg :deep(.tone-w2) { color: var(--lv-w2); }
+.log-row .msg :deep(.tone-alarm) { color: var(--lv-alarm); }
+.log-row .msg :deep(.tone-pre),
+.log-row .msg :deep(.tone-trend) { color: var(--lv-pre-2); }
+.log-row .msg :deep(.tone-diag) { color: #f0c674; }
+.log-row .msg :deep(.tone-agent) { color: #93c5fd; }
+.log-row .msg :deep(.tone-report) { color: #fda4af; }
+.log-row .msg :deep(.tone-muted) { color: var(--fg-4); font-weight: 500; }
+.log-row .msg :deep(.gas-unit) { font-size: 0.72em; font-weight: 500; opacity: 0.72; margin-left: 1px; }
 .log-cites {
-  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 6px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 6px;
   text-align: right;
 }
-/* 角标沿用 StdCite 固定钢青色，不随日志结论色变化 */
-.log-cites :deep(.std-cite) {
-  font-size: 10px;
-}
+.log-cites :deep(.std-cite) { font-size: 10px; }
 
 .output-row {
   display: grid;

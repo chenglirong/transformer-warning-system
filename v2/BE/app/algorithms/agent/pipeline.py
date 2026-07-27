@@ -13,6 +13,7 @@ from app.algorithms.agent.cites import place_cites_in_opinion
 from app.algorithms.agent.decide import decide_c
 from app.algorithms.agent.report_b import build_facts_pack, generate_opinion
 from app.algorithms.agent.report_card import build_g1_card, build_g2_card
+from app.algorithms.agent.run_logs import build_log_lines
 from app.algorithms.agent.tools import make_observation
 from app.algorithms.agent.workflow import (
     append_timeline,
@@ -225,12 +226,12 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
 
     sample_dates = _sample_dates(df, idx)
 
-    # 前端七步竖条:分级 → 紧急度 → 产气趋势 → 故障类型 → …
+    # 前端七步竖条:气体 → 分级 → 产气趋势 → 紧急度 → 故障判型 → 决策 → 报告
     steps = [
         _step(
             id="input",
             label="当日气体",
-            sub="七气浓度（μL/L）",
+            sub="七气浓度",
             tag="detect",
             cite=None,
             cite_ids=[],
@@ -240,8 +241,8 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
         ),
         _step(
             id="grade",
-            label="四档分级",
-            sub="DL/T 1498.2 表 A.3",
+            label="分级检测",
+            sub="浓度 · 增量 · 增速综合分档",
             tag="detect",
             cite={"id": "1498-表A3", "label": "表A.3"},
             cite_ids=obs_grade.get("cite_ids") or ["1498-表A3"],
@@ -252,7 +253,7 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
         _step(
             id="trend",
             label="产气趋势",
-            sub="722 §9.3.2 总烃月环比",
+            sub="总烃月环比与涨势判断",
             tag="trend",
             cite={"id": "722-9.3.2", "label": "§9.3.2"},
             cite_ids=obs_trend.get("cite_ids") or ["722-9.3.2"],
@@ -263,7 +264,7 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
         _step(
             id="urgency",
             label="处置紧急度",
-            sub="注意值2+/告警 · §9.3.3",
+            sub="高 / 中 / 低紧急度",
             tag="detect",
             cite={"id": "722-9.3.3", "label": "§9.3.3"},
             cite_ids=obs_urgency.get("cite_ids") or ["722-9.3.3"],
@@ -274,8 +275,8 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
         ),
         _step(
             id="diagnose",
-            label="故障类型",
-            sub="三比值法 · Duval · 特征气体",
+            label="故障判型",
+            sub="三法交叉研判",
             tag="diag",
             cite={"id": "722-10.3", "label": "§10.3"},
             cite_ids=diag_log_cites,
@@ -298,7 +299,7 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
         _step(
             id="report",
             label="生成报告",
-            sub="附录 G 档案卡片 · 分析意见",
+            sub="档案卡片与分析意见",
             tag="report",
             cite={"id": "722-附录G", "label": "附录G"},
             cite_ids=report_cites,
@@ -333,11 +334,13 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
     )
 
     note = opinion_pack.get("note") or opinion_pack.get("error")
+    log_lines = build_log_lines(steps)
 
     return {
         "date": day,
         "grade": grade,
         "steps": steps,
+        "log_lines": log_lines,
         "decision": decision,
         "g1": g1,
         "g2": g2,
@@ -379,7 +382,7 @@ def _grade_log(grade: str, triggers: list) -> str:
 def _urgency_log(grade: str, urgency: dict | None, thc_rel: float | None, is_pre: bool) -> str:
     """注意值2+/告警才给高/中/低;更低档「不适用」。
 
-    口径:涨势快→高;暂稳→中;仅 H₂ 特殊协调→低。
+    口径:涨势快→高;暂稳→中;仅 H₂ 超标且速率未超→低。
     """
     _ = (grade, is_pre)
     rate = f"{thc_rel}%/月" if thc_rel is not None else "—"
@@ -391,7 +394,7 @@ def _urgency_log(grade: str, urgency: dict | None, thc_rel: float | None, is_pre
     if level == "中":
         return f"中 · 暂稳（总烃月环比 {rate} 未超注意值）"
     if level == "低":
-        return f"低 · 仅 H₂ 特殊协调（总烃月环比 {rate}）"
+        return f"低 · 仅 H₂ 超标且速率未超（总烃月环比 {rate}）"
     return f"{level} · 总烃月环比 {rate}"
 
 

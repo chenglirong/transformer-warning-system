@@ -11,37 +11,37 @@ from typing import Any, Callable, Optional
 TOOL_SPECS: dict[str, dict[str, str]] = {
     "ingest.load": {
         "label": "当日气体",
-        "description": "读取指定日 DGA 七气浓度（μL/L）",
+        "description": "读取指定日七气浓度",
         "layer": "perceive",
     },
     "detect.grade": {
-        "label": "四档分级",
-        "description": "DL/T 1498.2 表 A.3 浓度/增量/增长率取最高档",
+        "label": "分级检测",
+        "description": "浓度 · 增量 · 增速综合分档",
         "layer": "analyze",
     },
     "detect.urgency": {
         "label": "处置紧急度",
-        "description": "注意值2+/告警才研判：涨势快→高、暂稳→中、仅H₂特殊协调→低；更低档不适用",
+        "description": "注意值2+才研判：涨势快→高、暂稳→中、仅H₂超标且速率未超→低",
         "layer": "analyze",
     },
     "diagnose.fusion": {
-        "label": "故障类型研判",
-        "description": "特征气体 + 三比值 + Duval 多方法交叉研判（注意值2+或速率超才触发）",
+        "label": "故障判型",
+        "description": "三法交叉研判",
         "layer": "analyze",
     },
     "trend.rate": {
         "label": "产气趋势",
-        "description": "722 §9.3.2 总烃月环比；结果态=涨势预警/涨势快/未超注意值",
+        "description": "总烃月环比与涨势判断",
         "layer": "analyze",
     },
     "agent.decide": {
         "label": "监测决策",
-        "description": "采集周期 / 二次采样 / 试验建议",
+        "description": "检测周期 / 二次采样 / 试验建议",
         "layer": "decide",
     },
     "agent.report": {
         "label": "分析报告",
-        "description": "表 G.1 / G.2 档案卡片与分析意见",
+        "description": "档案卡片与分析意见",
         "layer": "express",
     },
 }
