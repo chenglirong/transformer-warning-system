@@ -12,6 +12,5 @@ sqlalchemy
 python-dotenv
 
 # 报告导出
-python-docx
 reportlab
 

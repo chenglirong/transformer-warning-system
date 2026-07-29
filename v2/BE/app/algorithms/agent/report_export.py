@@ -1,4 +1,4 @@
-"""附录 G 档案卡片导出：Word(.docx) + PDF，版式对齐 ReportCardG.vue。"""
+"""附录 G 档案卡片导出：PDF，版式对齐 ReportCardG.vue。"""
 from __future__ import annotations
 
 import re
@@ -6,10 +6,6 @@ from io import BytesIO
 from typing import Any
 from urllib.parse import quote
 
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
-from docx.shared import Pt
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -57,25 +53,24 @@ def build_report_filename(g1: dict, day: str | None = None) -> str:
 
 
 def content_disposition(filename: str) -> str:
-    ext = ".docx" if filename.endswith(".docx") else ".pdf" if filename.endswith(".pdf") else ""
+    ext = ".pdf" if filename.endswith(".pdf") else ""
     ascii_name = filename.encode("ascii", "ignore").decode().strip("._")
     if not ascii_name.lower().endswith(ext):
-        ascii_name = f"dga_report{ext}"
+        ascii_name = f"dga_report{ext or '.pdf'}"
     encoded = quote(filename)
     return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{encoded}"
 
 
 def _footnote(g1: dict, g2: dict | None) -> str:
     g2d = g2 or {}
-    return " · ".join(
-        x
-        for x in [
-            g1.get("empty_note"),
-            g1.get("thc_gassing_rate_note"),
-            g2d.get("note"),
-        ]
-        if x
-    )
+    np = g1.get("nameplate") or {}
+    parts = [
+        np.get("nameplate_note"),
+        g1.get("empty_note"),
+        g1.get("thc_gassing_rate_note"),
+        g2d.get("note"),
+    ]
+    return " · ".join(x for x in parts if x)
 
 
 def _build_g1_grid(g1: dict, g2: dict | None) -> tuple[list[list[str | None]], list[tuple[int, int, int, int]]]:
@@ -134,11 +129,11 @@ def _build_g1_grid(g1: dict, g2: dict | None) -> tuple[list[list[str | None]], l
 
     r = add_row()
     place(r, 0, "冷却方式")
-    place(r, 1, np.get("cooling"), 3)
-    place(r, 4, "调压方式")
-    place(r, 5, np.get("tap_changer"), 2)
-    place(r, 7, "油保护方式")
-    place(r, 8, np.get("oil_protection"), 2)
+    place(r, 1, np.get("cooling"), 2)
+    place(r, 3, "调压方式")
+    place(r, 4, np.get("tap_changer"), 2)
+    place(r, 6, "油保护方式")
+    place(r, 7, np.get("oil_protection"), 3)
 
     # 取样条件 5 行
     r0 = add_row()
@@ -195,82 +190,6 @@ def _build_g1_grid(g1: dict, g2: dict | None) -> tuple[list[list[str | None]], l
 
     apply_span_markers()
     return grid, merges
-
-
-def _set_run_font(run, size_pt: float = 10, east_asia: str = "宋体") -> None:
-    run.font.name = "Times New Roman"
-    run.font.size = Pt(size_pt)
-    r_pr = run._element.get_or_add_rPr()
-    r_fonts = r_pr.rFonts
-    if r_fonts is None:
-        from docx.oxml import OxmlElement
-
-        r_fonts = OxmlElement("w:rFonts")
-        r_pr.append(r_fonts)
-    r_fonts.set(qn("w:eastAsia"), east_asia)
-
-
-def _docx_set_font(cell, size_pt: float = 9) -> None:
-    for p in cell.paragraphs:
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in p.runs:
-            _set_run_font(run, size_pt)
-
-
-def _render_docx_grid(doc: Document, grid: list[list[str | None]], merges: list[tuple[int, int, int, int]]) -> None:
-    table = doc.add_table(rows=len(grid), cols=10)
-    table.style = "Table Grid"
-    for r, row in enumerate(grid):
-        for c, val in enumerate(row):
-            if val is not None:
-                cell = table.rows[r].cells[c]
-                cell.text = val
-                _docx_set_font(cell)
-    for r0, c0, r1, c1 in merges:
-        table.rows[r0].cells[c0].merge(table.rows[r1].cells[c1])
-
-    left_rows = {"分析意见", "其他检查性试验", "检修情况", "故障记录"}
-    for r, row in enumerate(grid):
-        if row[0] not in left_rows:
-            continue
-        for c in range(2, 10):
-            if row[c] is not None:
-                for p in table.rows[r].cells[c].paragraphs:
-                    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-
-
-def build_docx_bytes(g1: dict, g2: dict | None = None) -> bytes:
-    doc = Document()
-    normal = doc.styles["Normal"]
-    normal.font.name = "Times New Roman"
-    normal.font.size = Pt(10)
-    normal._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
-
-    title = doc.add_paragraph()
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    tr = title.add_run("油中溶解气体分析档案卡片")
-    tr.bold = True
-    _set_run_font(tr, 14)
-
-    meta = doc.add_paragraph()
-    meta.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    left = meta.add_run(f"{_cell(g1.get('bureau'))}局（厂、所）")
-    _set_run_font(left, 10)
-    meta.add_run("\t")
-    right = meta.add_run(f"报告编号：{_cell(g1.get('report_no'))}")
-    _set_run_font(right, 10)
-
-    grid, merges = _build_g1_grid(g1, g2)
-    _render_docx_grid(doc, grid, merges)
-
-    notes = _footnote(g1, g2)
-    if notes:
-        p = doc.add_paragraph(notes)
-        p.runs[0].font.size = Pt(8)
-
-    buf = BytesIO()
-    doc.save(buf)
-    return buf.getvalue()
 
 
 def _pdf_para(text: str, style: ParagraphStyle) -> Paragraph:

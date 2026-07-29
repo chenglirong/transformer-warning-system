@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 from app.algorithms.agent.llm_client import llm_enabled
 from app.algorithms.agent.pipeline import run_agent
 from app.algorithms.agent.report_export import (
-    build_docx_bytes,
     build_pdf_bytes,
     build_report_filename,
     content_disposition,
@@ -98,27 +97,10 @@ def agent_run(
         return fail("无监测数据")
     transformer = _load_transformer(db, transformer_id=1)
     try:
-        result = run_agent(df, day, force_template=force_template)
+        result = run_agent(df, day, force_template=force_template, transformer=transformer)
     except ValueError as e:
         return fail(str(e), code=404)
     return ok(result)
-
-
-@router.post("/report/export/word", summary="导出分析报告 Word（已有 g1/g2，秒级）")
-def agent_export_word(body: ReportExportIn):
-    g1 = body.g1
-    if not g1:
-        return fail("缺少报告数据")
-    filename = f"{build_report_filename(g1)}.docx"
-    content = build_docx_bytes(g1, body.g2)
-    return Response(
-        content=content,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={
-            "Content-Disposition": content_disposition(filename),
-            "Content-Length": str(len(content)),
-        },
-    )
 
 
 @router.post("/report/export/pdf", summary="导出分析报告 PDF（已有 g1/g2，秒级）")

@@ -208,18 +208,6 @@ function closeFullReport() {
   fullG2.value = null
 }
 
-async function downloadFullReportWord() {
-  if (!fullG1.value || downloadBusy.value) return
-  downloadBusy.value = true
-  try {
-    await fullReportRef.value?.downloadWord()
-  } catch (e) {
-    window.alert(e?.message || 'Word 导出失败，请重试')
-  } finally {
-    downloadBusy.value = false
-  }
-}
-
 async function downloadFullReportPdf() {
   if (!fullG1.value || downloadBusy.value) return
   downloadBusy.value = true
@@ -538,19 +526,11 @@ onMounted(loadRecords)
             type="button"
             class="btn btn-primary"
             :disabled="fullReportLoading || !fullG1 || downloadBusy"
-            @click="downloadFullReportWord"
-          >
-            {{ downloadBusy ? '导出中…' : '下载 Word' }}
-          </button>
-          <button
-            type="button"
-            class="btn btn-ghost"
-            :disabled="fullReportLoading || !fullG1 || downloadBusy"
             @click="downloadFullReportPdf"
           >
             {{ downloadBusy ? '导出中…' : '下载 PDF' }}
           </button>
-          <button type="button" class="btn btn-primary" @click="closeFullReport">关闭</button>
+          <button type="button" class="btn btn-ghost" @click="closeFullReport">关闭</button>
         </div>
       </div>
     </div>
