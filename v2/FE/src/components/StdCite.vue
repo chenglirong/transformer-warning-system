@@ -14,7 +14,7 @@ const props = defineProps({
 
 const entry = computed(() => resolveStd(props.refId))
 const citeId = computed(() => entry.value?.id || props.refId)
-const text = computed(() => citeId.value)
+const text = computed(() => entry.value?.displayId || citeId.value)
 </script>
 
 <template>

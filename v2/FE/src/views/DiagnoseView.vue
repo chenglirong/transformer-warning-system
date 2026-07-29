@@ -201,6 +201,19 @@ const auxPack = computed(() => {
   }
 })
 
+/** DL/T 722 表3 单项注意值(220kV 及以下); 总烃单独算 */
+const TABLE3_ATTENTION = { h2: 150, c2h2: 5 }
+const TABLE3_THC = 150
+
+function gasExceedsTable3(key, value, thc) {
+  if (value == null || Number.isNaN(value)) return false
+  const v = Number(value)
+  if (key === 'h2') return v >= TABLE3_ATTENTION.h2
+  if (key === 'c2h2') return v >= TABLE3_ATTENTION.c2h2
+  if (key === 'ch4' || key === 'c2h4' || key === 'c2h6') return thc >= TABLE3_THC
+  return false
+}
+
 const GAS_GRID = [
   { key: 'h2', label: 'H₂' },
   { key: 'ch4', label: 'CH₄' },
@@ -213,15 +226,19 @@ const GAS_GRID = [
 
 const gasGrid = computed(() => {
   const g = detail.value?.gases || {}
-  const elevated = new Set((keyGas.value?.elevated || []).map((x) => x.toLowerCase()))
+  const thc = ['ch4', 'c2h4', 'c2h6', 'c2h2'].reduce((s, k) => {
+    const v = g[k]
+    return s + (v == null || Number.isNaN(v) ? 0 : Number(v))
+  }, 0)
   return GAS_GRID.map((row) => {
     let raw = g[row.key]
     if (row.key === 'co') raw = detail.value?.co ?? raw
     if (row.key === 'co2') raw = detail.value?.co2 ?? raw
+    const value = raw == null ? null : Number(raw)
     return {
       ...row,
-      value: raw == null ? null : Number(raw),
-      hot: elevated.has(row.key),
+      value,
+      hot: gasExceedsTable3(row.key, value, thc),
     }
   })
 })
@@ -517,7 +534,8 @@ function onResize() {
               </div>
             </div>
             <p class="gas-src-hint">
-              系统按特征气体法自动标红偏高组分（非手动标注，也不是分级档位颜色）。
+              标红表示该组分（或总烃合计）达 DL/T 722 表3 注意值；
+              CO/CO₂ 无表3单项注意值，不参与标红。
             </p>
           </div>
         </section>
@@ -617,6 +635,10 @@ function onResize() {
 
             <div ref="radarEl" class="radar" />
 
+            <p class="gas-src-hint kg-radar-hint">
+              雷达图为七气浓度相对展示，不表示故障类型。
+            </p>
+
             <div v-if="keyGas?.note" class="step-bar">
               <span class="step-k">表5 判据</span>
               {{ keyGas.note }}
@@ -669,7 +691,7 @@ function onResize() {
               <div v-if="auxPack" class="aux-box" :class="{ alert: auxPack.hasAlert, info: !auxPack.hasAlert }">
                 <div class="aux-head">
                   <span class="aux-title">辅助比值</span>
-                  <StdCite inline ref-id="722-10.2.3.1" label="§10.2.3" />
+                  <span class="aux-sub">DL/T 722</span>
                 </div>
                 <ul class="aux-rows">
                   <li v-for="r in auxPack.rows" :key="r.key" :class="r.level || 'idle'">
@@ -679,7 +701,6 @@ function onResize() {
                       <span v-if="r.level === 'alert'" class="aux-tag alert">提示</span>
                       <span v-else-if="r.level === 'info'" class="aux-tag info">参考</span>
                       <span v-else class="aux-tag idle">{{ r.band }}</span>
-                      <StdCite inline :ref-id="r.cite" :label="r.cite" />
                     </div>
                     <p v-if="r.text" class="aux-text">{{ r.text }}</p>
                   </li>
@@ -944,6 +965,8 @@ function onResize() {
 .g-unit { font-size: 9px; color: var(--fg-4); }
 .gas-src-hint { margin: 0; font-size: 11px; color: var(--fg-4); line-height: 1.5; }
 .gas-src-hint .hint-hot { color: #f87171; font-weight: 650; }
+.gas-src-hint .hint-aux { color: var(--teal, #2dd4bf); font-weight: 600; }
+.kg-radar-hint { margin-top: 6px; }
 .trigger-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   margin-bottom: 10px;
@@ -1098,6 +1121,10 @@ function onResize() {
   font-weight: 700;
   color: var(--fg-2);
   letter-spacing: 0.04em;
+}
+.aux-sub {
+  font-size: 10px;
+  color: var(--fg-4);
 }
 .aux-rows {
   list-style: none;
