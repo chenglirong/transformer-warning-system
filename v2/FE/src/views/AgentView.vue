@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router'
 import http from '@/service/http'
 import StdCite from '@/components/StdCite.vue'
 import ReportCardG from '@/components/ReportCardG.vue'
+import AssistantPanel from '@/components/AssistantPanel.vue'
 
 const route = useRoute()
 const loading = ref(true)
@@ -382,18 +383,6 @@ function closeReport() {
   modalOpen.value = false
 }
 
-async function downloadReportWord() {
-  if (!g1.value || downloadBusy.value) return
-  downloadBusy.value = true
-  try {
-    await fullReportRef.value?.downloadWord()
-  } catch (e) {
-    window.alert(e?.message || 'Word 导出失败，请重试')
-  } finally {
-    downloadBusy.value = false
-  }
-}
-
 async function downloadReportPdf() {
   if (!g1.value || downloadBusy.value) return
   downloadBusy.value = true
@@ -407,6 +396,21 @@ async function downloadReportPdf() {
 }
 
 const bootReady = ref(false)
+const assistantOpen = ref(false)
+
+function toggleAssistant() {
+  assistantOpen.value = !assistantOpen.value
+}
+
+/** 助手返回分析结果时同步刷新主区时间线/报告 */
+async function onAssistantResult(r) {
+  if (!r) return
+  await applyAgentPayload(r, { animate: false })
+}
+
+function onAssistantDay(day) {
+  if (day && day !== selectedDate.value) selectedDate.value = day
+}
 
 onMounted(async () => {
   try {
@@ -415,6 +419,9 @@ onMounted(async () => {
     loading.value = false
   }
   bootReady.value = true
+  if (route.query.assistant === '1') {
+    assistantOpen.value = true
+  }
   // 告警弹窗深链（?date=&report=1）静默出报告并打开完整报告
   if (wantsOpenReport()) {
     await applyReportDeepLink()
@@ -477,6 +484,14 @@ watch(selectedDate, (d, prev) => {
           </button>
           <button type="button" class="btn btn-primary" :disabled="running || !selectedDate" @click="runAgent()">
             {{ running ? '运行中…' : reportReady ? '重新运行' : '运行分析' }}
+          </button>
+          <button
+            type="button"
+            class="btn-assistant"
+            :class="{ active: assistantOpen }"
+            @click="toggleAssistant"
+          >
+            分析助手
           </button>
         </div>
       </div>
@@ -669,6 +684,16 @@ watch(selectedDate, (d, prev) => {
       </div>
     </div>
 
+    <AssistantPanel
+      :visible="assistantOpen"
+      :selected-date="selectedDate"
+      :agent-result="result"
+      :disabled="running"
+      @close="assistantOpen = false"
+      @analysis-result="onAssistantResult"
+      @selected-day="onAssistantDay"
+    />
+
     <!-- 完整报告弹层：国标表 G.1 + 表 G.2 -->
     <div v-if="modalOpen && g1" class="modal">
       <div class="modal-backdrop" @click="closeReport" />
@@ -695,13 +720,10 @@ watch(selectedDate, (d, prev) => {
           />
         </div>
         <div class="modal-foot">
-          <button type="button" class="btn btn-primary" :disabled="downloadBusy" @click="downloadReportWord">
-            {{ downloadBusy ? '导出中…' : '下载 Word' }}
-          </button>
-          <button type="button" class="btn btn-ghost" :disabled="downloadBusy" @click="downloadReportPdf">
+          <button type="button" class="btn btn-primary" :disabled="downloadBusy" @click="downloadReportPdf">
             {{ downloadBusy ? '导出中…' : '下载 PDF' }}
           </button>
-          <button type="button" class="btn btn-primary" @click="closeReport">关闭</button>
+          <button type="button" class="btn btn-ghost" @click="closeReport">关闭</button>
         </div>
       </div>
     </div>
@@ -729,6 +751,19 @@ watch(selectedDate, (d, prev) => {
 .cal-legend .lg.normal { background: var(--lv-normal); }
 .meta { font-size: 12px; color: var(--fg-3); }
 .actions { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+.btn-assistant {
+  background: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.btn-assistant:hover { background: rgba(139, 92, 246, 0.18); box-shadow: 0 0 12px rgba(139, 92, 246, 0.2); }
+.btn-assistant.active { background: rgba(139, 92, 246, 0.22); border-color: rgba(139, 92, 246, 0.6); }
 .btn-action {
   background: rgba(45, 212, 191, 0.08);
   color: var(--teal-2);

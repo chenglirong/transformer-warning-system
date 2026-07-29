@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from app.api import agent, dataset, decision, detect, diagnose, trend, warning
+from app.api import agent, assistant, dataset, decision, detect, diagnose, trend, warning
 from app.config import CORS_ORIGINS  # noqa: F401 — 顺带触发 .env 加载
 
 app = FastAPI(title="设备状态分析智能体", version="0.1.0")
@@ -26,6 +26,7 @@ app.include_router(diagnose.router, prefix="/api")
 app.include_router(warning.router, prefix="/api")
 app.include_router(decision.router, prefix="/api")
 app.include_router(agent.router, prefix="/api")
+app.include_router(assistant.router, prefix="/api")
 
 
 @app.get("/", include_in_schema=False)

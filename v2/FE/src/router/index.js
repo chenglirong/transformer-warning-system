@@ -62,6 +62,10 @@ const routes = [
         },
       },
       {
+        path: 'assistant',
+        redirect: { name: 'agent', query: { assistant: '1' } },
+      },
+      {
         path: 'agent',
         name: 'agent',
         component: () => import('@/views/AgentView.vue'),
