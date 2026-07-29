@@ -33,10 +33,17 @@ from app.algorithms.knowledge.refs import (
 GAS_COLS = ["h2", "ch4", "c2h4", "c2h6", "c2h2"]
 
 
-def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> dict[str, Any]:
+def run_agent(
+    df: pd.DataFrame,
+    day: str,
+    *,
+    force_template: bool = False,
+    transformer: dict | None = None,
+) -> dict[str, Any]:
     """对指定监测日跑工作流编排。
 
     force_template=True 时强制 Agent B 走规则模板(答辩演示降级/无网环境)。
+    transformer=设备台账 dict(来自 transformers 表),无则 report_card 用空值占位。
     """
     if df.empty:
         raise ValueError("无监测数据")
@@ -319,6 +326,7 @@ def run_agent(df: pd.DataFrame, day: str, *, force_template: bool = False) -> di
         report_no=report_no,
         cite_ids=cite_ids,
         cite_map=cite_map,
+        transformer=transformer,
     )
     g2 = build_g2_card(
         other_tests=opinion_pack.get("other_tests") or "",

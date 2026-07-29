@@ -78,15 +78,11 @@ function col(arr, i) {
   return Array.isArray(arr) ? arr[i] : null
 }
 
-async function downloadWord() {
-  await downloadReportFile('word', { g1: props.g1, g2: props.g2 })
-}
-
 async function downloadPdf() {
   await downloadReportFile('pdf', { g1: props.g1, g2: props.g2 })
 }
 
-defineExpose({ downloadWord, downloadPdf })
+defineExpose({ downloadPdf })
 
 const GAS_ROWS = [
   { key: 'h2', label: 'H₂' },
@@ -100,6 +96,16 @@ const GAS_ROWS = [
   { key: 'c2h2', label: 'C₂H₂' },
   { key: 'thc', label: 'C₁+C₂' },
 ]
+
+const footNote = computed(() => {
+  const parts = [
+    np.value?.nameplate_note,
+    props.g1?.empty_note,
+    props.g1?.thc_gassing_rate_note,
+    props.showG2 ? props.g2?.note : null,
+  ]
+  return parts.filter(Boolean).join(' · ')
+})
 </script>
 
 <template>
@@ -120,33 +126,33 @@ const GAS_ROWS = [
         <!-- 铭牌行 1 -->
         <tr>
           <td class="g1-lbl">型号</td>
-          <td class="g1-val empty" colspan="2">{{ cell(np.model) }}</td>
+          <td class="g1-val" colspan="2" :class="{ empty: !np.model }">{{ cell(np.model) }}</td>
           <td class="g1-lbl">电压等级/容量</td>
-          <td class="g1-val" colspan="2">{{ cell(np.voltage_capacity || g1.voltage) }}</td>
+          <td class="g1-val" colspan="2" :class="{ empty: !(np.voltage_capacity || g1.voltage) }">{{ cell(np.voltage_capacity || g1.voltage) }}</td>
           <td class="g1-lbl">油重, t</td>
-          <td class="g1-val empty">{{ cell(np.oil_weight_t) }}</td>
+          <td class="g1-val" :class="{ empty: np.oil_weight_t == null || np.oil_weight_t === '' }">{{ cell(np.oil_weight_t) }}</td>
           <td class="g1-lbl">油种</td>
-          <td class="g1-val empty">{{ cell(np.oil_type) }}</td>
+          <td class="g1-val" :class="{ empty: !np.oil_type }">{{ cell(np.oil_type) }}</td>
         </tr>
         <!-- 铭牌行 2 -->
         <tr>
           <td class="g1-lbl">制造厂</td>
-          <td class="g1-val empty" colspan="2">{{ cell(np.manufacturer) }}</td>
+          <td class="g1-val" colspan="2" :class="{ empty: !np.manufacturer }">{{ cell(np.manufacturer) }}</td>
           <td class="g1-lbl">出厂序号</td>
-          <td class="g1-val" colspan="2">{{ cell(np.serial_no || g1.device_id) }}</td>
+          <td class="g1-val" colspan="2" :class="{ empty: !(np.serial_no || g1.device_id) }">{{ cell(np.serial_no || g1.device_id) }}</td>
           <td class="g1-lbl">出厂年月</td>
-          <td class="g1-val empty">{{ cell(np.manufacture_date) }}</td>
+          <td class="g1-val" :class="{ empty: !np.manufacture_date }">{{ cell(np.manufacture_date) }}</td>
           <td class="g1-lbl">投运日期</td>
-          <td class="g1-val empty">{{ cell(np.commission_date) }}</td>
+          <td class="g1-val" :class="{ empty: !np.commission_date }">{{ cell(np.commission_date) }}</td>
         </tr>
-        <!-- 铭牌行 3 -->
+        <!-- 铭牌行 3：三组，前两组对齐上行「型号/电压」列界，油保护占右侧两格 -->
         <tr>
           <td class="g1-lbl">冷却方式</td>
-          <td class="g1-val empty" colspan="3">{{ cell(np.cooling) }}</td>
+          <td class="g1-val" colspan="2" :class="{ empty: !np.cooling }">{{ cell(np.cooling) }}</td>
           <td class="g1-lbl">调压方式</td>
-          <td class="g1-val empty" colspan="2">{{ cell(np.tap_changer) }}</td>
+          <td class="g1-val" colspan="2" :class="{ empty: !np.tap_changer }">{{ cell(np.tap_changer) }}</td>
           <td class="g1-lbl">油保护方式</td>
-          <td class="g1-val empty" colspan="2">{{ cell(np.oil_protection) }}</td>
+          <td class="g1-val" colspan="3" :class="{ empty: !np.oil_protection }">{{ cell(np.oil_protection) }}</td>
         </tr>
 
         <!-- 取样条件 -->
@@ -294,11 +300,11 @@ const GAS_ROWS = [
               <div class="g2-ot-prose">{{ cell(g2.other_tests) }}</div>
             </td>
           </tr>
-          <tr v-if="g2.maintenance || mode === 'full'">
+          <tr>
             <td class="g1-lbl" colspan="2">检修情况</td>
             <td class="g1-val" colspan="8" :class="{ empty: !g2.maintenance }">{{ cell(g2.maintenance) }}</td>
           </tr>
-          <tr v-if="g2.fault_records || mode === 'full'">
+          <tr>
             <td class="g1-lbl" colspan="2">故障记录</td>
             <td class="g1-val" colspan="8" :class="{ empty: !g2.fault_records }">{{ cell(g2.fault_records) }}</td>
           </tr>
@@ -306,11 +312,7 @@ const GAS_ROWS = [
         </tbody>
       </table>
 
-      <p v-if="g1.empty_note || g1.thc_gassing_rate_note || (showG2 && g2?.note)" class="g1-foot-note">
-        {{ g1.empty_note }}
-        <template v-if="g1.thc_gassing_rate_note"> · {{ g1.thc_gassing_rate_note }}</template>
-        <template v-if="showG2 && g2?.note"> · {{ g2.note }}</template>
-      </p>
+      <p v-if="footNote" class="g1-foot-note">{{ footNote }}</p>
     </div>
   </div>
 </template>

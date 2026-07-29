@@ -20,7 +20,7 @@ from app.algorithms.agent.report_export import (
 )
 from app.algorithms.knowledge.refs import REFS
 from app.core.response import fail, ok
-from app.db.models import Monitoring
+from app.db.models import Monitoring, Transformer
 from app.db.session import get_db
 
 router = APIRouter(prefix="/agent", tags=["Agent 分析编排"])
@@ -45,6 +45,27 @@ def _load_df(db: Session) -> pd.DataFrame:
         }
         for r in rows
     ])
+
+
+def _load_transformer(db: Session, transformer_id: int = 1) -> dict | None:
+    """查询变压器设备台账;无记录则返回 None(报告用空值占位)。"""
+    row = db.query(Transformer).filter_by(transformer_id=transformer_id).first()
+    if not row:
+        return None
+    return {
+        "bureau": row.bureau,
+        "model": row.model,
+        "voltage_capacity": row.voltage_capacity,
+        "oil_weight_t": row.oil_weight_t,
+        "oil_type": row.oil_type,
+        "manufacturer": row.manufacturer,
+        "serial_no": row.serial_no,
+        "manufacture_date": row.manufacture_date,
+        "commission_date": row.commission_date,
+        "cooling": row.cooling,
+        "tap_changer": row.tap_changer,
+        "oil_protection": row.oil_protection,
+    }
 
 
 @router.get("/knowledge", summary="判据库清单(静态)")
@@ -75,6 +96,7 @@ def agent_run(
     df = _load_df(db)
     if df.empty:
         return fail("无监测数据")
+    transformer = _load_transformer(db, transformer_id=1)
     try:
         result = run_agent(df, day, force_template=force_template)
     except ValueError as e:
