@@ -26,9 +26,9 @@ const modalRow = ref(null)
 
 const PERIOD_META = {
   baseline: { short: '基线周期', hint: '≤12h · 档位正常/未预警' },
-  fast: { short: '快速采样', hint: '下限 ≤2h · 涨势/速率超' },
+  fast: { short: '最小检测周期', hint: '下限 ≤2h · 涨势/速率超' },
   baseline_watch: { short: '基线加强监视', hint: '≤12h · 紧急度低' },
-  approach_fast: { short: '逼近快速周期', hint: '建议逼近 ≤2h · 注2/告警' },
+  approach_fast: { short: '逼近最小检测周期', hint: '建议逼近 ≤2h · 注2/告警' },
 }
 
 const RESAMPLE_META = {

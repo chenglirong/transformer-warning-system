@@ -13,9 +13,9 @@ from typing import Any, Optional
 # decide_c 输出档位（监测决策页 KPI / 筛选用）
 PERIOD_KINDS: dict[str, str] = {
     "baseline": "按在线基线周期(≤12h)",
-    "fast": "缩短至快速采样周期(下限≤2h)",
+    "fast": "缩短至最小检测周期(下限≤2h)",
     "baseline_watch": "保持基线并加强监视(≤12h)",
-    "approach_fast": "缩短采集周期并加强监视(建议逼近≤2h)",
+    "approach_fast": "缩短检测周期并加强监视(建议逼近≤2h)",
 }
 
 RESAMPLE_KINDS: dict[str, str] = {
@@ -29,11 +29,11 @@ def classify_period_kind(period: str) -> str:
     for kind, text in PERIOD_KINDS.items():
         if period == text:
             return kind
-    if period.startswith("缩短至快速"):
+    if period.startswith("缩短至最小检测") or period.startswith("缩短至快速"):
         return "fast"
     if "保持基线" in period:
         return "baseline_watch"
-    if "逼近" in period or period.startswith("缩短采集"):
+    if "逼近" in period or period.startswith("缩短检测") or period.startswith("缩短采集"):
         return "approach_fast"
     return "baseline"
 
@@ -77,7 +77,7 @@ def decide_c(
     # 正常基线 ≤12h;预警确认后快速周期,下限多组分 ≤2h
     if grade in ("正常", "注意值1") and not is_pre and not rate_rising:
         period = "按在线基线周期(≤12h)"
-        period_why = "档位正常，维持基线采集周期即可"
+        period_why = "档位正常，维持基线检测周期即可"
         resample = "不需要"
         resample_why = "未达预警，无需二次采样验证"
         fire(
@@ -87,9 +87,9 @@ def decide_c(
             "period",
         )
         fire("未达预警触发条件", resample, cite_resample, "resample")
-        log = f"采集周期 {period} · 二次采样：{resample}"
+        log = f"检测周期 {period} · 二次采样：{resample}"
     elif is_pre or (grade == "注意值1" and rate_rising):
-        period = "缩短至快速采样周期(下限≤2h)"
+        period = "缩短至最小检测周期(下限≤2h)"
         period_why = "已触发提前预警或速率超注意值，宜缩至最小检测周期"
         cite_period = "1498-5.5.5"
         resample = "建议二次采样验证"
@@ -97,7 +97,7 @@ def decide_c(
         cond = "触发涨势预警" if is_pre else "注意值1 且速率超注意值"
         fire(cond, period, cite_period, "period")
         fire(cond, resample, cite_resample, "resample")
-        log = f"采集周期 {period} · 二次采样：{resample}"
+        log = f"检测周期 {period} · 二次采样：{resample}"
     else:
         # 注意值2 / 告警值
         if urgency and urgency.get("level") == "低":
@@ -111,7 +111,7 @@ def decide_c(
                 "period",
             )
         elif urgency and urgency.get("rising"):
-            period = "缩短至快速采样周期(下限≤2h)"
+            period = "缩短至最小检测周期(下限≤2h)"
             period_why = "产气速率已确认上涨，缩短至最小检测周期加强监视"
             cite_period = "1498-5.5.5"
             fire(
@@ -121,7 +121,7 @@ def decide_c(
                 "period",
             )
         else:
-            period = "缩短采集周期并加强监视(建议逼近≤2h)"
+            period = "缩短检测周期并加强监视(建议逼近≤2h)"
             period_why = "已进入注意值2/告警，宜尽快逼近最小检测周期"
             cite_period = "1498-A.3.1"
             fire(
@@ -151,7 +151,7 @@ def decide_c(
             )
 
         trials_note = ""
-        log = f"采集周期 {period} · 二次采样：{resample}"
+        log = f"检测周期 {period} · 二次采样：{resample}"
 
     if measures:
         action = f"其他检查性试验 {len(measures)} 项"
