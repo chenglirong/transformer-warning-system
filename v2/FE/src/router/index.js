@@ -39,7 +39,7 @@ const routes = [
         name: 'warning',
         component: () => import('@/views/WarningView.vue'),
         meta: {
-          title: '告警流水',
+          title: '告警列表',
           sub: '四档全报 · 涨势预警 · 处置紧急度 · 故障类型摘要',
         },
       },
@@ -48,7 +48,7 @@ const routes = [
         name: 'decision',
         component: () => import('@/views/DecisionOverviewView.vue'),
         meta: {
-          title: '监测决策',
+          title: '决策列表',
           sub: '检测周期 · 二次采样 · 试验建议（全年流水）',
         },
       },
