@@ -165,7 +165,7 @@ def _build_g1_grid(g1: dict, g2: dict | None) -> tuple[list[list[str | None]], l
     for label, key in [
         ("总烃增长, μL/L", "thc_growth"),
         ("实际运行时间, 天", "run_days"),
-        ("总烃产气率, mL/天", "thc_gassing_rate_ml_d"),
+        ("总烃绝对产气速率, mL/天", "thc_gassing_rate_ml_d"),
         ("试验报告编号", "test_report_nos"),
     ]:
         r = add_row()

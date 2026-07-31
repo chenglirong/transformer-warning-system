@@ -252,7 +252,7 @@ const footNote = computed(() => {
           >{{ cell(col(g1.run_days, i - 1)) }}</td>
         </tr>
         <tr>
-          <td class="g1-sub" colspan="2">总烃产气率, mL/天</td>
+          <td class="g1-sub" colspan="2">总烃绝对产气速率, mL/天</td>
           <td
             v-for="i in 4"
             :key="'gr'+i"

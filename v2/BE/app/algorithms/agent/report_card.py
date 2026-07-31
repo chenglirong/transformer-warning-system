@@ -1,7 +1,7 @@
 """表 G.1 / G.2 报告字段装配(DL/T 722 附录G)。
 
 有值如实填;演示台账可填铭牌区,合成缺的工况/O₂·N₂/含气量%仍填 None→「—」。
-绝对产气率式1缺油密度,不杜撰 → 仍「—」。变压器台账来自 transformers 表。
+绝对产气速率式1缺油密度,不杜撰 → 仍「—」。变压器台账来自 transformers 表。
 """
 from __future__ import annotations
 
@@ -114,7 +114,7 @@ def build_g1_card(
         "gases": gases,
         "thc_growth": thc_growth,
         "run_days": run_days,
-        # 绝对产气率式1需油重+密度;台账有油重仍缺密度 →「—」,相对速率写分析意见
+        # 绝对产气速率式1需油重+密度;台账有油重仍缺密度 →「—」,相对速率写分析意见
         "thc_gassing_rate_ml_d": [None, None, None, None],
         "thc_gassing_rate_note": None,
         "test_report_nos": [report_no, None, None, None],
