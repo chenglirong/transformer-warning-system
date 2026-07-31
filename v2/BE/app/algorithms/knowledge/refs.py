@@ -10,8 +10,8 @@ from typing import Any, Optional
 REFS: dict[str, dict[str, str]] = {
     "1498-表A3": {
         "std": "DL/T 1498.2-2025",
-        "section": "附录A 表A.3",
-        "summary": "220kV及以下四档阈值(浓度/增量/相对增长速率)",
+        "section": "附录A A.2.3 / 表A.3",
+        "summary": "220kV及以下注意值1/注意值2/告警值；含量+绝对增量+相对增长速率；适用范围乙炔≤10/H₂≤150/总烃≤150",
     },
     "1498-A.3.1": {
         "std": "DL/T 1498.2-2025",

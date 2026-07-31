@@ -4,8 +4,7 @@ import imgTable67 from '@/assets/standards/table6-7-ratios.png'
 import imgDuval from '@/assets/standards/fig-c2-duval.png'
 import imgAppB from '@/assets/standards/appendix-b.png'
 import imgSec103 from '@/assets/standards/section-10.3-steps.png'
-import imgTableA3p1 from '@/assets/standards/table-a3-part1.png'
-import imgTableA3p2 from '@/assets/standards/table-a3-part2.png'
+import imgTableA3 from '@/assets/standards/table-a3.png'
 import imgTable3p1 from '@/assets/standards/table3-attention-part1.png'
 import imgTable3p2 from '@/assets/standards/table3-attention-part2.png'
 import imgSec932 from '@/assets/standards/section-9.3.2-rate.png'
@@ -87,8 +86,8 @@ export const STD_REFS = {
   },
   '1498-表A3': {
     title: 'DL/T 1498.2-2025 表A.3 在线监测阈值（220kV及以下）',
-    body: '四档：正常 / 注意值1 / 注意值2 / 告警值。三组判据（绝对浓度、绝对增量、相对增长速率）各算档后取最高档。注意值2 对齐 DL/T 722 表3。',
-    images: [imgTableA3p1, imgTableA3p2],
+    body: 'A.2.3：220kV及以下阈值分注意值1、注意值2、告警值三种，含乙炔、氢气和总烃等特征气体含量、绝对增量与相对增长速率；具体见表A.3。适用范围乙炔≤10、氢气≤150、总烃≤150 μL/L。本系统三组判据各算档后取最高档；注意值2对齐 DL/T 722 表3。',
+    images: [imgTableA3],
   },
   '722-9.3.2': {
     title: 'DL/T 722-2014 §9.3.2 产气速率',
