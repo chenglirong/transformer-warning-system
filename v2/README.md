@@ -66,15 +66,63 @@ v2/
 - **绝对产气速率(mL/天)**:式1 需油重与油密度;演示台账有油重仍缺密度 → 报告该格填「—」,相对速率写在分析意见
 - **不做**:时序预测、健康评分、运维处置指令、成因/部位定位、自由 ReAct
 
-## 启动(简)
+## 启动
+
+先装好两样东西：**Python 3.11**、**Node.js**。本系统代码在 `v2/` 里，只操作这一层即可（外面的 `V1/` 不用管）。
+
+需要开两个终端窗口：一个跑后端（算数、出报告），一个跑前端（网页界面）。网页默认地址是 `http://localhost:5173`。
+
+### 第一次下载后（只做一遍）
+
+**1）后端：装依赖、建数据库、灌演示数据**
 
 ```bash
-# 后端
-cd v2/BE && source .venv/bin/activate   # 或项目既有 venv
-# 可选: cp .env.example .env 并填 LLM_API_KEY
+cd v2/BE
+python3.11 -m venv .venv          # 在本目录建一个独立的 Python 环境
+source .venv/bin/activate         # 启用它；Windows 用：.venv\Scripts\activate
+pip install -r requirements.txt   # 安装后端依赖包
+
+# 建空库 → 写入一台演示变压器 → 把仓库里已有的 360 天气体数据灌进去
+python -m scripts.init_db
+python -m scripts.seed_transformer
+python -m scripts.import_data
+
+# 启动后端服务（看到类似 Uvicorn running 就说明起来了）
+uvicorn app.main:app --reload --port 8000
+```
+
+关于报告用的大模型密钥：Agent 写分析意见时会调用通义千问润色文字（不改判定结果）。请先去 **阿里云百炼** 开通服务并申请 API Key：
+
+1. 打开 [阿里云百炼控制台](https://bailian.console.aliyun.com/)，登录阿里云账号；
+2. 按提示开通大模型服务；
+3. 进入 **API-Key** 管理页，创建一把密钥（创建后立刻复制保存，关掉就看不到完整内容了）；官方说明见 [如何获取 API Key](https://help.aliyun.com/zh/model-studio/get-api-key)。
+
+然后在本机写入配置：
+
+```bash
+cp .env.example .env
+# 用编辑器打开 .env：把刚申请的密钥填到 LLM_API_KEY=
+# LLM_BASE_URL、LLM_MODEL 可先保持示例或默认（通义 qwen-max）
+```
+
+**2）前端：另开一个终端**
+
+```bash
+cd v2/FE
+npm install      # 第一次装前端依赖，稍等一会儿
+npm run dev      # 启动网页；终端会打印本地地址，用浏览器打开即可
+```
+
+### 以后每次开机接着用
+
+数据库已经有了，不必再跑上面的建库/灌数三步。两个终端分别：
+
+```bash
+# 终端 1：后端
+cd v2/BE && source .venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 
-# 前端
+# 终端 2：前端
 cd v2/FE && npm run dev
 ```
 
