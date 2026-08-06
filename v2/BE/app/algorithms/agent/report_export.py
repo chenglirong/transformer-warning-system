@@ -14,6 +14,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from app.algorithms.agent.report_b import _normalize_chem, _normalize_report_standards
+
 GAS_ROWS = [
     ("h2", "H₂"),
     ("o2", "O₂"),
@@ -27,6 +29,9 @@ GAS_ROWS = [
     ("thc", "C₁+C₂"),
 ]
 
+_SUBSCRIPT_DIGITS = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
+_SUBSCRIPT_RUN = re.compile(r"[₀₁₂₃₄₅₆₇₈₉]+")
+
 
 def _cell(v: Any) -> str:
     if v is None or v == "":
@@ -35,8 +40,10 @@ def _cell(v: Any) -> str:
     return "".join(ch for ch in s if ch in "\n\t\r" or ord(ch) >= 32)
 
 
-def _strip_cites(text: str) -> str:
-    return re.sub(r"【\d+】", "", text or "").replace("\n\n\n", "\n\n").strip()
+def _report_text(text: str) -> str:
+    """PDF 独立收口，兼容前端传入尚未重新分析的旧报告数据。"""
+    t = re.sub(r"【\d+】", "", text or "").replace("\n\n\n", "\n\n").strip()
+    return _normalize_chem(_normalize_report_standards(t))
 
 
 def _col(arr: Any, i: int) -> Any:
@@ -174,13 +181,13 @@ def _build_g1_grid(g1: dict, g2: dict | None) -> tuple[list[list[str | None]], l
 
     r = add_row()
     place(r, 0, "分析意见", 2)
-    opinion = _strip_cites(str(g1.get("opinion") or "")) or "—"
+    opinion = _report_text(str(g1.get("opinion") or "")) or "—"
     place(r, 2, opinion, 8)
 
     if g2d:
         r = add_row()
         place(r, 0, "其他检查性试验", 2)
-        place(r, 2, g2d.get("other_tests"), 8)
+        place(r, 2, _report_text(str(g2d.get("other_tests") or "")), 8)
         r = add_row()
         place(r, 0, "检修情况", 2)
         place(r, 2, g2d.get("maintenance"), 8)
@@ -198,8 +205,13 @@ def _pdf_para(text: str, style: ParagraphStyle) -> Paragraph:
         .replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
-        .replace("\n", "<br/>")
     )
+    # STSong-Light 不完整覆盖 Unicode 下标字形，直接输出会出现断裂字距。
+    # ReportLab Paragraph 支持 <sub>，改用真正的下标排版。
+    safe = _SUBSCRIPT_RUN.sub(
+        lambda m: f"<sub>{m.group(0).translate(_SUBSCRIPT_DIGITS)}</sub>",
+        safe,
+    ).replace("\n", "<br/>")
     return Paragraph(safe, style)
 
 

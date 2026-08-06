@@ -509,7 +509,6 @@ onMounted(loadRecords)
             :g1="fullG1"
             :g2="fullG2"
             mode="full"
-            :show-cites="false"
           />
           <p v-else-if="!fullReportLoading" class="report-err">暂无报告内容</p>
         </div>

@@ -34,7 +34,6 @@ def build_g1_card(
     device_id: str = "SYN-001",
     voltage: str = "220kV及以下(前提声明)",
     cite_ids: list[str] | None = None,
-    cite_map: list[dict] | None = None,
     transformer: dict | None = None,
 ) -> dict[str, Any]:
     """装配表G.1完整字段。sample_dates 长度=4(当日 / 约−7 / 约−14 / 约−21 天)。
@@ -121,7 +120,6 @@ def build_g1_card(
         "opinion": opinion,
         "empty_note": None,
         "cite_ids": cite_ids or [],
-        "cite_map": cite_map or [],
         "device_id": serial_no,
         "voltage": voltage_capacity,
         "sample_dates": sample_dates,  # 兼容旧前端字段

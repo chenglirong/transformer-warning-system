@@ -206,6 +206,16 @@ def assistant_chat(body: AssistantChatIn, db: Session = Depends(get_db)):
                     reply, cite_ids, mode = _polish_analysis(result_payload)
 
         elif intent in EXPLAIN_HANDLERS:
+            # 会话结果丢失(如后端重启)时,用页面选中日补跑一次再解释,不要反过来问用户要日期。
+            # 走模板成稿:解释只用七步结论,不必等大模型写报告。
+            if not sess.last_result:
+                day = body.selected_date or sess.last_day
+                if day:
+                    try:
+                        sess.last_result = _run_analysis(db, day, force_template=True)
+                        sess.last_day = day
+                    except ValueError:
+                        pass
             reply, cite_ids, mode = _handle_explain(message, intent, sess.last_result)
 
         elif intent == "standard_qa":

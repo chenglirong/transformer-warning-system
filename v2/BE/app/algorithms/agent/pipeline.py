@@ -9,7 +9,7 @@ from typing import Any
 
 import pandas as pd
 
-from app.algorithms.agent.cites import place_cites_in_opinion
+from app.algorithms.agent.cites import strip_cite_marks
 from app.algorithms.agent.decide import decide_c
 from app.algorithms.agent.report_b import build_facts_pack, generate_opinion
 from app.algorithms.agent.report_card import build_g1_card, build_g2_card
@@ -200,18 +200,8 @@ def run_agent(
     cite_ids = list(dict.fromkeys(
         detect_cites + ["722-9.3.2", "722-9.3.3"] + diag_cites + decide_cites + report_cites
     ))
-    opinion, cite_map = place_cites_in_opinion(
-        opinion_pack["text"],
-        section_ids={
-            "grade": ["1498-表A3"],
-            "trend": ["722-9.3.2"],
-            "urgency": ["722-9.3.3"],
-            "diagnose": diag_cites,
-            "decide": decide_cites,
-            "report": report_cites,
-        },
-        all_ids=cite_ids,
-    )
+    # 报告正文不挂角标:附录G 卡片按国标只填正文,依据留在步骤日志里看
+    opinion = strip_cite_marks(opinion_pack["text"])
 
     report_no = f"RPT-{day.replace('-', '')}-{day_num:03d}"
     if report_mode == "llm":
@@ -325,7 +315,6 @@ def run_agent(
         opinion=opinion,
         report_no=report_no,
         cite_ids=cite_ids,
-        cite_map=cite_map,
         transformer=transformer,
     )
     g2 = build_g2_card(

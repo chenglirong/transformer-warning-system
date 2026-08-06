@@ -593,7 +593,6 @@ watch(selectedDate, (d, prev) => {
                   :g2="g2"
                   mode="compact"
                   :show-g2="true"
-                  :show-cites="false"
                 />
                 <div v-else class="g1-placeholder">流程完成后解锁分析报告预览</div>
               </div>
@@ -716,7 +715,6 @@ watch(selectedDate, (d, prev) => {
             :g1="g1"
             :g2="g2"
             mode="full"
-            :show-cites="false"
           />
         </div>
         <div class="modal-foot">

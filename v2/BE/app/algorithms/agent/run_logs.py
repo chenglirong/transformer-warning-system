@@ -338,6 +338,28 @@ def _expand_urgency_logs(step: dict[str, Any]) -> list[dict[str, Any]]:
     }]
 
 
+def _format_aux_lines(fusion: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """§10.2.3 辅助比值:每条附注各占一行,依据挂到本条款。"""
+    lines: list[dict[str, Any]] = []
+    for n in (fusion or {}).get("aux_ratios", {}).get("notes") or []:
+        text = str(n.get("text") or "").strip()
+        if not text:
+            continue
+        cond, _, concl = text.partition("，")
+        if not concl:
+            cond, concl = f"{n.get('ratio') or '—'}={n.get('value') or '—'}", cond
+        clause = str(n.get("clause") or "")
+        cid = clause if clause.startswith("722-") else f"722-{clause}"
+        lines.append({
+            "cat": "判型",
+            "msg": f"辅助比值 · {cond} → {concl}",
+            "conclusion_tone": "w1" if n.get("level") == "alert" else "normal",
+            "cite_ids": [cid] if clause else [],
+            "show_cite": bool(clause),
+        })
+    return lines
+
+
 def _expand_diagnose_logs(step: dict[str, Any]) -> list[dict[str, Any]]:
     diag = (step.get("detail") or {}).get("diagnosis") or {}
     if not diag.get("triggered"):
@@ -347,7 +369,12 @@ def _expand_diagnose_logs(step: dict[str, Any]) -> list[dict[str, Any]]:
             "conclusion_tone": "muted",
         }]
     fusion = diag.get("fusion")
-    fusion_cites = _step_cite_ids(step)
+    fusion_msg = f"三方交叉融合 → {_format_fusion_line(fusion)}"
+    aux_lines = _format_aux_lines(fusion)
+    # 辅助比值自带 §10.2.3.x 依据,融合行不再重复挂
+    fusion_cites = [
+        cid for cid in _step_cite_ids(step) if not cid.startswith("722-10.2.3")
+    ]
     return [
         {
             "cat": "判型",
@@ -370,9 +397,10 @@ def _expand_diagnose_logs(step: dict[str, Any]) -> list[dict[str, Any]]:
             "cite_ids": ["722-表5"],
             "show_cite": True,
         },
+        *aux_lines,
         {
             "cat": "判型",
-            "msg": f"三方交叉融合 → {_format_fusion_line(fusion)}",
+            "msg": fusion_msg,
             "highlight": True,
             "conclusion_tone": _fusion_tone(fusion),
             "cite_ids": fusion_cites or ["722-10.3"],

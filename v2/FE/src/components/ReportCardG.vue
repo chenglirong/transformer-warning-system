@@ -2,10 +2,9 @@
 /**
  * DL/T 722-2014 附录 G 表 G.1 / 表 G.2 档案卡片
  * 有值如实填; null →「—」;合成缺字段不杜撰
- * 分析意见内【n】→ StdCite 角标(依据由规则绑死)
+ * 报告正文不挂条款角标;化学式一律走 <sub> 排版,不用 Unicode 下标(报告宋体缺字会裂开)
  */
 import { computed } from 'vue'
-import StdCite from '@/components/StdCite.vue'
 import { downloadReportFile } from '@/utils/reportDownload'
 
 const props = defineProps({
@@ -15,63 +14,57 @@ const props = defineProps({
   mode: { type: String, default: 'full' },
   /** 是否附带表 G.2 */
   showG2: { type: Boolean, default: true },
-  /** 可选覆盖;默认用 g1.cite_map */
-  citeMap: { type: Array, default: null },
-  /** 分析意见是否展示【n】角标；报告内默认不展示 */
-  showCites: { type: Boolean, default: false },
 })
 
 const np = computed(() => props.g1?.nameplate || {})
 const sample = computed(() => props.g1?.sample || {})
 const gases = computed(() => props.g1?.gases || {})
 
-const citeByN = computed(() => {
-  const list = props.citeMap || props.g1?.cite_map || []
-  const m = {}
-  for (const c of list) {
-    if (c && c.n != null && c.id) m[Number(c.n)] = c
+const SUB_DIGITS = '₀₁₂₃₄₅₆₇₈₉'
+
+/** 文本按 Unicode 下标切片 → 正文段 + <sub> 段 */
+function subParts(text) {
+  const out = []
+  let buf = ''
+  for (const ch of String(text)) {
+    const i = SUB_DIGITS.indexOf(ch)
+    if (i >= 0) {
+      if (buf) out.push({ sub: false, text: buf })
+      buf = ''
+      const last = out[out.length - 1]
+      if (last && last.sub) last.text += String(i)
+      else out.push({ sub: true, text: String(i) })
+    } else {
+      buf += ch
+    }
   }
-  return m
+  if (buf) out.push({ sub: false, text: buf })
+  return out
+}
+
+/** 化学式串(如 C2H4、C1+C2)→ 字母段 + <sub> 数字段 */
+function formulaParts(formula) {
+  return (String(formula).match(/[A-Za-z]+|\d+|./g) || []).map((tok) => ({
+    sub: /^\d+$/.test(tok),
+    text: tok,
+  }))
+}
+
+const opinionParts = computed(() => {
+  const text = String(props.g1?.opinion ?? '')
+    .replace(/【\d+】/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  return text ? subParts(text) : null
 })
 
-/** 把「……【1】【2】……」拆成文本 + 角标片段；showCites=false 时去掉角标 */
-const opinionParts = computed(() => {
-  let text = props.g1?.opinion
-  if (text == null || text === '') return [{ type: 'empty' }]
-  if (!props.showCites) {
-    text = String(text).replace(/【\d+】/g, '').replace(/\n{3,}/g, '\n\n').trim()
-    return text ? [{ type: 'text', text }] : [{ type: 'empty' }]
-  }
-  const parts = []
-  const re = /【(\d+)】/g
-  let last = 0
-  let m
-  while ((m = re.exec(text))) {
-    if (m.index > last) parts.push({ type: 'text', text: text.slice(last, m.index) })
-    const n = Number(m[1])
-    const hit = citeByN.value[n]
-    if (hit) parts.push({ type: 'cite', n, id: hit.id })
-    else parts.push({ type: 'text', text: m[0] })
-    last = m.index + m[0].length
-  }
-  if (last < text.length) parts.push({ type: 'text', text: text.slice(last) })
-  return parts.length ? parts : [{ type: 'text', text: String(text) }]
+const otherTestsParts = computed(() => {
+  const text = String(props.g2?.other_tests ?? '').trim()
+  return text ? subParts(text) : null
 })
 
 function cell(v) {
   return v == null || v === '' ? '—' : v
-}
-
-function gasTone(gas, v) {
-  if (v == null) return 'empty'
-  if (gas === 'c2h2') {
-    if (v >= 5) return 'over'
-    if (v >= 1) return 'warn'
-  }
-  if (gas === 'h2' || gas === 'thc') {
-    if (v >= 150) return 'warn'
-  }
-  return ''
 }
 
 function col(arr, i) {
@@ -85,16 +78,16 @@ async function downloadPdf() {
 defineExpose({ downloadPdf })
 
 const GAS_ROWS = [
-  { key: 'h2', label: 'H₂' },
-  { key: 'o2', label: 'O₂' },
-  { key: 'n2', label: 'N₂' },
-  { key: 'co', label: 'CO' },
-  { key: 'co2', label: 'CO₂' },
-  { key: 'ch4', label: 'CH₄' },
-  { key: 'c2h4', label: 'C₂H₄' },
-  { key: 'c2h6', label: 'C₂H₆' },
-  { key: 'c2h2', label: 'C₂H₂' },
-  { key: 'thc', label: 'C₁+C₂' },
+  { key: 'h2', formula: 'H2' },
+  { key: 'o2', formula: 'O2' },
+  { key: 'n2', formula: 'N2' },
+  { key: 'co', formula: 'CO' },
+  { key: 'co2', formula: 'CO2' },
+  { key: 'ch4', formula: 'CH4' },
+  { key: 'c2h4', formula: 'C2H4' },
+  { key: 'c2h6', formula: 'C2H6' },
+  { key: 'c2h2', formula: 'C2H2' },
+  { key: 'thc', formula: 'C1+C2' },
 ]
 
 const footNote = computed(() => {
@@ -218,12 +211,17 @@ const footNote = computed(() => {
           >{{ cell(col(g1.gas_content_pct, i - 1)) }}</td>
         </tr>
         <tr v-for="row in GAS_ROWS" :key="row.key">
-          <td class="g1-sub">{{ row.label }}</td>
+          <td class="g1-sub">
+            <span v-for="(p, k) in formulaParts(row.formula)" :key="k">
+              <sub v-if="p.sub">{{ p.text }}</sub>
+              <template v-else>{{ p.text }}</template>
+            </span>
+          </td>
           <td
             v-for="i in 4"
             :key="row.key + i"
             class="g1-val"
-            :class="gasTone(row.key, col(gases[row.key], i - 1)) || (col(gases[row.key], i - 1) == null ? 'empty' : '')"
+            :class="{ empty: col(gases[row.key], i - 1) == null }"
             colspan="2"
           >
             {{ cell(col(gases[row.key], i - 1)) }}
@@ -274,20 +272,11 @@ const footNote = computed(() => {
           <td class="g1-sub" colspan="2">分析意见</td>
           <td class="g1-opinion" colspan="8">
             <div class="opinion-body">
-              <template v-for="(p, i) in opinionParts" :key="'op'+i">
-                <span v-if="p.type === 'empty'">—</span>
-                <span v-else-if="p.type === 'text'">{{ p.text }}</span>
-                <div
-                  v-else-if="p.type === 'cite'"
-                  class="opinion-cite-line"
-                >
-                  <StdCite
-                    class="opinion-cite"
-                    :ref-id="p.id"
-                    inline
-                  />
-                </div>
-              </template>
+              <span v-if="!opinionParts">—</span>
+              <span v-for="(p, i) in opinionParts || []" :key="'op'+i">
+                <sub v-if="p.sub">{{ p.text }}</sub>
+                <template v-else>{{ p.text }}</template>
+              </span>
             </div>
           </td>
         </tr>
@@ -297,7 +286,13 @@ const footNote = computed(() => {
           <tr>
             <td class="g1-lbl" colspan="2">其他检查性试验</td>
             <td class="g1-val g2-ot" colspan="8" :class="{ empty: !g2.other_tests }">
-              <div class="g2-ot-prose">{{ cell(g2.other_tests) }}</div>
+              <div class="g2-ot-prose">
+                <span v-if="!otherTestsParts">—</span>
+                <span v-for="(p, i) in otherTestsParts || []" :key="'ot'+i">
+                  <sub v-if="p.sub">{{ p.text }}</sub>
+                  <template v-else>{{ p.text }}</template>
+                </span>
+              </div>
             </td>
           </tr>
           <tr>
@@ -385,8 +380,6 @@ const footNote = computed(() => {
   padding: 6px 2px;
 }
 .g1-val.empty { color: #888; }
-.g1-val.warn { color: #b45309; font-weight: 700; }
-.g1-val.over { color: #b91c1c; font-weight: 700; }
 .g1-opinion {
   font-size: 11px;
   line-height: 1.55;
@@ -395,18 +388,10 @@ const footNote = computed(() => {
   vertical-align: top;
 }
 .opinion-body { white-space: pre-wrap; }
-.opinion-cite-line {
-  display: block;
-  margin-top: 2px;
-  line-height: 1.4;
-}
-.opinion-cite :deep(.std-cite) {
-  font-family: "Menlo", "Consolas", monospace;
-  font-size: 10px;
-  color: #0f766e;
-  border-bottom-color: #0f766e;
-  font-weight: 700;
-  vertical-align: baseline;
+.rcg sub {
+  font-size: 0.72em;
+  line-height: 0;
+  vertical-align: -0.22em;
 }
 .g1-foot-note {
   margin: 6px 10px 8px;

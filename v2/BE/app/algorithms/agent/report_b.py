@@ -64,9 +64,11 @@ _SYSTEM = """你是电力试验室高级工程师,负责撰写《油中溶解气
 【opinion 结构——标签保留,正文必须是段落;各【】分区之间空一行】
 按序:【告警级别】【趋势】【处置紧急度】【故障类型】或【暂定故障类型】【处置建议】。
 - 【告警级别】:点明事实包「当日最高档」;若写依据须点 1498.2 表A.3。有超标触发写清气体;仅涨势预警时写明「档位未达注意值2,但速率已超 722 注意值」。
-- 【趋势】:只写总烃相对产气速率 vs 约 10%/月(722 §9.3.2)及涨势快/未超;勿在此段写紧急度档位。
+- 【趋势】:只写总烃相对产气速率 vs 约 10%/月(722 §9.3.2);结论**照抄「产气趋势结论」**(涨势预警/涨势快/未超注意值),有「涨势口径说明」时按其口径行文。
+  **禁止**由「是否涨势预警=否」推出「未见涨势/趋势平稳/产气缓慢」——档已达注意值2或告警时本就不作涨势预警,
+  速率越注意值即为「涨势快」,须写成「因档已达注意值2/告警,不另作涨势预警,但产气涨势明显」。勿在此段写紧急度档位。
 - 【处置紧急度】:照抄「处置紧急度」(高/中/低/不适用);有「紧急度说明」时简要融入一句。仅注意值2/告警才给高中低,更低档写「不适用」。
-- 【故障类型】/【暂定】:「故障类型主结论」「故障编码」照抄;用「可信度」「可信度说明」「故障性质」「研判要点」组织成因果句;性质服从「故障性质」。有「油纸维度附注」时原样写入一句(表5 补油/纸,不改六代码主名)。
+- 【故障类型】/【暂定】:「故障类型主结论」「故障编码」照抄;用「可信度」「可信度说明」「故障性质」「研判要点」组织成因果句;性质服从「故障性质」。有「油纸维度附注」时原样写入一句(表5 补油/纸,不改六代码主名)。有「辅助比值附注」时**逐条**写入(§10.2.3,一条都不许漏,只作附注、不改主结论与可信度)。
 - 【处置建议】:写清「建议检测周期」「二次采样安排」;有试验清单时一句「其他检查性试验见本卡片对应栏」,**勿在此罗列试验名**(试验名写到 other_tests)。事实包若有「非故障气源提示」,须在本段末尾**原样写入**该句。
 各分区之间用空行分隔(即 \\n\\n),与正式报告排版一致。
 
@@ -110,6 +112,36 @@ def resolve_report_nature(fusion: Optional[dict], decision: dict) -> str:
     return "—"
 
 
+def _trend_verdict(
+    *,
+    grade: str,
+    is_pre: bool,
+    thc_rel: Optional[float],
+    urgency: Optional[dict],
+) -> tuple[str, Optional[str]]:
+    """产气趋势结论 + 涨势预警口径说明。
+
+    「涨势预警」专指档未达注意值2、仅速率越线的情形;档已达注意值2/告警时
+    速率超注意值叫「涨势快」,不得因未挂涨势预警就写成趋势平稳。
+    """
+    if is_pre:
+        return "涨势预警", (
+            "当日档未达注意值2,但总烃相对产气速率已越注意值,按 DL/T 722 §9.3.3 a 作涨势预警"
+        )
+    rising = bool((urgency or {}).get("rising"))
+    if thc_rel is not None:
+        try:
+            rising = rising or float(thc_rel) >= 10
+        except (TypeError, ValueError):
+            pass
+    if rising:
+        return "涨势快", (
+            f"当日档已达「{grade}」,按超注意值直接处置,故不另作涨势预警"
+            "（涨势预警仅用于档未达注意值2的情形）"
+        )
+    return "未超注意值", None
+
+
 def build_facts_pack(
     *,
     grade: str,
@@ -131,13 +163,27 @@ def build_facts_pack(
     provisional = bool(f.get("provisional")) or f.get("confidence") == "低"
     # 仅写报告时附 §9.3.3 e 提示;检测/告警 API 不外泄
     non_fault_tip = _NON_FAULT_TIP if grade in ("注意值2", "告警值") else None
+    # 三法研判要点与 §10.2.3 辅助比值分开装:辅助比值条数不定,混在一起会被截断
     reasoning = []
-    for r in (f.get("reasoning") or [])[:4]:
-        if isinstance(r, dict):
-            reasoning.append({
-                "method": r.get("label") or "",
-                "result": r.get("text") or "",
-            })
+    for r in (f.get("reasoning") or []):
+        if not isinstance(r, dict):
+            continue
+        if str(r.get("cite") or "").startswith("722-10.2.3"):
+            continue
+        reasoning.append({
+            "method": r.get("label") or "",
+            "result": r.get("text") or "",
+        })
+        if len(reasoning) >= 4:
+            break
+    aux_ratios = [
+        {"ratio": n.get("ratio") or "", "text": n.get("text") or ""}
+        for n in ((f.get("aux_ratios") or {}).get("notes") or [])
+        if n.get("text")
+    ]
+    trend_verdict, trend_note = _trend_verdict(
+        grade=grade, is_pre=is_pre, thc_rel=thc_rel, urgency=urgency,
+    )
     return {
         "grade": grade,
         "gases_uL_L": {
@@ -153,6 +199,8 @@ def build_facts_pack(
         "is_pre": is_pre,
         "thc_rel_rate_pct_per_month": thc_rel,
         "thc_attention_rel_rate_pct_per_month": 10,
+        "trend_verdict": trend_verdict,
+        "trend_note": trend_note,
         "urgency_level": (urgency or {}).get("level") if urgency else None,
         "urgency_advice": (urgency or {}).get("advice") if urgency else None,
         "diagnosis_triggered": bool(diagnosis.get("triggered")),
@@ -165,6 +213,7 @@ def build_facts_pack(
         "provisional": provisional,
         "report_nature": report_nature,
         "reasoning": reasoning,
+        "aux_ratios": aux_ratios,
         "period": decision.get("period"),
         "resample": decision.get("resample"),
         "measures": measures,
@@ -175,6 +224,26 @@ def build_facts_pack(
         "non_fault_source_tip": non_fault_tip,
         "opinion_length_hint": "opinion 320～560字;有measures时other_tests 80～220字,均为段落体",
     }
+
+
+def _trend_paragraph(facts: dict[str, Any]) -> str:
+    """【趋势】规则段:模板成稿与大模型口径兜底共用。"""
+    rate = facts.get("thc_rel_rate_pct_per_month")
+    rate_txt = f"{rate}%/月" if rate is not None else "—"
+    attn = facts.get("thc_attention_rel_rate_pct_per_month") or 10
+    if facts.get("is_pre"):
+        return (
+            f"【趋势】总烃相对产气速率约为 {rate_txt},已越过相对产气速率注意值(约 {attn}%/月),"
+            f"满足涨势预警条件。表明产气过程仍在发展,需要加密监视并复核数据可信性。"
+        )
+    if facts.get("trend_verdict") == "涨势快":
+        return (
+            f"【趋势】总烃相对产气速率约为 {rate_txt},已明显超过相对产气速率注意值"
+            f"(约 {attn}%/月),产气涨势明显。"
+            f"{str(facts.get('trend_note') or '').rstrip('。')}。"
+        )
+    compare = f"相对产气速率注意值约为 {attn}%/月,当前涨势相对可控。" if rate is not None else ""
+    return f"【趋势】以总烃相对产气速率衡量,当前约为 {rate_txt}。{compare}"
 
 
 def build_template_opinion(*, facts: dict[str, Any]) -> str:
@@ -210,25 +279,7 @@ def build_template_opinion(*, facts: dict[str, Any]) -> str:
             )
 
     # 趋势(只写速率;紧急度单列)
-    if facts.get("is_pre"):
-        trend_para = (
-            f"【趋势】总烃相对产气速率约为 {rate_txt},已越过相对产气速率注意值(约 {attn}%/月),"
-            f"满足涨势预警条件。表明产气过程仍在发展,需要加密监视并复核数据可信性。"
-        )
-    else:
-        compare = ""
-        if rate is not None:
-            try:
-                rv = float(rate)
-                if rv >= attn:
-                    compare = f"明显超过相对产气速率注意值(约 {attn}%/月),产气过程偏活跃。"
-                else:
-                    compare = f"相对产气速率注意值约为 {attn}%/月,当前涨势相对可控。"
-            except (TypeError, ValueError):
-                compare = ""
-        trend_para = (
-            f"【趋势】以总烃相对产气速率衡量,当前约为 {rate_txt}。{compare}"
-        )
+    trend_para = _trend_paragraph(facts)
 
     # 处置紧急度(注意值2+/告警才有高中低;否则不适用)
     urg = facts.get("urgency_level")
@@ -277,6 +328,13 @@ def build_template_opinion(*, facts: dict[str, Any]) -> str:
             )
         if facts.get("paper_note"):
             fault_para += str(facts["paper_note"]).rstrip("。") + "。"
+        aux_txt = "；".join(
+            str(a.get("text") or "").rstrip("。")
+            for a in (facts.get("aux_ratios") or [])
+            if a.get("text")
+        )
+        if aux_txt:
+            fault_para += f"辅助比值方面,{aux_txt}。"
     else:
         fault_para = f"【故障类型】{facts.get('trigger_note') or '未进入判型步骤'}。"
 
@@ -371,6 +429,8 @@ def _facts_for_llm(facts: dict[str, Any]) -> dict[str, Any]:
             for t in (facts.get("triggers") or [])
         ],
         "是否涨势预警": "是" if facts.get("is_pre") else "否",
+        "产气趋势结论": facts.get("trend_verdict"),
+        "涨势口径说明": facts.get("trend_note"),
         "总烃相对产气速率_百分每月": facts.get("thc_rel_rate_pct_per_month"),
         "相对产气速率注意值_百分每月": facts.get("thc_attention_rel_rate_pct_per_month"),
         "产气速率依据标准": facts.get("rate_standard"),
@@ -406,6 +466,9 @@ def _facts_for_llm(facts: dict[str, Any]) -> dict[str, Any]:
     paper = facts.get("paper_note")
     if paper:
         out["油纸维度附注"] = paper
+    aux = [a.get("text") for a in (facts.get("aux_ratios") or []) if a.get("text")]
+    if aux:
+        out["辅助比值附注"] = aux
     return out
 
 
@@ -449,6 +512,126 @@ def _ensure_report_nature(other: str, facts: dict[str, Any]) -> str:
         type_bit = f"（{code}）"
     prefix = f"综合色谱判型,当前故障性质{head}「{nature}」{type_bit}。"
     return prefix + t
+
+
+_CHEM_SUB = {
+    "C2H2": "C₂H₂", "C2H4": "C₂H₄", "C2H6": "C₂H₆",
+    "CH4": "CH₄", "CO2": "CO₂", "H2": "H₂", "O2": "O₂", "N2": "N₂",
+}
+_CHEM_RE = re.compile(
+    r"(?<![A-Za-z0-9])(C2H2|C2H4|C2H6|CH4|CO2|H2|O2|N2)(?![0-9A-Za-z])"
+)
+
+
+def _normalize_chem(text: str) -> str:
+    """化学式统一下标写法,并清掉大模型带出的零散空格。"""
+    t = text or ""
+    t = _CHEM_RE.sub(lambda m: _CHEM_SUB[m.group(1)], t)
+    # CO₂ /CO → CO₂/CO
+    t = re.sub(r"([A-Z][A-Za-z]?[₀-₉])\s*/\s*([A-Z])", r"\1/\2", t)
+    # C₂H₂ 浓度 → C₂H₂浓度
+    t = re.sub(r"([₀-₉])[ \t]+([\u4e00-\u9fff])", r"\1\2", t)
+    t = re.sub(r"[ \t]+([，。；、）：])", r"\1", t)
+    return t
+
+
+_REPORT_STANDARDS = (
+    (r"DL/T\s*1498\.2(?:[-—]\s*2025)?", "《DL/T 1498.2-2025》"),
+    (r"DL/T\s*722(?:[-—]\s*2014)?", "《DL/T 722-2014》"),
+    (r"DL/T\s*1685(?:[-—]\s*2017)?", "《DL/T 1685-2017》"),
+)
+_STANDARD_DETAIL = re.compile(
+    r"\s*(?:"
+    r"§\s*[\d.]+(?:\s*[a-z])?"
+    r"|第\s*[\d.]+\s*(?:条|节)"
+    r"|附录\s*[A-Z](?:\s*表\s*[A-Z]\.\d+)?"
+    r"|表\s*[A-Z]?\s*[\d.]+"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _normalize_report_standards(text: str) -> str:
+    """报告只保留标准简称，不展示章节、条款、附录或表号。"""
+    t = text or ""
+    protected: dict[str, str] = {}
+    for i, (_, title) in enumerate(_REPORT_STANDARDS):
+        token = f"@@STD_{i}@@"
+        if title in t:
+            protected[token] = title
+            t = t.replace(title, token)
+    for pattern, title in _REPORT_STANDARDS:
+        t = re.sub(pattern, title, t, flags=re.IGNORECASE)
+    # 兼容模板或模型偶尔输出的裸简称；已规范的书名号内容不得再次替换。
+    t = re.sub(r"(?<!DL/T )(?<![\d./A-Za-z])1498\.2(?![\d.])", "《DL/T 1498.2-2025》", t)
+    t = re.sub(r"(?<!DL/T )(?<![\d./A-Za-z])722(?![\d.])", "《DL/T 722-2014》", t)
+    t = re.sub(r"(?<!DL/T )(?<![\d./A-Za-z])1685(?![\d.])", "《DL/T 1685-2017》", t)
+    # 报告模板中的裸条款均属于 DL/T 722；先补标准简称，避免删条款后留下“按 处置”。
+    t = re.sub(
+        r"按\s*§\s*[\d.]+(?:\s*[a-z])?",
+        "按《DL/T 722-2014》",
+        t,
+        flags=re.IGNORECASE,
+    )
+    t = re.sub(
+        r"不启动\s*§\s*[\d.]+\s*紧急度研判",
+        "依据《DL/T 722-2014》，不启动紧急度研判",
+        t,
+        flags=re.IGNORECASE,
+    )
+    for token, title in protected.items():
+        t = t.replace(token, title)
+    # 标准名后的具体定位均删掉；连续定位（§4.3、§9.3.3 e）一并处理。
+    t = re.sub(
+        r"(《DL/T\s+(?:1498\.2-2025|722-2014|1685-2017)》)"
+        r"(?:\s*(?:、|及|与)?\s*"
+        r"(?:§\s*[\d.]+(?:\s*[a-z])?|附录\s*[A-Z](?:\s*表\s*[A-Z]\.\d+)?|表\s*[A-Z]?\s*[\d.]+))+",
+        r"\1",
+        t,
+        flags=re.IGNORECASE,
+    )
+    # 模型有时省略第二个标准名，仅写“按 §9.3.3”；报告中也不保留这种裸条款。
+    t = _STANDARD_DETAIL.sub("", t)
+    t = re.sub(r"《(DL/T [^》]+)》(?:\s*《\1》)+", r"《\1》", t)
+    t = re.sub(r"([\u4e00-\u9fff，。；：、])\s+(《)", r"\1\2", t)
+    t = re.sub(r"(》)\s+([\u4e00-\u9fff，。；：、])", r"\1\2", t)
+    t = re.sub(r"\s+([，。；、）])", r"\1", t)
+    return t
+
+
+_TREND_MISREAD = (
+    "未达到涨势预警", "未触发涨势预警", "不构成涨势预警", "未形成涨势预警",
+    "未满足涨势预警", "趋势平稳", "无明显涨势", "未见涨势", "涨势不明显", "产气缓慢",
+)
+
+
+def _ensure_trend_verdict(opinion: str, facts: dict[str, Any]) -> str:
+    """涨势快当日不许写成「未达涨势预警=没涨势」;口径写偏就整段换回规则句。"""
+    if facts.get("trend_verdict") != "涨势快":
+        return opinion
+    parts = re.split(r"\n\n+", (opinion or "").strip())
+    for i, p in enumerate(parts):
+        if not p.startswith("【趋势】"):
+            continue
+        misread = any(b in p for b in _TREND_MISREAD)
+        stated = "涨势明显" in p or "涨势快" in p
+        if misread or not stated:
+            parts[i] = _trend_paragraph(facts)
+        break
+    return "\n\n".join(parts)
+
+
+def _finish_opinion(text: str, facts: dict[str, Any]) -> str:
+    """定稿收口:补 §9.3.3 e 提示 → 校正趋势口径 → 排版 → 化学式规范。"""
+    t = _ensure_non_fault_tip(text, facts)
+    t = _ensure_trend_verdict(t, facts)
+    t = _normalize_report_standards(t)
+    return _normalize_chem(_normalize_section_breaks(t))
+
+
+def _finish_other_tests(text: str) -> str:
+    """其他检查性试验与分析意见使用同一标准简称、化学式口径。"""
+    return _normalize_chem(_normalize_report_standards(text))
 
 
 def _normalize_section_breaks(text: str) -> str:
@@ -578,8 +761,8 @@ def generate_opinion(
 
     if force_template or not llm_enabled():
         return {
-            "text": _normalize_section_breaks(_ensure_non_fault_tip(opinion_tpl, facts)),
-            "other_tests": other_tpl,
+            "text": _finish_opinion(opinion_tpl, facts),
+            "other_tests": _finish_other_tests(other_tpl),
             "mode": "rule_template",
             "error": None,
             "note": "未配置大模型密钥，已使用固定模板" if not llm_enabled() and not force_template else None,
@@ -608,8 +791,8 @@ def generate_opinion(
         data = _parse_llm_json(raw)
         if not data:
             return {
-                "text": _normalize_section_breaks(_ensure_non_fault_tip(opinion_tpl, facts)),
-                "other_tests": other_tpl,
+                "text": _finish_opinion(opinion_tpl, facts),
+                "other_tests": _finish_other_tests(other_tpl),
                 "mode": "rule_template",
                 "error": "大模型未返回合法 JSON，已改用固定模板",
             }
@@ -623,10 +806,8 @@ def generate_opinion(
         err_o = _validate_opinion(opinion, facts)
         err_t = _validate_other_tests(other, facts) if (facts.get("measures") or []) else None
 
-        final_opinion = _normalize_section_breaks(
-            _ensure_non_fault_tip(opinion if not err_o else opinion_tpl, facts)
-        )
-        final_other = other if not err_t else other_tpl
+        final_opinion = _finish_opinion(opinion if not err_o else opinion_tpl, facts)
+        final_other = _finish_other_tests(other if not err_t else other_tpl)
         notes = []
         if err_o:
             notes.append(f"分析意见未过校验({err_o})，已用扩写模板")
@@ -642,8 +823,8 @@ def generate_opinion(
         }
     except Exception as e:  # noqa: BLE001
         return {
-            "text": _normalize_section_breaks(_ensure_non_fault_tip(opinion_tpl, facts)),
-            "other_tests": other_tpl,
+            "text": _finish_opinion(opinion_tpl, facts),
+            "other_tests": _finish_other_tests(other_tpl),
             "mode": "rule_template",
             "error": f"大模型调用失败，已改用固定模板: {e}",
         }

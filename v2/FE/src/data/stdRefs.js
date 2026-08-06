@@ -62,19 +62,16 @@ export const STD_REFS = {
     image: imgDuval,
   },
   '722-10.2.3.1': {
-    displayId: 'CO₂/CO',
     title: 'DL/T 722 CO₂/CO 辅助比值',
     body: 'CO₂/CO <3 时故障可能涉及固体绝缘；>7 属正常老化。宜用增量计算。本系统仅将 <3 写入油/纸附注，不改主结论。',
     image: imgAuxCo2Co,
   },
   '722-10.2.3.2': {
-    displayId: 'C₂H₂/H₂',
     title: 'DL/T 722 C₂H₂/H₂ 辅助比值',
     body: '特征气体达表3注意值且 C₂H₂/H₂ >2（宜用增量）时，可能是有载分接开关油/气渗入本体。仅作辅助附注，不改主结论。',
     image: imgAuxC2h2H2,
   },
   '722-10.2.3.3': {
-    displayId: 'O₂/N₂',
     title: 'DL/T 722 O₂/N₂ 辅助比值',
     body: '油中 O₂/N₂ 约 0.5；开放式设备 <0.3 提示氧耗过大宜关注，密封良好设备可正常低于 0.05。在线监测一般不测；有数据时仅作辅助附注。',
     image: imgAuxO2N2,
