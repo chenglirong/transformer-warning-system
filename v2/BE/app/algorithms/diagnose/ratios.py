@@ -25,8 +25,8 @@ _NON_DIAGNOSTIC = {UNDETERMINED, INSUFFICIENT_DATA}
 
 # 表7 编码三元组 → 故障类型
 _FAULT_CODE_TABLE = {
-    # 表7:低温过热<150℃ = (0,0,1);无 (0,0,0) 行 → 无对应编码
-    (0, 0, 1): THERMAL_LOW1,
+    # 表7 首行:低温过热<150℃ = (0,0,0)
+    (0, 0, 0): THERMAL_LOW1,
     (0, 2, 0): THERMAL_LOW2,
     (0, 2, 1): THERMAL_MID,
     (0, 0, 2): THERMAL_HIGH,
@@ -43,14 +43,17 @@ _FAULT_CODE_TABLE = {
     (1, 2, 2): ARC_DISCHARGE_THERMAL,
 }
 
-# 表7 → Duval 六代码(用于与大卫三角比一致性;国标无官方映射,属工程对照)
+# 表7 → 大卫三角标签(用于一致性对照;国标无官方映射,属工程对照)
+# 六主类一对一;两个「兼过热」对应三角 D+T 混合区(不压进 D1/D2)
 FAULT_TO_DUVAL = {
     THERMAL_LOW1: "T1", THERMAL_LOW2: "T1",
     THERMAL_MID: "T2",
     THERMAL_HIGH: "T3",
     PARTIAL_DISCHARGE: "PD",
-    LOW_DISCHARGE: "D1", LOW_DISCHARGE_THERMAL: "D1",
-    ARC_DISCHARGE: "D2", ARC_DISCHARGE_THERMAL: "D2",
+    LOW_DISCHARGE: "D1",
+    LOW_DISCHARGE_THERMAL: "DT",
+    ARC_DISCHARGE: "D2",
+    ARC_DISCHARGE_THERMAL: "DT",
 }
 
 # 浓度过低经验下限(工程取值,国标未给单气体比值下限明文)
