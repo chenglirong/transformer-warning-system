@@ -50,19 +50,49 @@ def duval_coords(
 
 
 def classify_zone(pct_ch4: float, pct_c2h4: float, pct_c2h2: float) -> str:
-    """按 Duval Triangle 1 边界落区。"""
+    """按 DL/T 722—2014 表C.1《区域极限》落区。
+
+    区域极限线(表C.1):
+      PD  CH4=98%
+      D1  C2H4=23%,  C2H2=13%
+      D2  C2H4=23%,  C2H2=13%,  C2H4=38%,  C2H2=29%
+      T1  C2H2=4%,   C2H4=10%
+      T2  C2H2=4%,   C2H4=10%,  C2H4=50%
+      T3  C2H2=15%,  C2H4=50%
+      D+T 由 D2/T2/T3 的极限线围成的中间区
+
+    边界点归属:落在分界线上 → 归相邻两区中故障更严重的一区。
+    严重度序 D2 > D1 > D+T > T3 > T2 > T1(放电重于过热;
+    同类能级/温度高者重;D+T 放电兼过热,重于纯热)。据此各极限线归属:
+      C2H2=13 → D 类                C2H2=29 → D2
+      C2H4=23 → D2                  C2H4=38 → D2(D2 重于 D+T)
+      C2H2=4  → D+T                 C2H2=15 → D+T
+      C2H4=10 → T2                  C2H4=50 → T3
+    唯 PD(CH4=98)按行业习惯取 ≥98(含线),不套上面「更严重」序。
+    """
+    # PD:顶角 CH4≥98%(行业习惯含 98 线)
     if pct_ch4 >= 98.0:
         return "PD"
-    if pct_c2h2 >= 13.0:
-        return "D1" if pct_c2h4 < 23.0 else "D2"
-    if pct_c2h4 >= 50.0 and pct_c2h2 < 15.0:
-        return "T3"
+    # 纯热故障竖线:C2H2<4%(C2H2=4 归 D+T,故此处严格 <4)
     if pct_c2h2 < 4.0:
-        if pct_c2h4 < 10.0:
+        if pct_c2h4 < 10.0:      # C2H4=10 归 T2
             return "T1"
-        if pct_c2h4 < 50.0:
+        if pct_c2h4 < 50.0:      # C2H4=50 归 T3
             return "T2"
         return "T3"
+    # T3:C2H2<15% 且 C2H4≥50%(C2H2=15 归 D+T;C2H4=50 归 T3)
+    if pct_c2h2 < 15.0 and pct_c2h4 >= 50.0:
+        return "T3"
+    # 放电类:C2H2≥13%(C2H2=13 归 D 类)
+    if pct_c2h2 >= 13.0:
+        if pct_c2h4 < 23.0:      # C2H4=23 归 D2,故 D1 严格 <23
+            return "D1"
+        # D2 四边形:C2H4≤38 或 C2H2≥29(C2H4=38 归 D2;C2H2=29 归 D2)
+        if pct_c2h4 <= 38.0 or pct_c2h2 >= 29.0:
+            return "D2"
+        # C2H2 13~29% 且 C2H4>38% 的右上折块 → D+T
+        return "DT"
+    # 其余(4%≤C2H2<13% 且非 T3):放电兼过热夹区
     return "DT"
 
 
