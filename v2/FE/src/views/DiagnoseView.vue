@@ -244,35 +244,89 @@ const gasGrid = computed(() => {
 })
 
 // —— Duval ——
-const TOP = { x: 200, y: 28 }
-const LEFT = { x: 28, y: 330 }
-const RIGHT = { x: 372, y: 330 }
+// 三角三顶点像素坐标(留出四周页边,给 CH₄/C₂H₂/C₂H₄ 轴标注让位)
+const TOP = { x: 200, y: 46 }
+const LEFT = { x: 46, y: 320 }
+const RIGHT = { x: 354, y: 320 }
 
-function xy(c2h2, c2h4, ch4) {
+/** 三坐标 → SVG/画布像素点(重心插值)。返回 {x, y}。 */
+function triXY(c2h2, c2h4, ch4) {
   const s = c2h2 + c2h4 + ch4
-  const a = c2h2 / s
-  const b = c2h4 / s
-  const c = ch4 / s
-  return `${(a * LEFT.x + b * RIGHT.x + c * TOP.x).toFixed(1)},${(a * LEFT.y + b * RIGHT.y + c * TOP.y).toFixed(1)}`
+  const a = c2h2 / s, b = c2h4 / s, c = ch4 / s
+  return {
+    x: a * LEFT.x + b * RIGHT.x + c * TOP.x,
+    y: a * LEFT.y + b * RIGHT.y + c * TOP.y,
+  }
 }
-function poly(verts) {
-  return verts.map(([a, b, c]) => xy(a, b, c)).join(' ')
+// 大卫三角:改用离屏 Canvas 逐像素上色,着色规则 == 后端 classify_zone,
+// 图区与落区判定永远一致(不再手连顶点,免接缝/漏叠)。边界照 DL/T 722—2014 表C.1。
+// 各区颜色沿用页面图例 ZONE_LEGEND。
+const ZONE_COLORS = {
+  PD: '#60a5fa', D1: '#34d399', D2: '#f5555a',
+  T1: '#facc15', T2: '#fb923c', T3: '#a78bfa', DT: '#2dd4bf',
 }
-const ZONES = [
-  { id: 'PD', fill: 'rgba(96,165,250,0.45)', label: [1, 1, 98], text: 'PD',
-    verts: [[0, 0, 100], [2, 0, 98], [0, 2, 98]] },
-  { id: 'D1', fill: 'rgba(52,211,153,0.28)', label: [55, 8, 37], text: 'D1',
-    verts: [[13, 0, 87], [100, 0, 0], [77, 23, 0], [13, 23, 64]] },
-  { id: 'D2', fill: 'rgba(245,85,90,0.32)', label: [35, 50, 15], text: 'D2',
-    verts: [[13, 23, 64], [13, 87, 0], [77, 23, 0]] },
-  { id: 'T1', fill: 'rgba(250,204,21,0.28)', label: [2, 5, 93], text: 'T1',
-    verts: [[0, 0, 100], [0, 10, 90], [4, 10, 86], [4, 0, 96]] },
-  { id: 'T2', fill: 'rgba(251,146,60,0.28)', label: [2, 30, 68], text: 'T2',
-    verts: [[0, 10, 90], [0, 50, 50], [4, 50, 46], [4, 10, 86]] },
-  { id: 'T3', fill: 'rgba(167,139,250,0.32)', label: [5, 70, 25], text: 'T3',
-    verts: [[0, 50, 50], [0, 100, 0], [13, 87, 0], [13, 50, 37]] },
-  { id: 'DT', fill: 'rgba(45,212,191,0.16)', label: [8, 25, 67], text: 'D+T',
-    verts: [[4, 0, 96], [13, 0, 87], [13, 23, 64], [13, 50, 37], [4, 50, 46], [4, 10, 86]] },
+
+// 与后端 diagnose/duval.py 的 classify_zone 逐行对应(严格照 DL/T 722—2014 表C.1《区域极限》)。
+// D2 = 四条极限线 23%C2H4 / 13%C2H2 / 38%C2H4 / 29%C2H2 围出的四边形。
+// 边界点归更严重区(严重度 D2>D1>D+T>T3>T2>T1):
+//   C2H2=13/29→D类/D2  C2H4=23/38→D2  C2H2=4/15→D+T  C2H4=10/50→T2/T3
+//   唯 PD(CH4=98)按行业习惯取 ≥98(含线)。
+function classifyZone(pctCh4, pctC2h4, pctC2h2) {
+  if (pctCh4 >= 98) return 'PD'
+  if (pctC2h2 < 4) {
+    if (pctC2h4 < 10) return 'T1'
+    if (pctC2h4 < 50) return 'T2'
+    return 'T3'
+  }
+  if (pctC2h2 < 15 && pctC2h4 >= 50) return 'T3'
+  if (pctC2h2 >= 13) {
+    if (pctC2h4 < 23) return 'D1'
+    if (pctC2h4 <= 38 || pctC2h2 >= 29) return 'D2'
+    return 'DT'  // C2H2 13~29% 且 C2H4>38% 的右上折块 → D+T
+  }
+  return 'DT'    // 4%≤C2H2<13% 且非 T3:放电兼过热夹区
+}
+
+// 三条边的刻度(20/40/60/80),照国标图C.2:每边一组短刻度线 + 数字
+// 每条边由「起点顶点 → 终点顶点」,frac=沿边比例(该边终点组分的百分比)
+const AXIS_TICKS = [20, 40, 60, 80]
+function edgeTicks(A, B, outN) {
+  // A→B 边,outN=垂直边向外的法向(单位化后偏移)。返回刻度线段与数字位置。
+  const dx = B.x - A.x, dy = B.y - A.y
+  const len = Math.hypot(dx, dy)
+  const nx = outN.x, ny = outN.y
+  return AXIS_TICKS.map((t) => {
+    const f = t / 100
+    const x = A.x + dx * f, y = A.y + dy * f
+    return {
+      t,
+      x1: x, y1: y,
+      x2: x + nx * 6, y2: y + ny * 6,
+      tx: x + nx * 15, ty: y + ny * 15,
+    }
+  })
+}
+// 三条边外法向(粗略指向三角外侧)
+const leftAxis = computed(() => edgeTicks(LEFT, TOP, { x: -0.87, y: -0.5 }))   // C2H2→CH4 腰(%CH4 递增)
+const rightAxis = computed(() => edgeTicks(TOP, RIGHT, { x: 0.87, y: -0.5 }))  // CH4→C2H4 腰(%C2H4 递增)
+const bottomAxis = computed(() => edgeTicks(RIGHT, LEFT, { x: 0, y: 1 }))      // C2H4→C2H2 底(%C2H2 递增)
+
+// PD/T1/T2 三区太窄,标注引出到右腰外(照国标图C.2:引线从区内指向腰外文字)。
+// from=区内锚点 [C2H2,C2H4,CH4],to=腰外文字像素点。
+function leader(fromTri, toPx) {
+  const p = triXY(fromTri[0], fromTri[1], fromTri[2])
+  return { x1: p.x, y1: p.y, x2: toPx.x, y2: toPx.y, tx: toPx.x, ty: toPx.y }
+}
+const pdLeader = computed(() => leader([0.5, 0.5, 99], { x: TOP.x, y: TOP.y - 22 }))
+const t1Leader = computed(() => leader([2, 6, 92], { x: TOP.x + 60, y: TOP.y + 4 }))
+const t2Leader = computed(() => leader([2.5, 24, 73.5], { x: TOP.x + 96, y: TOP.y + 42 }))
+
+// 区内文字锚点 [C2H2%, C2H4%, CH4%]。PD/T1/T2 太窄改用引线,不进此表。
+const ZONE_LABELS_POS = [
+  { id: 'T3', text: 'T3', at: [8, 82, 10] },
+  { id: 'D1', text: 'D1', at: [55, 10, 35] },
+  { id: 'D2', text: 'D2', at: [40, 28, 32] },
+  { id: 'DT', text: 'D+T', at: [20, 48, 32] },
 ]
 /** 附录C 六分区：代码 + 具体类型名，单行图例 */
 const ZONE_LEGEND = [
@@ -288,12 +342,51 @@ const ZONE_LEGEND = [
 const point = computed(() => {
   const p = duval.value?.percents
   if (!p) return null
-  const [x, y] = xy(p.pct_c2h2, p.pct_c2h4, p.pct_ch4).split(',').map(Number)
-  return { x, y }
+  return triXY(p.pct_c2h2, p.pct_c2h4, p.pct_ch4)
 })
-const labelPos = (v) => {
-  const [x, y] = xy(...v).split(',').map(Number)
-  return { x, y }
+const labelPos = (v) => triXY(v[0], v[1], v[2])
+
+// 判定某像素是否落在三角内(重心系数全 ≥0)。
+function pxToTri(px, py) {
+  // 解重心坐标:px,py = a*LEFT + b*RIGHT + c*TOP, a+b+c=1
+  const det = (RIGHT.x - LEFT.x) * (TOP.y - LEFT.y) - (TOP.x - LEFT.x) * (RIGHT.y - LEFT.y)
+  const b = ((px - LEFT.x) * (TOP.y - LEFT.y) - (TOP.x - LEFT.x) * (py - LEFT.y)) / det
+  const c = ((RIGHT.x - LEFT.x) * (py - LEFT.y) - (px - LEFT.x) * (RIGHT.y - LEFT.y)) / det
+  const a = 1 - b - c
+  if (a < -1e-9 || b < -1e-9 || c < -1e-9) return null
+  // a=C2H2占比 b=C2H4 c=CH4
+  return { c2h2: a * 100, c2h4: b * 100, ch4: c * 100 }
+}
+
+const duvalCanvas = ref(null)
+/** 逐像素按 classifyZone 上色,着色规则 == 后端落区。 */
+function drawDuval() {
+  const cv = duvalCanvas.value
+  if (!cv) return
+  const W = 400, H = 360
+  const dpr = window.devicePixelRatio || 1
+  cv.width = W * dpr
+  cv.height = H * dpr
+  const ctx = cv.getContext('2d')
+  ctx.scale(dpr, dpr)
+  ctx.clearRect(0, 0, W, H)
+  const img = ctx.createImageData(W * dpr, H * dpr)
+  const data = img.data
+  const hexToRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]
+  const rgbCache = {}
+  for (const [id, hex] of Object.entries(ZONE_COLORS)) rgbCache[id] = hexToRgb(hex)
+  for (let py = 0; py < H * dpr; py++) {
+    for (let px = 0; px < W * dpr; px++) {
+      const tri = pxToTri(px / dpr, py / dpr)
+      const off = (py * W * dpr + px) * 4
+      if (!tri) { data[off + 3] = 0; continue }
+      const z = classifyZone(tri.ch4, tri.c2h4, tri.c2h2)
+      const [r, g, b] = rgbCache[z]
+      data[off] = r; data[off + 1] = g; data[off + 2] = b
+      data[off + 3] = 128 // ~0.5 alpha,和原 fill 透明度相近
+    }
+  }
+  ctx.putImageData(img, 0, 0)
 }
 
 function disabledDate(d) {
@@ -404,6 +497,7 @@ async function loadDay(date) {
     await nextTick()
     if (triggered.value) renderRadar()
     else disposeRadar()
+    if (duval.value?.ok) drawDuval()
   } finally {
     if (selectedDate.value === req) dayLoading.value = false
   }
@@ -599,19 +693,53 @@ function onResize() {
             </div>
 
             <div class="duval-wrap">
-              <svg v-if="duval?.ok" viewBox="0 0 400 360" class="duval-svg">
-                <polygon v-for="z in ZONES" :key="z.id" :points="poly(z.verts)" :fill="z.fill"
-                  stroke="rgba(160,174,192,0.2)" stroke-width="0.8" />
-                <polygon :points="`${TOP.x},${TOP.y} ${RIGHT.x},${RIGHT.y} ${LEFT.x},${LEFT.y}`"
-                  fill="none" stroke="rgba(200,210,230,0.75)" stroke-width="1.8" />
-                <text v-for="z in ZONES" :key="z.id+'t'"
-                  :x="labelPos(z.label).x" :y="labelPos(z.label).y" class="zlab">{{ z.text }}</text>
-                <text :x="TOP.x" :y="TOP.y - 10" class="vertex">CH₄</text>
-                <text :x="LEFT.x - 4" :y="LEFT.y + 16" class="vertex">C₂H₂</text>
-                <text :x="RIGHT.x + 4" :y="RIGHT.y + 16" class="vertex">C₂H₄</text>
-                <circle v-if="point" :cx="point.x" :cy="point.y" r="7"
-                  fill="#f5555a" stroke="#fff" stroke-width="2" />
-              </svg>
+              <div v-if="duval?.ok" class="duval-stage">
+                <!-- 分区色块:离屏 Canvas 逐像素上色,规则 == 后端 classify_zone -->
+                <canvas ref="duvalCanvas" class="duval-canvas" />
+                <!-- 外框 / 顶点标注 / 分区文字 / 落点:SVG 叠在 canvas 之上 -->
+                <svg viewBox="0 0 400 360" class="duval-svg duval-overlay">
+                  <polygon :points="`${TOP.x},${TOP.y} ${RIGHT.x},${RIGHT.y} ${LEFT.x},${LEFT.y}`"
+                    fill="none" stroke="rgba(200,210,230,0.75)" stroke-width="1.8" />
+
+                  <!-- 三边刻度(20/40/60/80)+ 数字 -->
+                  <g class="axis-ticks">
+                    <template v-for="(tk, i) in leftAxis" :key="'l'+i">
+                      <line :x1="tk.x1" :y1="tk.y1" :x2="tk.x2" :y2="tk.y2" />
+                      <text :x="tk.tx" :y="tk.ty" class="tick-num">{{ tk.t }}</text>
+                    </template>
+                    <template v-for="(tk, i) in rightAxis" :key="'r'+i">
+                      <line :x1="tk.x1" :y1="tk.y1" :x2="tk.x2" :y2="tk.y2" />
+                      <text :x="tk.tx" :y="tk.ty" class="tick-num">{{ tk.t }}</text>
+                    </template>
+                    <template v-for="(tk, i) in bottomAxis" :key="'b'+i">
+                      <line :x1="tk.x1" :y1="tk.y1" :x2="tk.x2" :y2="tk.y2" />
+                      <text :x="tk.tx" :y="tk.ty" class="tick-num">{{ tk.t }}</text>
+                    </template>
+                  </g>
+
+                  <!-- 区内文字(PD 除外) -->
+                  <text v-for="z in ZONE_LABELS_POS" :key="z.id+'t'"
+                    :x="labelPos(z.at).x" :y="labelPos(z.at).y" class="zlab">{{ z.text }}</text>
+
+                  <!-- PD / T1 / T2 太窄,引线指出,标注在腰外(照国标图C.2) -->
+                  <g class="leaders">
+                    <line :x1="pdLeader.x1" :y1="pdLeader.y1" :x2="pdLeader.x2" :y2="pdLeader.y2" />
+                    <text :x="pdLeader.tx" :y="pdLeader.ty - 4" class="zlab">PD</text>
+                    <line :x1="t1Leader.x1" :y1="t1Leader.y1" :x2="t1Leader.x2" :y2="t1Leader.y2" />
+                    <text :x="t1Leader.tx + 4" :y="t1Leader.ty" class="zlab" text-anchor="start">T1</text>
+                    <line :x1="t2Leader.x1" :y1="t2Leader.y1" :x2="t2Leader.x2" :y2="t2Leader.y2" />
+                    <text :x="t2Leader.tx + 4" :y="t2Leader.ty" class="zlab" text-anchor="start">T2</text>
+                  </g>
+
+                  <!-- 轴名放三条边中点外侧(照国标图C.2) -->
+                  <text :x="(TOP.x + LEFT.x) / 2 - 34" :y="(TOP.y + LEFT.y) / 2" class="vertex" text-anchor="middle">%CH₄</text>
+                  <text :x="(TOP.x + RIGHT.x) / 2 + 34" :y="(TOP.y + RIGHT.y) / 2" class="vertex" text-anchor="middle">%C₂H₄</text>
+                  <text :x="(LEFT.x + RIGHT.x) / 2" :y="LEFT.y + 34" class="vertex" text-anchor="middle">%C₂H₂</text>
+
+                  <circle v-if="point" :cx="point.x" :cy="point.y" r="7"
+                    fill="#f5555a" stroke="#fff" stroke-width="2" />
+                </svg>
+              </div>
               <p v-else class="muted">{{ duval?.reason || duval?.fault || '未判定' }}</p>
             </div>
 
@@ -911,6 +1039,9 @@ function onResize() {
   display: flex; justify-content: center; align-items: center;
   flex: 1; min-height: 200px;
 }
+.duval-stage { position: relative; width: 100%; max-width: 280px; }
+.duval-canvas { display: block; width: 100%; height: auto; aspect-ratio: 400 / 360; }
+.duval-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
 .duval-svg { width: 100%; max-width: 280px; height: auto; }
 .zlab {
   fill: var(--fg); font-size: 11px; font-weight: 700;
@@ -920,6 +1051,13 @@ function onResize() {
 .vertex {
   fill: var(--fg-3); font-size: 10px; font-weight: 600;
   text-anchor: middle;
+  font-family: 'JetBrains Mono', monospace;
+}
+.axis-ticks line { stroke: rgba(200, 210, 230, 0.55); stroke-width: 0.8; }
+.leaders line { stroke: rgba(200, 210, 230, 0.6); stroke-width: 0.8; }
+.tick-num {
+  fill: var(--fg-4); font-size: 8px;
+  text-anchor: middle; dominant-baseline: middle;
   font-family: 'JetBrains Mono', monospace;
 }
 .duval-coords {
