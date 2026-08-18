@@ -749,10 +749,6 @@ function onResize() {
               </div>
             </div>
 
-            <p class="gas-src-hint kg-gas-hint">
-              条形为该故障主/次要特征气体的当日浓度（μL/L）。
-            </p>
-
             <div v-if="keyGas?.note" class="step-bar">
               <span class="step-k">表5 判据</span>
               {{ keyGas.note }}
@@ -1106,10 +1102,6 @@ function onResize() {
 .thc-lab { font-size: 11.5px; color: var(--fg-3); }
 .thc-val { font-size: 13px; font-weight: 700; color: var(--fg); }
 .thc-row.hot .thc-val { color: #f87171; }
-.gas-src-hint { margin: 0; font-size: 11px; color: var(--fg-4); line-height: 1.5; }
-.gas-src-hint .hint-hot { color: #f87171; font-weight: 650; }
-.gas-src-hint .hint-aux { color: var(--teal, #2dd4bf); font-weight: 600; }
-.kg-gas-hint { margin-top: 8px; }
 .kg-bars { display: flex; flex-direction: column; gap: 7px; }
 .kg-bar-row { display: flex; align-items: center; gap: 8px; }
 .kg-bar-tag {
