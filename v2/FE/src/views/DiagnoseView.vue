@@ -1,9 +1,8 @@
 <script setup>
 // 故障判型页 —— 三方法对标参考页信息密度:
-// 三比值表+编码块 / 大卫三角图 / 特征气体雷达+含量表 → 一致性结论
+// 三比值表+编码块 / 大卫三角图 / 特征气体主次气条形 → 一致性结论
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import * as echarts from 'echarts'
 import http from '@/service/http'
 import StdCite from '@/components/StdCite.vue'
 
@@ -15,9 +14,6 @@ const summary = ref({})
 const selectedDate = ref('')
 const detail = ref(null)
 const dayLoading = ref(false)
-
-const radarEl = ref(null)
-let radarChart = null
 
 const diagnosis = computed(() => detail.value?.diagnosis || null)
 const triggered = computed(() => !!diagnosis.value?.triggered)
@@ -201,16 +197,16 @@ const auxPack = computed(() => {
   }
 })
 
-/** DL/T 722 表3 单项注意值(220kV 及以下); 总烃单独算 */
+/** DL/T 722 表3 单项注意值(220kV 及以下):只有 H₂、C₂H₂ 有单项值;总烃(四烃合计)单列 */
 const TABLE3_ATTENTION = { h2: 150, c2h2: 5 }
 const TABLE3_THC = 150
 
-function gasExceedsTable3(key, value, thc) {
+/** 只对有表3单项注意值的气标红(CH₄/C₂H₄/C₂H₆ 无单项值,不因总烃连坐) */
+function gasExceedsTable3(key, value) {
   if (value == null || Number.isNaN(value)) return false
   const v = Number(value)
   if (key === 'h2') return v >= TABLE3_ATTENTION.h2
   if (key === 'c2h2') return v >= TABLE3_ATTENTION.c2h2
-  if (key === 'ch4' || key === 'c2h4' || key === 'c2h6') return thc >= TABLE3_THC
   return false
 }
 
@@ -224,12 +220,50 @@ const GAS_GRID = [
   { key: 'co2', label: 'CO₂' },
 ]
 
-const gasGrid = computed(() => {
+// 本次命中表5行的主气/次气(后端 key_gas 返回)
+const GAS_LABEL = Object.fromEntries(GAS_GRID.map((g) => [g.key, g.label]))
+/** 把气体键名数组 → {key,label,value} 数组(带当日实测值) */
+function gasRow(keys) {
   const g = detail.value?.gases || {}
-  const thc = ['ch4', 'c2h4', 'c2h6', 'c2h2'].reduce((s, k) => {
+  return (keys || []).map((k) => {
+    let raw = g[k]
+    if (k === 'co') raw = detail.value?.co ?? raw
+    if (k === 'co2') raw = detail.value?.co2 ?? raw
+    return { key: k, label: GAS_LABEL[k] || k, value: raw == null ? null : Number(raw) }
+  })
+}
+const keyGasPrimaryRows = computed(() => gasRow(keyGas.value?.primary))
+const keyGasSecondaryRows = computed(() => gasRow(keyGas.value?.secondary))
+// 命中行主+次气条形:长度相对本组最大值
+const keyGasBars = computed(() => {
+  const rows = [
+    ...keyGasPrimaryRows.value.map((r) => ({ ...r, role: 'primary' })),
+    ...keyGasSecondaryRows.value.map((r) => ({ ...r, role: 'secondary' })),
+  ]
+  const maxV = Math.max(1, ...rows.map((r) => (r.value != null && r.value > 0 ? r.value : 0)))
+  return rows.map((r) => ({
+    ...r,
+    pct: r.value != null && r.value > 0 ? Math.max(4, (r.value / maxV) * 100) : 0,
+  }))
+})
+// 表5 落选行(非采用行),带落选原因,供「为什么不是它」对照
+const keyGasRejected = computed(() =>
+  (keyGas.value?.rows || []).filter((r) => !r.chosen).map((r) => ({
+    fault: r.fault,
+    reject: r.reject || (r.matched ? '同样命中,但特征气体不如采用行齐全' : ''),
+    matched: r.matched,
+  })),
+)
+
+const gasThc = computed(() => {
+  const g = detail.value?.gases || {}
+  return ['ch4', 'c2h4', 'c2h6', 'c2h2'].reduce((s, k) => {
     const v = g[k]
     return s + (v == null || Number.isNaN(v) ? 0 : Number(v))
   }, 0)
+})
+const gasGrid = computed(() => {
+  const g = detail.value?.gases || {}
   return GAS_GRID.map((row) => {
     let raw = g[row.key]
     if (row.key === 'co') raw = detail.value?.co ?? raw
@@ -238,7 +272,7 @@ const gasGrid = computed(() => {
     return {
       ...row,
       value,
-      hot: gasExceedsTable3(row.key, value, thc),
+      hot: gasExceedsTable3(row.key, value),
     }
   })
 })
@@ -423,61 +457,6 @@ function stepDay(delta) {
   selectedDate.value = series.value[i].date
 }
 
-function renderRadar() {
-  if (!radarEl.value || !triggered.value) return
-  const vals = gasGrid.value.map((g) => {
-    const v = g.value
-    if (v == null || v <= 0) return 0.01
-    return Math.max(0.01, v)
-  })
-  if (!radarChart) radarChart = echarts.init(radarEl.value)
-  const maxV = Math.max(...vals, 1)
-  radarChart.setOption({
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: '#323e4c',
-      borderColor: 'rgba(45,212,191,0.35)',
-      textStyle: { color: '#f1f5fb', fontSize: 12 },
-      formatter: (p) => {
-        const i = p.dataIndex ?? 0
-        const g = gasGrid.value[i]
-        return `${g?.label || ''}: ${g?.value ?? '—'} μL/L`
-      },
-    },
-    radar: {
-      indicator: GAS_GRID.map((g) => ({ name: g.label, max: maxV })),
-      center: ['50%', '52%'],
-      radius: '62%',
-      axisName: { color: '#9aa8bc', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' },
-      splitArea: {
-        areaStyle: {
-          color: ['rgba(45,212,191,0.03)', 'rgba(45,212,191,0.07)'],
-        },
-      },
-      axisLine: { lineStyle: { color: 'rgba(160,174,192,0.25)' } },
-      splitLine: { lineStyle: { color: 'rgba(160,174,192,0.2)' } },
-    },
-    series: [{
-      type: 'radar',
-      data: [{
-        value: vals,
-        name: '含量',
-        areaStyle: { color: 'rgba(59,130,246,0.28)' },
-        lineStyle: { color: '#60a5fa', width: 2 },
-        itemStyle: { color: '#93c5fd' },
-      }],
-    }],
-  }, true)
-}
-
-function disposeRadar() {
-  if (radarChart) {
-    radarChart.dispose()
-    radarChart = null
-  }
-}
-
 async function loadSeries() {
   const res = await http.get('/detect/series')
   series.value = res.series || []
@@ -495,8 +474,6 @@ async function loadDay(date) {
     if (selectedDate.value !== req) return
     detail.value = data
     await nextTick()
-    if (triggered.value) renderRadar()
-    else disposeRadar()
     if (duval.value?.ok) drawDuval()
   } finally {
     if (selectedDate.value === req) dayLoading.value = false
@@ -518,10 +495,9 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
-  disposeRadar()
 })
 function onResize() {
-  radarChart?.resize()
+  if (duval.value?.ok) drawDuval()
 }
 </script>
 
@@ -616,8 +592,8 @@ function onResize() {
               <StdCite
                 v-else
                 inline
-                ref-id="1498-表A3"
-                label="表A.3"
+                ref-id="722-表3"
+                label="722 表3 注意值"
               />
             </div>
             <div class="gas-grid shared">
@@ -627,10 +603,11 @@ function onResize() {
                 <span class="g-unit">μL/L</span>
               </div>
             </div>
-            <p class="gas-src-hint">
-              标红表示该组分（或总烃合计）达 DL/T 722 表3 注意值；
-              CO/CO₂ 无表3单项注意值，不参与标红。
-            </p>
+            <div class="thc-row" :class="{ hot: gasThc >= 150 }">
+              <span class="thc-lab">总烃合计（CH₄+C₂H₄+C₂H₆+C₂H₂）</span>
+              <span class="thc-val mono">{{ gasThc.toFixed(2) }} μL/L</span>
+              <StdCite inline ref-id="722-表3" label="722 表3 注意值 150" />
+            </div>
           </div>
         </section>
 
@@ -761,16 +738,35 @@ function onResize() {
               <StdCite inline ref-id="722-表5" label="DL/T 722 §10.1 · 表5" />
             </header>
 
-            <div ref="radarEl" class="radar" />
+            <div v-if="keyGas?.ok" class="kg-bars">
+              <div v-for="x in keyGasBars" :key="x.key" class="kg-bar-row" :class="x.role">
+                <span class="kg-bar-tag" :class="x.role">{{ x.role === 'primary' ? '主' : '次' }}</span>
+                <span class="kg-bar-lab mono">{{ x.label }}</span>
+                <div class="kg-bar-track">
+                  <div class="kg-bar-fill" :class="x.role" :style="{ width: x.pct + '%' }" />
+                </div>
+                <span class="kg-bar-val mono">{{ x.value == null ? '—' : x.value }}</span>
+              </div>
+            </div>
 
-            <p class="gas-src-hint kg-radar-hint">
-              雷达图为七气浓度相对展示，不表示故障类型。
+            <p class="gas-src-hint kg-gas-hint">
+              条形为该故障主/次要特征气体的当日浓度（μL/L）。
             </p>
 
             <div v-if="keyGas?.note" class="step-bar">
               <span class="step-k">表5 判据</span>
               {{ keyGas.note }}
             </div>
+
+            <!-- 表5 其余行为何落选(命中行+落选行对照) -->
+            <details v-if="keyGasRejected.length" class="kg-reject">
+              <summary>表5 其余 {{ keyGasRejected.length }} 行为何未选？</summary>
+              <ul>
+                <li v-for="r in keyGasRejected" :key="r.fault">
+                  <b>{{ r.fault }}</b><span class="kg-rj-why">{{ r.reject }}</span>
+                </li>
+              </ul>
+            </details>
 
             <div class="verdict" :class="keyGas?.ok ? 'hot' : ''">
               <span class="verdict-k">故障类型</span>
@@ -1101,10 +1097,49 @@ function onResize() {
 }
 .gas-cell.hot .g-val { color: #f87171; }
 .g-unit { font-size: 9px; color: var(--fg-4); }
+.thc-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 8px 0 4px; padding: 6px 10px; border-radius: 6px;
+  background: var(--bg-3); border: 1px solid var(--line);
+}
+.thc-row.hot { border-color: rgba(245,85,90,0.45); background: rgba(245,85,90,0.1); }
+.thc-lab { font-size: 11.5px; color: var(--fg-3); }
+.thc-val { font-size: 13px; font-weight: 700; color: var(--fg); }
+.thc-row.hot .thc-val { color: #f87171; }
 .gas-src-hint { margin: 0; font-size: 11px; color: var(--fg-4); line-height: 1.5; }
 .gas-src-hint .hint-hot { color: #f87171; font-weight: 650; }
 .gas-src-hint .hint-aux { color: var(--teal, #2dd4bf); font-weight: 600; }
-.kg-radar-hint { margin-top: 6px; }
+.kg-gas-hint { margin-top: 8px; }
+.kg-bars { display: flex; flex-direction: column; gap: 7px; }
+.kg-bar-row { display: flex; align-items: center; gap: 8px; }
+.kg-bar-tag {
+  flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px;
+  font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+}
+.kg-bar-tag.primary { background: rgba(45,212,191,0.2); color: #2dd4bf; }
+.kg-bar-tag.secondary { background: rgba(94,234,212,0.12); color: #5eead4; }
+.kg-bar-lab { flex-shrink: 0; width: 3.2em; font-size: 12px; color: var(--fg-2); }
+.kg-bar-track {
+  flex: 1; height: 10px; border-radius: 5px;
+  background: rgba(160,174,192,0.12); overflow: hidden;
+}
+.kg-bar-fill { height: 100%; border-radius: 5px; transition: width .3s ease; }
+.kg-bar-fill.primary { background: #2dd4bf; }
+.kg-bar-fill.secondary { background: rgba(94,234,212,0.6); }
+.kg-bar-val {
+  flex-shrink: 0; min-width: 5.5em; text-align: right;
+  font-size: 11.5px; font-weight: 700; color: var(--fg);
+}
+.kg-reject { margin-top: 8px; font-size: 11px; }
+.kg-reject summary {
+  cursor: pointer; color: var(--fg-3); user-select: none;
+  padding: 4px 0;
+}
+.kg-reject summary:hover { color: var(--fg-2); }
+.kg-reject ul { margin: 4px 0 0; padding-left: 4px; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.kg-reject li { color: var(--fg-3); line-height: 1.5; }
+.kg-reject li b { color: var(--fg-2); font-weight: 650; margin-right: 6px; }
+.kg-rj-why { color: var(--fg-4); }
 .trigger-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   margin-bottom: 10px;
@@ -1133,7 +1168,6 @@ function onResize() {
 }
 
 /* 特征气体 */
-.radar { width: 100%; height: 220px; }
 .step-bar {
   margin: 0; padding: 8px 10px; border-radius: 6px;
   font-size: 11.5px; color: var(--fg-2); line-height: 1.5;
