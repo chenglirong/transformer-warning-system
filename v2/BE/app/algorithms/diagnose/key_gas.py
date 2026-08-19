@@ -147,10 +147,10 @@ def diagnose_key_gas(
 
         # ① 主要特征气体(除 CO)须全部检出
         if missing:
-            matched, reject = False, "主要气体未全部检出:" + "、".join(_GAS_CN.get(g, g) for g in missing)
+            matched, reject = False, "未检出主要特征气体 " + "、".join(_GAS_CN.get(g, g) for g in missing)
         # ② 含 CO 行(油和纸类):注2/3/5——CO₂/CO<3 佐证固体绝缘涉入
         elif row["need_co"] and not _co_cellulose(co, co2):
-            matched, reject = False, "CO₂/CO≥3,不支持固体绝缘涉入"
+            matched, reject = False, "CO₂/CO≥3,未见固体绝缘特征"
         # ③ 注3 局放:主产 H₂/CH₄ 且以「没有或极少 C₂H₄」为特征
         elif fault == "油纸绝缘中局部放电" and not (h2ch4_dominant and c2h4_is_least):
             matched = False
