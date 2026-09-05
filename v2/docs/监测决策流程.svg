@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图4.3 监测决策流程 — 统一风格版（正交重排）
+  风格基准：多规则协同判断流程.svg
+    marker 统一箭头；主干1.6 / 分支1.4；全部正交折线（直角拐弯）
+    扇出/汇入用横杆+垂直落线；处置紧急度为实体框（不再悬浮）
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="880" height="640"
+     viewBox="0 0 880 640"
+     font-family="'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#5D6D7E"/>
+    </marker>
+  </defs>
+
+  <rect width="880" height="640" fill="#ffffff"/>
+
+  <!-- ===== 输入 ===== -->
+  <rect x="280" y="18" width="320" height="44" rx="22"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="440" y="45" text-anchor="middle"
+        fill="#155230" font-size="13" font-weight="600">分级 / 预警 / 紧急度 / 判型可信度</text>
+
+  <line x1="440" y1="62" x2="440" y2="88" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ===== 主判断：含量超注意值？ ===== -->
+  <polygon points="440,92 522,132 440,172 358,132"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="440" y="127" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">含量超</text>
+  <text x="440" y="144" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">注意值？</text>
+
+  <!-- 左分支（否）L形折线 → 涨势预警菱形 -->
+  <polyline points="358,132 170,132 170,195" fill="none"
+            stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="262" y="124" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+
+  <polygon points="170,199 238,237 170,275 102,237"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="170" y="232" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">涨势</text>
+  <text x="170" y="249" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">预警？</text>
+
+  <!-- 涨势·否 垂直落线 → 基线周期框 -->
+  <line x1="102" y1="237" x2="102" y2="305" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="94" y="276" text-anchor="end" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+
+  <!-- 涨势·是 垂直落线 → 缩短至最小框 -->
+  <line x1="238" y1="237" x2="238" y2="305" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="246" y="276" text-anchor="start" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- 右分支（是）L形折线 → 处置紧急度框 -->
+  <polyline points="522,132 600,132 600,182" fill="none"
+            stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="560" y="124" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- 处置紧急度（实体框） -->
+  <rect x="556" y="186" width="88" height="28" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="600" y="204" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">处置紧急度</text>
+
+  <!-- 处置紧急度 扇出（横杆+三垂直落线） -->
+  <line x1="600" y1="214" x2="600" y2="242" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="440" y1="242" x2="760" y2="242" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="440" y1="242" x2="440" y2="305" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="450" y="280" text-anchor="start" fill="#CA6F1E" font-size="11" font-weight="600">低</text>
+  <line x1="600" y1="242" x2="600" y2="305" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="610" y="280" text-anchor="start" fill="#CA6F1E" font-size="11" font-weight="600">中</text>
+  <line x1="760" y1="242" x2="760" y2="305" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="770" y="280" text-anchor="start" fill="#CA6F1E" font-size="11" font-weight="600">高</text>
+
+  <!-- ===== 五个周期结果框 ===== -->
+  <rect x="50" y="309" width="140" height="54" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="120" y="332" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">基线周期≤12h</text>
+  <text x="120" y="351" text-anchor="middle" fill="#1A3A5C" font-size="10.5">不需二次采样</text>
+
+  <rect x="210" y="309" width="140" height="54" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="280" y="332" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">缩短至最小≤2h</text>
+  <text x="280" y="351" text-anchor="middle" fill="#1A3A5C" font-size="10.5">建议二次采样验证</text>
+
+  <rect x="370" y="309" width="140" height="54" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="440" y="332" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">保持基线≤12h</text>
+  <text x="440" y="351" text-anchor="middle" fill="#1A3A5C" font-size="10.5">加强监视</text>
+
+  <rect x="530" y="309" width="140" height="54" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="600" y="332" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">缩短检测周期</text>
+  <text x="600" y="351" text-anchor="middle" fill="#1A3A5C" font-size="10.5">加强监视 · 逼近≤2h</text>
+
+  <rect x="690" y="309" width="140" height="54" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="760" y="332" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">缩短至最小≤2h</text>
+  <text x="760" y="351" text-anchor="middle" fill="#1A3A5C" font-size="10.5">加强监视</text>
+
+  <!-- 右三框 汇入横杆 → 判型可信度菱形 -->
+  <line x1="440" y1="363" x2="440" y2="372" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="600" y1="363" x2="600" y2="372" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="760" y1="363" x2="760" y2="372" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="440" y1="372" x2="760" y2="372" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="600" y1="372" x2="600" y2="387" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+
+  <!-- 判型可信度菱形（下移10px留足汇入空间） -->
+  <polygon points="600,391 685,429 600,467 515,429"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="600" y="424" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">判型可信度</text>
+  <text x="600" y="441" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">低？</text>
+
+  <!-- 是 → L形折线 → 建议核实 -->
+  <polyline points="515,429 445,429 445,479" fill="none"
+            stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="482" y="421" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <rect x="360" y="483" width="170" height="44" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="445" y="510" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">二次采样：建议核实</text>
+
+  <!-- 否 → L形折线 → 暂不建议 -->
+  <polyline points="685,429 722,429 722,479" fill="none"
+            stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="706" y="421" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+
+  <rect x="635" y="483" width="175" height="44" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="722" y="510" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">二次采样：暂不建议</text>
+
+  <!-- 汇入输出（全部垂直落线） -->
+  <line x1="120" y1="363" x2="120" y2="557" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="280" y1="363" x2="280" y2="557" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="445" y1="527" x2="445" y2="557" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="722" y1="527" x2="722" y2="557" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+
+  <!-- 输出 -->
+  <rect x="100" y="561" width="680" height="48" rx="24"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="440" y="590" text-anchor="middle"
+        fill="#155230" font-size="12.5" font-weight="600">输出：检测周期 + 二次采样建议 + 试验清单（沿用第3章）</text>
+
+</svg>

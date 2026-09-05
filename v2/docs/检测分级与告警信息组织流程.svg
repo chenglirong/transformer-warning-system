@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图2.1 检测分级与告警计算流程 — 疏朗版
+  字号不变（12/10.5/11.5）；◇C/◇B 收窄为 190×92，◇D 170×80，紧急度框 150×46，预警框 180×48；
+  "C是→高"拐点 x=500，与 ◇B 左顶点（x=545）留 45px 间距，无任何重叠
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="800" height="910"
+     viewBox="0 0 800 910"
+     font-family="'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#5D6D7E"/>
+    </marker>
+  </defs>
+
+  <rect width="800" height="910" fill="#ffffff"/>
+
+  <!-- ══ 输入 ══ -->
+  <rect x="270" y="16" width="260" height="48" rx="24" fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="400" y="46" text-anchor="middle" fill="#155230" font-size="12.5" font-weight="600">溶解气体浓度时序</text>
+
+  <line x1="400" y1="64" x2="400" y2="82" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ══ 总烃 + 参比值 ══ -->
+  <rect x="280" y="86" width="240" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="400" y="112" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">数据准备</text>
+  <text x="400" y="132" text-anchor="middle" fill="#5D6D7E" font-size="10.5">计算总烃 · 参比值取前14~7天均值</text>
+
+  <!-- 三分叉 -->
+  <line x1="400" y1="142" x2="400" y2="158" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="150" y1="160" x2="650" y2="160" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="150" y1="160" x2="150" y2="174" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="400" y1="160" x2="400" y2="174" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="650" y1="160" x2="650" y2="174" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+
+  <!-- ══ 三判据 ══ -->
+  <rect x="55" y="176" width="190" height="58" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="150" y="201" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">① 绝对浓度</text>
+  <text x="150" y="221" text-anchor="middle" fill="#5D6D7E" font-size="10.5">乙炔 · H₂ · 总烃</text>
+
+  <rect x="305" y="176" width="190" height="58" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="400" y="201" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">② 绝对增量</text>
+  <text x="400" y="221" text-anchor="middle" fill="#5D6D7E" font-size="10.5">当前 − 参比值</text>
+
+  <rect x="555" y="176" width="190" height="58" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="650" y="201" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">③ 相对增长速率</text>
+  <text x="650" y="221" text-anchor="middle" fill="#5D6D7E" font-size="10.5">总烃 %/周</text>
+
+  <!-- 汇合 -->
+  <line x1="150" y1="234" x2="150" y2="252" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="400" y1="234" x2="400" y2="252" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="650" y1="234" x2="650" y2="252" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="150" y1="254" x2="650" y2="254" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="400" y1="254" x2="400" y2="266" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+
+  <!-- ══ 综合分级 ══ -->
+  <rect x="250" y="270" width="300" height="52" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="400" y="292" text-anchor="middle" fill="#1A3A5C" font-size="12.5" font-weight="600">综合检测分级（全指标最高档）</text>
+  <text x="400" y="311" text-anchor="middle" fill="#5D6D7E" font-size="10.5">正常也如实报告</text>
+
+  <line x1="400" y1="322" x2="400" y2="338" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ══ 总烃月环比 ══ -->
+  <rect x="250" y="342" width="300" height="52" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="400" y="364" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">总烃月环比</text>
+  <text x="400" y="383" text-anchor="middle" fill="#5D6D7E" font-size="10.5">(今−30天前)/30天前 · %/月</text>
+
+  <line x1="400" y1="394" x2="400" y2="410" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ══ ◇A：档位 ≥ 注意值2？（220×104 宽扁菱形） ══ -->
+  <polygon points="400,414 510,466 400,518 290,466"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="400" y="461" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">档位 ≥</text>
+  <text x="400" y="481" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">注意值2？</text>
+
+  <!-- A 是 → ◇C（左） -->
+  <polyline points="290,466 160,466 160,532" fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="222" y="457" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- A 否 → ◇B（右） -->
+  <polyline points="510,466 640,466 640,532" fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="578" y="457" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+
+  <!-- ══ ◇C：速率超注意？（190×92） ══ -->
+  <polygon points="160,536 255,582 160,628 65,582"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="160" y="578" text-anchor="middle" fill="#7D3C0A" font-size="11.5" font-weight="600">速率超</text>
+  <text x="160" y="597" text-anchor="middle" fill="#7D3C0A" font-size="11.5" font-weight="600">注意？</text>
+
+  <!-- C 是 → 紧急度高（拐点 500，避开 ◇B 左顶点 545） -->
+  <polyline points="255,582 500,582 500,746" fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="370" y="573" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- C 否 ↓ ◇D -->
+  <line x1="160" y1="628" x2="160" y2="644" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="170" y="640" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+
+  <!-- ══ ◇D：仅 H₂ 超标？（170×80） ══ -->
+  <polygon points="160,648 245,688 160,728 75,688"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="160" y="693" text-anchor="middle" fill="#7D3C0A" font-size="11.5" font-weight="600">仅 H₂ 超标？</text>
+
+  <!-- D 是 ↓ 紧急度低 -->
+  <line x1="160" y1="728" x2="160" y2="746" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="170" y="741" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- D 否 → 紧急度中 -->
+  <polyline points="245,688 330,688 330,746" fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="285" y="679" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+
+  <!-- ══ 紧急度三框（150×46） ══ -->
+  <rect x="85" y="750" width="150" height="46" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.5"/>
+  <text x="160" y="770" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">紧急度 低</text>
+  <text x="160" y="787" text-anchor="middle" fill="#1A3A5C" font-size="10">档位如实·加强监视</text>
+
+  <rect x="255" y="750" width="150" height="46" rx="6" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.5"/>
+  <text x="330" y="770" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">紧急度 中</text>
+  <text x="330" y="787" text-anchor="middle" fill="#7D3C0A" font-size="10">加强监视</text>
+
+  <rect x="425" y="750" width="150" height="46" rx="6" fill="#FADBD8" stroke="#E74C3C" stroke-width="1.5"/>
+  <text x="500" y="770" text-anchor="middle" fill="#922B21" font-size="12" font-weight="600">紧急度 高</text>
+  <text x="500" y="787" text-anchor="middle" fill="#922B21" font-size="10">缩短检测周期</text>
+
+  <!-- ══ ◇B：速率超注意？（190×92，左顶点 545） ══ -->
+  <polygon points="640,536 735,582 640,628 545,582"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="640" y="578" text-anchor="middle" fill="#7D3C0A" font-size="11.5" font-weight="600">速率超</text>
+  <text x="640" y="597" text-anchor="middle" fill="#7D3C0A" font-size="11.5" font-weight="600">注意？</text>
+
+  <!-- B 是 ↓ 涨势预警 -->
+  <line x1="640" y1="628" x2="640" y2="650" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="650" y="644" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <rect x="550" y="654" width="180" height="48" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="640" y="674" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">涨势预警「预」</text>
+  <text x="640" y="692" text-anchor="middle" fill="#5D6D7E" font-size="10.5">缩周期 · 可进故障判型</text>
+
+  <!-- B 否 → 右缘下行直通输出 -->
+  <polyline points="735,582 765,582 765,878 666,878" fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="750" y="573" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+
+  <!-- ══ 输出 ══ -->
+  <rect x="140" y="850" width="520" height="56" rx="28" fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="400" y="873" text-anchor="middle" fill="#155230" font-size="12.5" font-weight="600">每日分级告警记录</text>
+  <text x="400" y="894" text-anchor="middle" fill="#155230" font-size="11">分级 · 指标明细 · 紧急度 · 涨势预警</text>
+
+  <!-- 各路汇入输出 -->
+  <line x1="160" y1="796" x2="160" y2="846" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="330" y1="796" x2="330" y2="846" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="500" y1="796" x2="500" y2="846" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <line x1="640" y1="702" x2="640" y2="846" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+
+</svg>

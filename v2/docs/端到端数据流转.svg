@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图5.x 端到端数据流转（简化版：少字 + 图标，B族配色与 ReAct/Plan-and-Execute/七步工作流 统一）
+  与图1.1（静态五层架构）的区别：本图只展示"一次分析"的运行时数据路径主线
+  ①前端发起分析 ②接口层取数 ③调度七步工作流 ④按步调用算法引擎/大模型 ⑤事实包与报告返回
+  ⑤走顶部回路，与底部数据库（②）在空间上彻底分离，避免混淆
+  配色：蓝#2471A3 智能体 / 橙#CA6F1E 接口 / 绿#1E8449 前端 / 紫#8E44AD 数据库 / 箭头#5D6D7E
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="260" viewBox="0 0 700 260" font-family="'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <rect width="700" height="260" fill="#ffffff"/>
+
+  <!-- ═══════════ 主线节点 1：前端（绿，显示器图标） ═══════════ -->
+  <rect x="30" y="40" width="110" height="70" rx="8" fill="#EAFAF1" stroke="#1E8449" stroke-width="1"/>
+  <g transform="translate(76, 44) scale(0.9)" stroke="#1E8449" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="16" height="12" rx="2"/>
+    <line x1="10" y1="15" x2="10" y2="18"/>
+    <line x1="6" y1="18" x2="14" y2="18"/>
+  </g>
+  <text x="85" y="80" text-anchor="middle" fill="#155230" font-size="11" font-weight="700">前　端</text>
+  <text x="85" y="97" text-anchor="middle" fill="#7F8C8D" font-size="9">结果展示 · 报告导出</text>
+
+  <!-- ═══════════ 主线节点 2：接口层（橙，双向交换图标） ═══════════ -->
+  <rect x="195" y="40" width="110" height="70" rx="8" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1"/>
+  <g transform="translate(241, 44) scale(0.9)" stroke="#CA6F1E" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="7" x2="15" y2="7"/>
+    <polyline points="12,4 15,7 12,10"/>
+    <line x1="17" y1="13" x2="5" y2="13"/>
+    <polyline points="8,10 5,13 8,16"/>
+  </g>
+  <text x="250" y="80" text-anchor="middle" fill="#7D3C0A" font-size="11" font-weight="700">接口层</text>
+  <text x="250" y="97" text-anchor="middle" fill="#7F8C8D" font-size="9">REST API · 统一取数</text>
+
+  <!-- ═══════════ 主线节点 3：智能体（蓝，加粗强调，机器人图标） ═══════════ -->
+  <rect x="360" y="40" width="125" height="70" rx="8" fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <g transform="translate(413.5, 44) scale(0.9)" stroke="#2471A3" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="7" width="12" height="9" rx="2"/>
+    <line x1="10" y1="4" x2="10" y2="7"/>
+    <circle cx="10" cy="3" r="1"/>
+    <circle cx="7.5" cy="11.5" r="1.1" fill="#2471A3" stroke="none"/>
+    <circle cx="12.5" cy="11.5" r="1.1" fill="#2471A3" stroke="none"/>
+  </g>
+  <text x="422.5" y="80" text-anchor="middle" fill="#1A3A5C" font-size="11" font-weight="700">智 能 体</text>
+  <text x="422.5" y="97" text-anchor="middle" fill="#7F8C8D" font-size="9">七步工作流</text>
+
+  <!-- ═══════════ 主线节点 4：算法引擎（白底蓝虚线，芯片图标，被调用组件） ═══════════ -->
+  <rect x="540" y="40" width="115" height="70" rx="8" fill="#ffffff" stroke="#2471A3" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <g transform="translate(588, 44) scale(0.9)" stroke="#2471A3" stroke-width="1.2" fill="none" stroke-linecap="round">
+    <rect x="5" y="5" width="10" height="10" rx="2"/>
+    <line x1="8" y1="2" x2="8" y2="5"/>
+    <line x1="12" y1="2" x2="12" y2="5"/>
+    <line x1="8" y1="15" x2="8" y2="18"/>
+    <line x1="12" y1="15" x2="12" y2="18"/>
+    <line x1="2" y1="8" x2="5" y2="8"/>
+    <line x1="2" y1="12" x2="5" y2="12"/>
+    <line x1="15" y1="8" x2="18" y2="8"/>
+    <line x1="15" y1="12" x2="18" y2="12"/>
+  </g>
+  <text x="597.5" y="80" text-anchor="middle" fill="#1A3A5C" font-size="11" font-weight="700">算法引擎</text>
+  <text x="597.5" y="97" text-anchor="middle" fill="#7F8C8D" font-size="9">规则计算 + 大模型</text>
+
+  <!-- ═══════════ 数据库节点（紫，挂于接口层下方，圆柱图标） ═══════════ -->
+  <rect x="195" y="170" width="110" height="68" rx="8" fill="#F4ECF7" stroke="#8E44AD" stroke-width="1"/>
+  <g transform="translate(242, 176) scale(0.75)" stroke="#8E44AD" stroke-width="1.2" fill="none" stroke-linecap="round">
+    <ellipse cx="10" cy="4" rx="8" ry="2.8"/>
+    <path d="M2 4v12c0 1.55 3.58 2.8 8 2.8s8-1.25 8-2.8V4"/>
+    <path d="M2 10c0 1.55 3.58 2.8 8 2.8s8-1.25 8-2.8"/>
+  </g>
+  <text x="250" y="212" text-anchor="middle" fill="#4A235A" font-size="10" font-weight="700">SQLite 数据库</text>
+  <text x="250" y="228" text-anchor="middle" fill="#7F8C8D" font-size="9">气体时序 · 设备信息</text>
+
+  <!-- ═══════════ 箭头 ① 前端 → 接口层 ═══════════ -->
+  <text x="167.5" y="68" text-anchor="middle" fill="#5D6D7E" font-size="9" font-weight="600">① 发起分析</text>
+  <line x1="140" y1="75" x2="189" y2="75" stroke="#5D6D7E" stroke-width="1.2"/>
+  <polygon points="189,71.5 189,78.5 195,75" fill="#5D6D7E"/>
+
+  <!-- ═══════════ 箭头 ② 接口层 ⇅ 数据库（双向取数，数据库专属连线） ═══════════ -->
+  <line x1="250" y1="117" x2="250" y2="163" stroke="#5D6D7E" stroke-width="1.2"/>
+  <polygon points="246.5,117 253.5,117 250,111" fill="#5D6D7E"/>
+  <polygon points="246.5,163 253.5,163 250,169" fill="#5D6D7E"/>
+  <text x="260" y="137" fill="#5D6D7E" font-size="9" font-weight="600">② 读取数据</text>
+
+  <!-- ═══════════ 箭头 ③ 接口层 → 智能体 ═══════════ -->
+  <text x="332.5" y="68" text-anchor="middle" fill="#5D6D7E" font-size="9" font-weight="600">③ 调度分析</text>
+  <line x1="305" y1="75" x2="354" y2="75" stroke="#5D6D7E" stroke-width="1.2"/>
+  <polygon points="354,71.5 354,78.5 360,75" fill="#5D6D7E"/>
+
+  <!-- ═══════════ 箭头 ④ 智能体 ⇄ 算法引擎（双向） ═══════════ -->
+  <text x="512.5" y="68" text-anchor="middle" fill="#5D6D7E" font-size="9" font-weight="600">④ 按步调用</text>
+  <line x1="491" y1="75" x2="534" y2="75" stroke="#5D6D7E" stroke-width="1.2"/>
+  <polygon points="534,71.5 534,78.5 540,75" fill="#5D6D7E"/>
+  <polygon points="491,71.5 491,78.5 485,75" fill="#5D6D7E"/>
+
+  <!-- ═══════════ 箭头 ⑤ 智能体 → 前端（顶部回路，远离底部数据库） ═══════════ -->
+  <path d="M 422.5 40 V 18 H 85 V 34" fill="none" stroke="#5D6D7E" stroke-width="1.2"/>
+  <polygon points="81.5,34 88.5,34 85,40" fill="#5D6D7E"/>
+  <text x="253.75" y="13" text-anchor="middle" fill="#5D6D7E" font-size="9" font-weight="600">⑤ 事实包 + 报告 · 经接口层返回</text>
+</svg>

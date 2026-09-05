@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="920" viewBox="0 0 760 920" font-family="PingFang SC, Microsoft YaHei, SimSun, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="5.5" markerHeight="5.5" refX="5" refY="2.75" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L5.5,2.75 L0,5.5 Z" fill="#66717d"/>
+    </marker>
+    <style>
+      .frame { fill: #ffffff; stroke: #6aa3d8; stroke-width: 1.25; stroke-dasharray: 8 6; }
+      .panel { fill: #fbfdff; stroke: #c8d6e5; stroke-width: 0.95; }
+      .nest-b { fill: #f3f8fd; stroke: #b8d0ea; stroke-width: 0.85; }
+      .nest-g { fill: #f3faf5; stroke: #b5dfc3; stroke-width: 0.85; }
+      .box { fill: #ffffff; stroke: #8fa1b3; stroke-width: 0.85; }
+      .blue { fill: #eef4fb; stroke: #b8d0ea; stroke-width: 0.85; }
+      .green { fill: #eefaf1; stroke: #b5dfc3; stroke-width: 0.85; }
+      .purple { fill: #f2eaf9; stroke: #c9b2db; stroke-width: 0.85; }
+      .yellow { fill: #fffbea; stroke: #e8d9a8; stroke-width: 0.85; }
+      .title { fill: #1f2d3d; font-size: 15px; font-weight: 700; }
+      .chapter { fill: #2c3e50; font-size: 12.5px; font-weight: 700; }
+      .text { fill: #2c3e50; font-size: 9.5px; font-weight: 600; }
+      .small { fill: #566573; font-size: 8.8px; }
+      .label { fill: #66717d; font-size: 8px; font-weight: 600; }
+      .arrow { stroke: #66717d; stroke-width: 0.9; fill: none; marker-end: url(#arrow); }
+      .line { stroke: #a0aab5; stroke-width: 0.7; fill: none; }
+      .dash { stroke: #8a7aa8; stroke-width: 0.85; fill: none; stroke-dasharray: 4 3; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="760" height="920" fill="#ffffff"/>
+
+  <!-- ==================== 第1章 ==================== -->
+  <rect x="52" y="40" width="656" height="126" rx="18" class="frame"/>
+  <text x="380" y="62" text-anchor="middle" class="chapter">第1章　绪论</text>
+
+  <rect x="80" y="76" width="128" height="24" rx="5" class="box"/>
+  <text x="144" y="92" text-anchor="middle" class="text">1.1 研究背景</text>
+  <line x1="208" y1="88" x2="226" y2="88" class="arrow"/>
+  <rect x="228" y="76" width="140" height="24" rx="5" class="box"/>
+  <text x="298" y="92" text-anchor="middle" class="text">1.2 国内外研究现状</text>
+  <line x1="368" y1="88" x2="386" y2="88" class="arrow"/>
+  <rect x="388" y="76" width="128" height="24" rx="5" class="box"/>
+  <text x="452" y="92" text-anchor="middle" class="text">1.3 目的与意义</text>
+  <line x1="516" y1="88" x2="534" y2="88" class="arrow"/>
+  <rect x="536" y="76" width="140" height="24" rx="5" class="box"/>
+  <text x="606" y="92" text-anchor="middle" class="text">1.4 研究内容与结构</text>
+
+  <line x1="298" y1="100" x2="298" y2="110" class="line"/>
+  <line x1="200" y1="110" x2="396" y2="110" class="line"/>
+  <line x1="200" y1="110" x2="200" y2="118" class="arrow"/>
+  <line x1="298" y1="110" x2="298" y2="118" class="arrow"/>
+  <line x1="396" y1="110" x2="396" y2="118" class="arrow"/>
+
+  <rect x="154" y="120" width="92" height="22" rx="5" class="blue"/>
+  <text x="200" y="135" text-anchor="middle" class="small">规则诊断方法</text>
+  <rect x="252" y="120" width="92" height="22" rx="5" class="blue"/>
+  <text x="298" y="135" text-anchor="middle" class="small">机器学习方法</text>
+  <rect x="350" y="120" width="92" height="22" rx="5" class="blue"/>
+  <text x="396" y="135" text-anchor="middle" class="small">智能体与大模型</text>
+
+  <line x1="380" y1="166" x2="380" y2="192" class="arrow"/>
+
+  <!-- ==================== 第2章与第3章 ==================== -->
+  <rect x="32" y="194" width="696" height="304" rx="18" class="frame"/>
+  <text x="380" y="216" text-anchor="middle" class="chapter">第2章与第3章　规则分析方法层</text>
+
+  <!-- 第2章 -->
+  <rect x="48" y="230" width="312" height="248" rx="8" class="panel"/>
+  <text x="204" y="250" text-anchor="middle" fill="#1a5276" font-size="11.5" font-weight="700">第2章　检测分级与预警智能分类</text>
+
+  <rect x="84" y="262" width="240" height="22" rx="5" class="blue"/>
+  <text x="204" y="277" text-anchor="middle" class="small">2.3 合成时序数据集</text>
+  <line x1="204" y1="284" x2="204" y2="296" class="arrow"/>
+
+  <rect x="62" y="298" width="284" height="70" rx="6" class="nest-b"/>
+  <text x="204" y="316" text-anchor="middle" fill="#1a5276" font-size="9" font-weight="700">2.4 检测分级方法</text>
+  <rect x="74" y="326" width="82" height="28" rx="5" class="box"/>
+  <text x="115" y="344" text-anchor="middle" class="small">绝对浓度</text>
+  <rect x="163" y="326" width="82" height="28" rx="5" class="box"/>
+  <text x="204" y="344" text-anchor="middle" class="small">绝对增量</text>
+  <rect x="252" y="326" width="82" height="28" rx="5" class="box"/>
+  <text x="293" y="344" text-anchor="middle" class="small">相对增长速率</text>
+
+  <line x1="204" y1="368" x2="204" y2="378" class="line"/>
+  <line x1="133" y1="378" x2="275" y2="378" class="line"/>
+  <line x1="133" y1="378" x2="133" y2="386" class="arrow"/>
+  <line x1="275" y1="378" x2="275" y2="386" class="arrow"/>
+
+  <rect x="68" y="388" width="130" height="22" rx="5" class="box"/>
+  <text x="133" y="403" text-anchor="middle" class="small">2.5 处置紧急度</text>
+  <rect x="210" y="388" width="130" height="22" rx="5" class="box"/>
+  <text x="275" y="403" text-anchor="middle" class="small">2.6 涨势预警</text>
+
+  <line x1="133" y1="410" x2="133" y2="418" class="line"/>
+  <line x1="275" y1="410" x2="275" y2="418" class="line"/>
+  <line x1="133" y1="418" x2="275" y2="418" class="line"/>
+  <line x1="204" y1="418" x2="204" y2="426" class="arrow"/>
+
+  <rect x="84" y="428" width="240" height="22" rx="5" class="blue"/>
+  <text x="204" y="443" text-anchor="middle" class="small">2.7 分级告警信息组织</text>
+
+  <!-- 第3章 -->
+  <rect x="400" y="230" width="312" height="248" rx="8" class="panel"/>
+  <text x="556" y="250" text-anchor="middle" fill="#1e6b3a" font-size="11.5" font-weight="700">第3章　多规则协同故障类型判断</text>
+
+  <rect x="436" y="262" width="240" height="22" rx="5" class="green"/>
+  <text x="556" y="277" text-anchor="middle" class="small">3.3 触发判型条件</text>
+  <line x1="556" y1="284" x2="556" y2="296" class="arrow"/>
+
+  <rect x="414" y="298" width="284" height="70" rx="6" class="nest-g"/>
+  <text x="556" y="316" text-anchor="middle" fill="#1e6b3a" font-size="9" font-weight="700">3.4 故障类型判断方法</text>
+  <rect x="426" y="326" width="82" height="28" rx="5" class="box"/>
+  <text x="467" y="344" text-anchor="middle" class="small">特征气体法</text>
+  <rect x="515" y="326" width="82" height="28" rx="5" class="box"/>
+  <text x="556" y="344" text-anchor="middle" class="small">三比值法</text>
+  <rect x="604" y="326" width="82" height="28" rx="5" class="box"/>
+  <text x="645" y="344" text-anchor="middle" class="small">大卫三角形法</text>
+
+  <line x1="556" y1="368" x2="556" y2="386" class="arrow"/>
+
+  <rect x="436" y="388" width="240" height="22" rx="5" class="green"/>
+  <text x="556" y="403" text-anchor="middle" class="small">3.5 多规则协同与可信度标注</text>
+  <line x1="556" y1="410" x2="556" y2="426" class="arrow"/>
+
+  <rect x="436" y="428" width="240" height="22" rx="5" class="box"/>
+  <text x="556" y="443" text-anchor="middle" class="small">3.6 试验建议生成方法</text>
+
+  <!-- 第2章 → 第3章：触发判型 -->
+  <path d="M360,399 L380,399 L380,273 L398,273" class="dash"/>
+  <rect x="356" y="338" width="48" height="14" fill="#ffffff"/>
+  <text x="380" y="349" text-anchor="middle" class="label">触发判型</text>
+
+  <!-- 汇入第4章 -->
+  <line x1="204" y1="478" x2="204" y2="510" class="line"/>
+  <line x1="556" y1="478" x2="556" y2="510" class="line"/>
+  <line x1="204" y1="510" x2="556" y2="510" class="line"/>
+  <line x1="380" y1="510" x2="380" y2="530" class="arrow"/>
+  <text x="392" y="524" class="label">规则模块接入工作流</text>
+
+  <!-- ==================== 第4章 ==================== -->
+  <rect x="52" y="532" width="656" height="158" rx="18" class="frame"/>
+  <text x="380" y="556" text-anchor="middle" class="chapter">第4章　面向变压器油中溶解气体分析智能体设计与实现</text>
+
+  <rect x="184" y="572" width="180" height="24" rx="5" class="purple"/>
+  <text x="274" y="588" text-anchor="middle" class="small">4.3 智能体整体架构</text>
+  <line x1="364" y1="584" x2="394" y2="584" class="arrow"/>
+  <rect x="396" y="572" width="180" height="24" rx="5" class="purple"/>
+  <text x="486" y="588" text-anchor="middle" class="small">4.4 七步工作流</text>
+
+  <line x1="486" y1="596" x2="486" y2="610" class="line"/>
+  <line x1="318" y1="610" x2="654" y2="610" class="line"/>
+  <line x1="318" y1="610" x2="318" y2="618" class="arrow"/>
+  <line x1="430" y1="610" x2="430" y2="618" class="arrow"/>
+  <line x1="542" y1="610" x2="542" y2="618" class="arrow"/>
+  <line x1="654" y1="610" x2="654" y2="618" class="arrow"/>
+
+  <rect x="265" y="620" width="106" height="24" rx="5" class="box"/>
+  <text x="318" y="636" text-anchor="middle" class="small">第2、3章规则算法</text>
+  <rect x="377" y="620" width="106" height="24" rx="5" class="box"/>
+  <text x="430" y="636" text-anchor="middle" class="small">4.4.1 监测决策机制</text>
+  <rect x="489" y="620" width="106" height="24" rx="5" class="box"/>
+  <text x="542" y="636" text-anchor="middle" class="small">4.4.2 分析报告生成</text>
+  <rect x="601" y="620" width="106" height="24" rx="5" class="box"/>
+  <text x="654" y="636" text-anchor="middle" class="small">4.4.3 判据角标绑定</text>
+
+  <text x="380" y="672" text-anchor="middle" class="small">承接第2、3章规则模块，按固定顺序编排，形成可复现、可追溯的智能体分析流程</text>
+
+  <line x1="380" y1="690" x2="380" y2="714" class="arrow"/>
+
+  <!-- ==================== 第5章 ==================== -->
+  <rect x="52" y="716" width="656" height="108" rx="18" class="frame"/>
+  <text x="380" y="740" text-anchor="middle" class="chapter">第5章　变压器油中溶解气体分析预警系统设计与实现</text>
+
+  <rect x="80" y="760" width="140" height="24" rx="5" class="yellow"/>
+  <text x="150" y="776" text-anchor="middle" class="small">5.1 系统总体架构</text>
+  <line x1="220" y1="772" x2="238" y2="772" class="arrow"/>
+  <rect x="240" y="760" width="140" height="24" rx="5" class="yellow"/>
+  <text x="310" y="776" text-anchor="middle" class="small">5.2 核心功能模块</text>
+  <line x1="380" y1="772" x2="398" y2="772" class="arrow"/>
+  <rect x="400" y="760" width="140" height="24" rx="5" class="yellow"/>
+  <text x="470" y="776" text-anchor="middle" class="small">5.3 数据库与数据流</text>
+  <line x1="540" y1="772" x2="558" y2="772" class="arrow"/>
+  <rect x="560" y="760" width="140" height="24" rx="5" class="yellow"/>
+  <text x="630" y="776" text-anchor="middle" class="small">5.4 原型界面展示</text>
+
+  <text x="380" y="806" text-anchor="middle" class="small">完成从气体数据输入、规则判定、智能体编排到分析报告导出的端到端落地</text>
+
+  <line x1="380" y1="824" x2="380" y2="848" class="arrow"/>
+
+  <!-- ==================== 结论 ==================== -->
+  <rect x="292" y="850" width="176" height="34" rx="14" fill="#ffffff" stroke="#6aa3d8" stroke-width="1.25" stroke-dasharray="8 6"/>
+  <text x="380" y="872" text-anchor="middle" class="chapter">结论与展望</text>
+</svg>

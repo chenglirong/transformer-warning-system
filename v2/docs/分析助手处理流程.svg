@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图4.7  分析助手处理流程
+  风格基准：报告生成流程.svg（图4.6）
+    步骤框   fill=#EBF3FB  stroke=#2471A3  text=#1A3A5C
+    判断菱形  fill=#FEF9F0  stroke=#CA6F1E  text=#7D3C0A
+    预设框   fill=#F4F6F7  stroke=#7F8C8D  text=#5D6D7E
+    终端胶囊  fill=#EAFAF1  stroke=#1E8449  text=#155230
+    箭头     stroke=#5D6D7E
+    回退虚线  stroke=#CA6F1E
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="960" height="925"
+     viewBox="0 0 960 925"
+     font-family="'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#5D6D7E"/>
+    </marker>
+    <marker id="arrOr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#CA6F1E"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="925" fill="#ffffff"/>
+
+  <!-- ══════ 主干 ══════ -->
+  <rect x="370" y="20" width="200" height="44" rx="22"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="470" y="47" text-anchor="middle"
+        fill="#155230" font-size="13" font-weight="600">用户输入消息</text>
+
+  <line x1="470" y1="64" x2="470" y2="82" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <rect x="350" y="87" width="240" height="50" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="470" y="108" text-anchor="middle"
+        fill="#1A3A5C" font-size="13" font-weight="600">意图识别</text>
+  <text x="470" y="126" text-anchor="middle"
+        fill="#5D6D7E" font-size="9.5">正则规则匹配</text>
+  <line x1="470" y1="137" x2="470" y2="153" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <polygon points="470,157 560,205 470,253 380,205"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.6"/>
+  <text x="470" y="200" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">意图</text>
+  <text x="470" y="217" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">类型？</text>
+
+  <!-- 分支A出口 -->
+  <polyline points="380,205 150,205 150,269"
+            fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="265" y="197" text-anchor="middle" fill="#7D3C0A" font-size="10" font-weight="600">运行分析 / 切换日期 / 当日概览</text>
+
+  <!-- 分支B出口 -->
+  <line x1="470" y1="253" x2="470" y2="269" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="483" y="266" fill="#7D3C0A" font-size="10" font-weight="600">结果解释</text>
+
+  <!-- 分支C出口 -->
+  <polyline points="560,205 790,205 790,269"
+            fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="672" y="197" text-anchor="middle" fill="#7D3C0A" font-size="10" font-weight="600">标准问答 / 未知</text>
+
+  <!-- ══════ A列：运行分析（x=150）══════ -->
+  <rect x="52" y="273" width="196" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="150" y="296" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">日期解析</text>
+  <text x="150" y="314" text-anchor="middle" fill="#5D6D7E" font-size="9">识别日期，或切换至前 / 后一日</text>
+
+  <line x1="150" y1="329" x2="150" y2="345" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <polygon points="150,349 235,390 150,431 65,390"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.6"/>
+  <text x="150" y="384" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">当日已有</text>
+  <text x="150" y="401" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">分析结果？</text>
+
+  <!-- 否 → 七步工作流 -->
+  <line x1="150" y1="431" x2="150" y2="450" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="162" y="446" fill="#5D6D7E" font-size="10" font-weight="600">否</text>
+
+  <rect x="52" y="454" width="196" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="150" y="477" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">调用七步工作流</text>
+  <text x="150" y="495" text-anchor="middle" fill="#5D6D7E" font-size="9">执行完整分析并记录结果</text>
+
+  <line x1="150" y1="510" x2="150" y2="529" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <rect x="52" y="533" width="196" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="150" y="556" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">生成结论草稿</text>
+  <text x="150" y="574" text-anchor="middle" fill="#5D6D7E" font-size="9">汇总各步分析结论</text>
+
+  <!-- 是 → 缓存复用（虚线绕行） -->
+  <polyline points="235,390 290,390 290,560 252,560"
+            fill="none" stroke="#5D6D7E" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arr)"/>
+  <text x="245" y="381" fill="#5D6D7E" font-size="10" font-weight="600">是</text>
+  <text x="296" y="480" fill="#7F8C8D" font-size="9">复用已有结果</text>
+
+  <!-- A列 → 大模型生成 -->
+  <polyline points="150,589 150,637 361,637"
+            fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+
+  <!-- ══════ B列：结果解释（x=470）══════ -->
+  <polygon points="470,273 555,315 470,357 385,315"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.6"/>
+  <text x="470" y="309" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">已有</text>
+  <text x="470" y="326" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">分析结果？</text>
+
+  <!-- 否 → 静默补跑 -->
+  <line x1="470" y1="357" x2="470" y2="376" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="482" y="372" fill="#5D6D7E" font-size="10" font-weight="600">否</text>
+
+  <rect x="365" y="380" width="210" height="50" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="470" y="400" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">自动重新执行工作流</text>
+  <text x="470" y="418" text-anchor="middle" fill="#5D6D7E" font-size="9">不中断当前对话</text>
+
+  <line x1="470" y1="430" x2="470" y2="476" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <rect x="365" y="480" width="210" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="470" y="503" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">结果解释（分级、趋势、判型等）</text>
+  <text x="470" y="521" text-anchor="middle" fill="#5D6D7E" font-size="9">按意图提取对应结论，附判据编号</text>
+
+  <!-- 是 → 直接引用结果（虚线绕行） -->
+  <polyline points="555,315 595,315 595,508 579,508"
+            fill="none" stroke="#5D6D7E" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arr)"/>
+  <text x="565" y="306" fill="#5D6D7E" font-size="10" font-weight="600">是</text>
+  <text x="601" y="530" fill="#7F8C8D" font-size="9">直接引用结果</text>
+
+  <line x1="470" y1="536" x2="470" y2="608" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ══════ 大模型生成（蓝）(365-575, 612-662) ══════ -->
+  <rect x="365" y="612" width="210" height="50" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="470" y="632" text-anchor="middle" fill="#1A3A5C" font-size="11.5" font-weight="600">大模型生成</text>
+  <text x="470" y="650" text-anchor="middle" fill="#5D6D7E" font-size="9">草稿生成连贯叙述</text>
+
+  <!-- 大模型生成 → 一致性判断 -->
+  <line x1="470" y1="662" x2="470" y2="676" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ══════ 一致性判断菱形 center(470,722) ══════ -->
+  <polygon points="470,680 555,722 470,764 385,722"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.6"/>
+  <text x="470" y="716" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">结论与原判定</text>
+  <text x="470" y="733" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">一致？</text>
+
+  <!-- 是 → 生成回复 -->
+  <line x1="470" y1="764" x2="470" y2="801" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="482" y="787" fill="#5D6D7E" font-size="10" font-weight="600">是</text>
+
+  <!-- 否 → 回退规则模板（左侧示出） -->
+  <line x1="385" y1="722" x2="318" y2="722" stroke="#CA6F1E" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrOr)"/>
+  <text x="380" y="710" text-anchor="end" fill="#CA6F1E" font-size="10" font-weight="600">否（回退规则模板）</text>
+  <text x="380" y="740" text-anchor="end" fill="#CA6F1E" font-size="9">规则模板原文作为回复</text>
+
+  <!-- ══════ C列：标准问答（x=790）══════ -->
+  <polygon points="790,273 875,315 790,357 705,315"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.6"/>
+  <text x="790" y="309" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">超出服务</text>
+  <text x="790" y="326" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">范围？</text>
+
+  <!-- 是 → 边界说明 -->
+  <line x1="790" y1="357" x2="790" y2="376" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="802" y="372" fill="#5D6D7E" font-size="10" font-weight="600">是</text>
+
+  <rect x="685" y="380" width="210" height="50" rx="6"
+        fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1.6"/>
+  <text x="790" y="400" text-anchor="middle" fill="#5D6D7E" font-size="11.5" font-weight="600">返回范围说明</text>
+  <text x="790" y="418" text-anchor="middle" fill="#5D6D7E" font-size="9">请查看告警 / 决策页面</text>
+
+  <!-- 否 → 命中判断（绕行左侧进入顶部） -->
+  <polyline points="705,315 645,315 645,445 790,445 790,457"
+            fill="none" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="692" y="306" fill="#5D6D7E" font-size="10" font-weight="600">否</text>
+
+  <!-- ══════ 命中预设答案？菱形 center(790,505) ══════ -->
+  <polygon points="790,463 875,505 790,547 705,505"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.6"/>
+  <text x="790" y="499" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">命中预设</text>
+  <text x="790" y="516" text-anchor="middle" fill="#7D3C0A" font-size="10.5" font-weight="600">答案？</text>
+
+  <!-- 命中 → 返回预设答案 -->
+  <line x1="790" y1="547" x2="790" y2="574" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="802" y="566" fill="#5D6D7E" font-size="10" font-weight="600">是</text>
+
+  <rect x="685" y="578" width="210" height="50" rx="6"
+        fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1.6"/>
+  <text x="790" y="598" text-anchor="middle" fill="#5D6D7E" font-size="11.5" font-weight="600">返回预设答案</text>
+  <text x="790" y="616" text-anchor="middle" fill="#5D6D7E" font-size="9">附标准条文编号</text>
+
+  <!-- 未命中 → 引导提示（虚线绕左侧） -->
+  <polyline points="705,505 665,505 665,673 681,673"
+            fill="none" stroke="#CA6F1E" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrOr)"/>
+  <text x="695" y="494" text-anchor="end" fill="#CA6F1E" font-size="10" font-weight="600">否</text>
+
+  <rect x="685" y="648" width="210" height="50" rx="6"
+        fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1.6"/>
+  <text x="790" y="668" text-anchor="middle" fill="#5D6D7E" font-size="11.5" font-weight="600">引导提示</text>
+  <text x="790" y="686" text-anchor="middle" fill="#5D6D7E" font-size="9">提示可提问的内容</text>
+
+  <!-- ══════ C列三路汇合（右侧竖线 x=920）══════ -->
+  <line x1="895" y1="405" x2="920" y2="405" stroke="#5D6D7E" stroke-width="1.4"/>
+
+  <line x1="895" y1="603" x2="920" y2="603" stroke="#5D6D7E" stroke-width="1.4"/>
+
+  <line x1="895" y1="673" x2="920" y2="673" stroke="#5D6D7E" stroke-width="1.4"/>
+
+  <line x1="920" y1="405" x2="920" y2="835" stroke="#5D6D7E" stroke-width="1.4"/>
+  <line x1="920" y1="835" x2="634" y2="835" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+
+  <!-- ══════ 回复组装（终端胶囊）══════ -->
+  <rect x="330" y="805" width="300" height="60" rx="30"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="480" y="830" text-anchor="middle"
+        fill="#155230" font-size="13" font-weight="600">生成回复</text>
+  <text x="480" y="850" text-anchor="middle"
+        fill="#196F3D" font-size="9.5">回复文本 · 判据编号 · 推荐追问</text>
+
+  <line x1="480" y1="865" x2="480" y2="884" stroke="#5D6D7E" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="480" y="906" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">输出回复</text>
+
+</svg>
