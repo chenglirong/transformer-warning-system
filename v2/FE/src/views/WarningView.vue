@@ -586,9 +586,9 @@ onMounted(loadRecords)
   cursor: pointer;
 }
 .chip.on {
-  border-color: rgba(45,212,191,0.45);
+  border-color: var(--teal-line);
   color: var(--teal-2);
-  background: rgba(45,212,191,0.1);
+  background: var(--teal-dim);
 }
 .search {
   width: 220px; max-width: 100%;
@@ -597,7 +597,7 @@ onMounted(loadRecords)
   background: var(--bg-3); color: var(--fg);
   font-size: 12px;
 }
-.search:focus { outline: none; border-color: rgba(45,212,191,0.45); }
+.search:focus { outline: none; border-color: var(--teal-line); }
 .sort {
   display: flex; align-items: center; gap: 6px;
   font-size: 12px; color: var(--fg-3);
@@ -706,7 +706,7 @@ onMounted(loadRecords)
 .hit-chip.alarm { border-color: rgba(245,85,90,0.4); color: var(--lv-alarm); }
 .urg-tag.high { background: rgba(245,85,90,0.15); color: var(--lv-alarm); }
 .urg-tag.mid { background: rgba(251,146,60,0.15); color: var(--lv-w2); }
-.urg-tag.low { background: rgba(45,212,191,0.12); color: var(--teal-2); }
+.urg-tag.low { background: var(--teal-dim); color: var(--teal-2); }
 
 .modal {
   position: fixed; inset: 0; z-index: 80;
@@ -777,7 +777,7 @@ onMounted(loadRecords)
 }
 .sum-table tr.sum-group.detail th {
   color: var(--teal-2);
-  background: rgba(45, 212, 191, 0.1);
+  background: var(--teal-dim);
 }
 .sum-table .col-grade { width: 88px; text-align: right; white-space: nowrap; }
 .sum-table td .pre-tag,

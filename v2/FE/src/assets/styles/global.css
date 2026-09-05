@@ -7,6 +7,9 @@ html, body, #app {
   height: 100%;
 }
 
+/* ── 公式统一斜体 ── */
+.formula, .f-mono { font-style: italic; }
+
 /* 钉死 SCADA 底色(压过 Tailwind preflight) */
 body {
   overflow: hidden;
@@ -231,4 +234,108 @@ body {
   opacity: 0.45;
   pointer-events: none;
   cursor: not-allowed;
+}
+
+/* ========== Element Plus 浅色模式覆盖 ========== */
+[data-theme="light"] {
+  --el-color-primary: #0d9488;
+  --el-color-primary-light-3: #14b8a6;
+  --el-color-primary-light-5: rgba(13, 148, 136, 0.35);
+  --el-color-primary-light-7: rgba(13, 148, 136, 0.18);
+  --el-color-primary-light-8: rgba(13, 148, 136, 0.10);
+  --el-color-primary-light-9: rgba(13, 148, 136, 0.06);
+  --el-color-primary-dark-2: #0f766e;
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #ffffff;
+  --el-bg-color-overlay: #ffffff;
+  --el-text-color-primary: #1a1a1a;
+  --el-text-color-regular: #3a3a3a;
+  --el-text-color-secondary: #6b7280;
+  --el-text-color-placeholder: #9ca3af;
+  --el-border-color: rgba(0, 0, 0, 0.15);
+  --el-border-color-light: rgba(0, 0, 0, 0.10);
+  --el-border-color-lighter: rgba(0, 0, 0, 0.06);
+  --el-border-color-extra-light: rgba(0, 0, 0, 0.04);
+  --el-fill-color: #f5f5f5;
+  --el-fill-color-light: #fafafa;
+  --el-fill-color-lighter: #ffffff;
+  --el-fill-color-blank: #ffffff;
+  --el-fill-color-dark: #ebebeb;
+  --el-mask-color: rgba(255, 255, 255, 0.80);
+  --el-box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  --el-disabled-bg-color: #fafafa;
+  --el-disabled-text-color: #9ca3af;
+}
+
+[data-theme="light"] .el-table {
+  --el-table-bg-color: #ffffff;
+  --el-table-tr-bg-color: #ffffff;
+  --el-table-header-bg-color: #fafafa;
+  --el-table-row-hover-bg-color: #f5f5f5;
+  --el-table-border-color: rgba(13, 148, 136, 0.12);
+  --el-table-text-color: #3a3a3a;
+  --el-table-header-text-color: #6b7280;
+  --el-table-current-row-bg-color: rgba(13, 148, 136, 0.06);
+  background: #ffffff !important;
+  color: var(--fg-2);
+}
+
+[data-theme="light"] .el-table th.el-table__cell {
+  background: #fafafa !important;
+}
+
+[data-theme="light"] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: rgba(250, 250, 250, 0.7) !important;
+}
+
+[data-theme="light"] .el-loading-mask {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="light"] .el-loading-spinner .path {
+  stroke: var(--teal) !important;
+}
+
+[data-theme="light"] .el-tooltip__popper.is-dark,
+[data-theme="light"] .el-popper.is-dark {
+  background: #ffffff !important;
+  border: 1px solid var(--teal-line) !important;
+  color: var(--fg-2) !important;
+}
+
+[data-theme="light"] .el-tag--info {
+  background: var(--bg-3);
+  color: var(--fg-3);
+}
+
+/* 浅色模式日历色标（同系统语义色，-700 深度保证对比度） */
+[data-theme="light"] .el-date-table td.det-alarm .el-date-table-cell__text,
+[data-theme="light"] .dga-cal-popper .el-date-table td.det-alarm .el-date-table-cell__text {
+  background: rgba(220, 38, 38, 0.14) !important;
+  color: #dc2626 !important;
+  box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.75);
+}
+[data-theme="light"] .el-date-table td.det-w2 .el-date-table-cell__text,
+[data-theme="light"] .dga-cal-popper .el-date-table td.det-w2 .el-date-table-cell__text {
+  background: rgba(249, 115, 22, 0.14) !important;
+  color: #f97316 !important;
+  box-shadow: inset 0 0 0 2px rgba(249, 115, 22, 0.70);
+}
+[data-theme="light"] .el-date-table td.det-w1 .el-date-table-cell__text,
+[data-theme="light"] .dga-cal-popper .el-date-table td.det-w1 .el-date-table-cell__text {
+  background: rgba(202, 138, 4, 0.14) !important;
+  color: #ca8a04 !important;
+  box-shadow: inset 0 0 0 2px rgba(202, 138, 4, 0.65);
+}
+[data-theme="light"] .el-date-table td.det-normal .el-date-table-cell__text,
+[data-theme="light"] .dga-cal-popper .el-date-table td.det-normal .el-date-table-cell__text {
+  background: rgba(13, 148, 136, 0.14) !important;
+  color: #0d9488 !important;
+  box-shadow: inset 0 0 0 2px rgba(13, 148, 136, 0.65);
+}
+[data-theme="light"] .el-date-table td.det-pre .el-date-table-cell__text,
+[data-theme="light"] .dga-cal-popper .el-date-table td.det-pre .el-date-table-cell__text {
+  background: rgba(124, 58, 237, 0.13) !important;
+  color: #7c3aed !important;
+  box-shadow: inset 0 0 0 2px rgba(124, 58, 237, 0.60);
 }

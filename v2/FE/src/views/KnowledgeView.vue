@@ -338,18 +338,18 @@ watch(() => route.query.id, () => {
   cursor: pointer;
 }
 .cat-card:hover {
-  border-color: rgba(45, 212, 191, 0.3);
+  border-color: var(--teal-line);
 }
 .cat-card.on {
-  border-color: rgba(45, 212, 191, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.15);
+  border-color: var(--teal-line);
+  box-shadow: inset 0 0 0 1px var(--teal-line);
 }
 .cat-head {
   display: block;
   padding: 12px 12px 8px;
   color: inherit;
 }
-.cat-card:hover .cat-code { color: #5eead4; }
+.cat-card:hover .cat-code { color: var(--teal-2); }
 .cat-code {
   font-size: 12px; font-weight: 700; color: var(--teal-2);
   margin-bottom: 4px;
@@ -376,9 +376,9 @@ watch(() => route.query.id, () => {
   cursor: pointer; max-width: 100%;
 }
 .cat-sec:hover, .cat-sec.on {
-  border-color: rgba(45, 212, 191, 0.45);
-  color: #5eead4;
-  background: rgba(45, 212, 191, 0.1);
+  border-color: var(--teal-line);
+  color: var(--teal-2);
+  background: var(--teal-dim);
 }
 .cat-sec-label {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -388,7 +388,7 @@ watch(() => route.query.id, () => {
 .cat-sec-img {
   flex-shrink: 0;
   font-size: 9px; font-weight: 700;
-  color: #5eead4; opacity: 0.85;
+  color: var(--teal-2); opacity: 0.85;
 }
 
 .toolbar {
@@ -403,9 +403,9 @@ watch(() => route.query.id, () => {
   cursor: pointer;
 }
 .chip.on {
-  border-color: rgba(45, 212, 191, 0.45);
-  color: #5eead4;
-  background: rgba(45, 212, 191, 0.1);
+  border-color: var(--teal-line);
+  color: var(--teal-2);
+  background: var(--teal-dim);
 }
 .search {
   width: min(240px, 100%);
@@ -442,7 +442,6 @@ watch(() => route.query.id, () => {
 .sum { line-height: 1.45; color: var(--fg-3); }
 
 .detail {
-  border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--bg-3);
   padding: 14px;
@@ -467,7 +466,5 @@ watch(() => route.query.id, () => {
 .detail-imgs img {
   width: 100%;
   border-radius: 6px;
-  border: 1px solid var(--line);
-  background: #1c2530;
 }
 </style>

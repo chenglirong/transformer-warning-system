@@ -586,16 +586,17 @@ watch(selectedDate, (d, prev) => {
               </button>
             </div>
             <div class="gp-body g1-body">
-              <div class="g1-preview" :class="reportReady ? 'unlocked' : 'locked'">
-                <ReportCardG
-                  v-if="g1"
-                  :g1="g1"
-                  :g2="g2"
-                  mode="compact"
-                  :show-g2="true"
-                />
-                <div v-else class="g1-placeholder">流程完成后解锁分析报告预览</div>
-              </div>
+              <template v-if="reportReady && g1">
+                <div class="g1-preview unlocked">
+                  <ReportCardG
+                    :g1="g1"
+                    :g2="g2"
+                    mode="compact"
+                    :show-g2="true"
+                  />
+                </div>
+              </template>
+              <div v-else class="decision-lock g1-lock">流程完成后解锁分析报告预览</div>
             </div>
           </section>
 
@@ -763,14 +764,14 @@ watch(selectedDate, (d, prev) => {
 .btn-assistant:hover { background: rgba(139, 92, 246, 0.18); box-shadow: 0 0 12px rgba(139, 92, 246, 0.2); }
 .btn-assistant.active { background: rgba(139, 92, 246, 0.22); border-color: rgba(139, 92, 246, 0.6); }
 .btn-action {
-  background: rgba(45, 212, 191, 0.08);
+  background: var(--teal-dim);
   color: var(--teal-2);
-  border-color: rgba(45, 212, 191, 0.45);
+  border-color: var(--teal-line);
 }
 .btn-action:hover:not(:disabled) {
-  background: rgba(45, 212, 191, 0.14);
+  background: var(--teal-dim);
   color: var(--teal-2);
-  box-shadow: 0 0 12px rgba(45, 212, 191, 0.2);
+  box-shadow: none;
 }
 .btn.mini { padding: 2px 8px; font-size: 10px; height: auto; }
 
@@ -820,7 +821,7 @@ watch(selectedDate, (d, prev) => {
 .v-line::after {
   content: ''; position: absolute; inset: 0 auto auto 0;
   width: 100%; height: 0;
-  background: linear-gradient(180deg, var(--teal), #d4a017);
+  background: var(--teal);
   transition: height 0.45s ease;
 }
 .v-line.flowing::after { height: 100%; }
@@ -839,13 +840,13 @@ watch(selectedDate, (d, prev) => {
 }
 .v-step.active .v-node {
   border-color: var(--teal); color: var(--teal-2);
-  box-shadow: 0 0 0 3px rgba(45,212,191,0.15);
+  box-shadow: none;
 }
-.v-step.active .v-badge { color: var(--teal-2); background: rgba(45,212,191,0.12); }
+.v-step.active .v-badge { color: var(--teal-2); background: var(--teal-dim); }
 .v-step.active .label { color: var(--fg); }
 .v-step.done .v-node {
-  border-color: rgba(45,212,191,0.5); color: var(--teal-2);
-  background: rgba(45,212,191,0.1);
+  border-color: var(--teal); color: var(--teal);
+  background: var(--bg-1);
 }
 .v-step.done .v-badge { color: var(--teal-2); }
 .v-step.output.active .v-node,
@@ -925,16 +926,16 @@ watch(selectedDate, (d, prev) => {
 .log-row:hover { background: rgba(255, 255, 255, 0.02); }
 .log-row.sev-muted { opacity: 0.72; }
 /* 一行 severity → 左边框 + [分类] + 结论 同色 */
-.log-row.sev-detect  { border-left-color: rgba(45, 212, 191, 0.45); --log-tone: var(--teal-2); }
+.log-row.sev-detect  { border-left-color: var(--teal-line); --log-tone: var(--teal-2); }
 .log-row.sev-normal  { border-left-color: var(--lv-normal); --log-tone: var(--lv-normal); }
 .log-row.sev-w1      { border-left-color: var(--lv-w1); --log-tone: var(--lv-w1); }
 .log-row.sev-w2      { border-left-color: var(--lv-w2); --log-tone: var(--lv-w2); }
 .log-row.sev-alarm   { border-left-color: var(--lv-alarm); --log-tone: var(--lv-alarm); }
 .log-row.sev-pre,
 .log-row.sev-trend   { border-left-color: var(--lv-pre); --log-tone: var(--lv-pre-2); }
-.log-row.sev-diag    { border-left-color: #f0c674; --log-tone: #f0c674; }
-.log-row.sev-agent   { border-left-color: #c4b5fd; --log-tone: #93c5fd; }
-.log-row.sev-report  { border-left-color: #fda4af; --log-tone: #fda4af; }
+.log-row.sev-diag    { border-left-color: #d4a017; --log-tone: #d4a017; }
+.log-row.sev-agent   { border-left-color: #0369a1;        --log-tone: #0369a1; }
+.log-row.sev-report  { border-left-color: #b45309;        --log-tone: #b45309; }
 .log-row.sev-muted   { border-left-color: rgba(160, 174, 192, 0.25); --log-tone: var(--fg-4); }
 /* 气体行：[分类] 与数值同为正文色，左边框略提亮 */
 .log-row.log-gas {
@@ -955,9 +956,9 @@ watch(selectedDate, (d, prev) => {
 .log-row .msg :deep(.tone-alarm) { color: var(--lv-alarm); }
 .log-row .msg :deep(.tone-pre),
 .log-row .msg :deep(.tone-trend) { color: var(--lv-pre-2); }
-.log-row .msg :deep(.tone-diag) { color: #f0c674; }
-.log-row .msg :deep(.tone-agent) { color: #93c5fd; }
-.log-row .msg :deep(.tone-report) { color: #fda4af; }
+.log-row .msg :deep(.tone-diag) { color: #d4a017; }
+.log-row .msg :deep(.tone-agent)  { color: #0369a1; }
+.log-row .msg :deep(.tone-report) { color: #b45309; }
 .log-row .msg :deep(.tone-muted) { color: var(--fg-4); font-weight: 500; }
 .log-row .msg :deep(.gas-unit) { font-size: 0.72em; font-weight: 500; opacity: 0.72; margin-left: 1px; }
 .log-cites {
@@ -990,10 +991,15 @@ watch(selectedDate, (d, prev) => {
 }
 
 .g1-body { padding: 12px !important; }
+.g1-lock {
+  position: static !important;
+  min-height: 120px;
+  border-radius: 8px;
+}
 .g1-preview {
   max-height: none;
   overflow: visible;
-  background: #e8ecf0;
+  background: var(--bg-3);
   border-radius: 8px;
   padding: 8px;
 }
@@ -1009,9 +1015,9 @@ watch(selectedDate, (d, prev) => {
   margin-bottom: 8px;
 }
 .opinion-mode-bar.llm {
-  color: #0f766e;
-  border-color: rgba(45, 212, 191, 0.55);
-  background: rgba(45, 212, 191, 0.12);
+  color: var(--teal);
+  border-color: var(--teal-line);
+  background: var(--teal-dim);
 }
 .opinion-mode-bar.rule_template {
   color: #92400e;
@@ -1034,7 +1040,7 @@ watch(selectedDate, (d, prev) => {
 
 .tag-mod {
   margin-left: auto; font-size: 10px; color: var(--teal-2);
-  border: 1px solid rgba(45,212,191,0.3); padding: 1px 6px; border-radius: 4px;
+  border: 1px solid var(--teal-line); padding: 1px 6px; border-radius: 4px;
 }
 .decision-body { display: flex; flex-direction: column; gap: 12px; position: relative; min-height: 160px; }
 .dec-item { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
@@ -1042,7 +1048,7 @@ watch(selectedDate, (d, prev) => {
 .dec-k { font-size: 11px; color: var(--fg-4); }
 .dec-v { font-size: 15px; font-weight: 700; color: var(--fg); margin: 4px 0; }
 .dec-v.teal { color: var(--teal-2); }
-.dec-v.agent { color: #93c5fd; }
+.dec-v.agent { color: #0369a1; }
 .dec-v.w1 { color: var(--lv-w1); }
 .dec-v.w2 { color: var(--lv-w2); }
 .dec-v.alarm { color: var(--lv-alarm); }
@@ -1068,9 +1074,7 @@ watch(selectedDate, (d, prev) => {
 .tp-table-hint { color: var(--fg-3); }
 .tp-block {
   margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--bg-3);
+  padding: 10px 0;
 }
 .tp-block:last-of-type { margin-bottom: 0; }
 .tp-chain { margin: 0; }
@@ -1094,9 +1098,9 @@ watch(selectedDate, (d, prev) => {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px; font-weight: 700;
   padding: 1px 6px; border-radius: 4px;
-  background: rgba(45, 212, 191, 0.12);
-  color: #5eead4;
-  border: 1px solid rgba(45, 212, 191, 0.3);
+  background: var(--teal-dim);
+  color: var(--teal-2);
+  border: 1px solid var(--teal-line);
   margin-right: 4px;
 }
 .tp-items {
@@ -1118,8 +1122,9 @@ watch(selectedDate, (d, prev) => {
 .decision-lock {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(20,28,36,0.72); color: var(--fg-3); font-size: 12px;
+  background: var(--bg-3); color: var(--fg-4); font-size: 12px;
   border-radius: var(--r);
+  border: 1px dashed var(--line);
 }
 
 /* 表 G.1 样式在 ReportCardG.vue；此处只管预览壳 */
@@ -1127,7 +1132,7 @@ watch(selectedDate, (d, prev) => {
   font-size: 11px; font-weight: 650; padding: 4px 10px; border-radius: 999px;
   border: 1px solid var(--line); color: var(--fg-3);
 }
-.mode-pill.llm { border-color: rgba(45, 212, 191, 0.45); color: #5eead4; background: rgba(45, 212, 191, 0.08); }
+.mode-pill.llm { border-color: var(--teal-line); color: var(--teal-2); background: var(--teal-dim); }
 .mode-pill.rule_template { background: var(--bg-3); }
 
 .modal {

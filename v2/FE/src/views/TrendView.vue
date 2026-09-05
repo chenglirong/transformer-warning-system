@@ -25,14 +25,26 @@ const selectedDay = ref(null)
 const rateEl = ref(null)
 let rateChart = null
 
-const colors = {
-  axis: '#7c8aa0',
-  split: 'rgba(160, 174, 192, 0.12)',
-  text: '#b4c0d4',
-  rate: '#2dd4bf',
-  attention: '#d9a441',
-  pre: '#a78bfa', // 对齐 --lv-pre
-  rising: '#fb923c',
+function getColors() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light'
+  const cs = getComputedStyle(document.documentElement)
+  const teal = cs.getPropertyValue('--teal').trim() || '#2dd4bf'
+  return {
+    axis:      isLight ? '#64748b' : '#7c8aa0',
+    split:     isLight ? 'rgba(0,0,0,0.08)' : 'rgba(160,174,192,0.12)',
+    text:      isLight ? '#3d3d3d' : '#b4c0d4',
+    tooltipBg: isLight ? '#ffffff' : '#323e4c',
+    tooltipFg: isLight ? '#1f1f1f' : '#f1f5fb',
+    tooltipBd: isLight ? 'rgba(0,0,0,0.12)' : 'rgba(45,212,191,0.35)',
+    rate:      teal,
+    areaHigh:  isLight ? `${teal}22` : 'rgba(45,212,191,0.22)',
+    areaLow:   isLight ? `${teal}08` : 'rgba(45,212,191,0.02)',
+    zoomBg:    isLight ? 'rgba(240,242,245,0.9)' : 'rgba(33,43,56,0.8)',
+    zoomFill:  isLight ? 'rgba(13,148,136,0.10)' : 'rgba(45,212,191,0.18)',
+    attention: '#d9a441',
+    pre:       '#a78bfa',
+    rising:    '#fb923c',
+  }
 }
 
 const gradeClass = (g) => ({
@@ -116,13 +128,15 @@ function renderRate() {
     }
   }
 
+  const colors = getColors()
+
   rateChart.setOption({
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#323e4c',
-      borderColor: 'rgba(45, 212, 191, 0.35)',
-      textStyle: { color: '#f1f5fb', fontSize: 12 },
+      backgroundColor: colors.tooltipBg,
+      borderColor: colors.tooltipBd,
+      textStyle: { color: colors.tooltipFg, fontSize: 12 },
       formatter: (ps) => {
         const idx = ps[0].dataIndex
         const s = data[idx]
@@ -168,10 +182,10 @@ function renderRate() {
         height: 14,
         start: zoomRange.start,
         end: zoomRange.end,
-        borderColor: 'rgba(160,174,192,0.26)',
-        backgroundColor: 'rgba(33,43,56,0.8)',
-        fillerColor: 'rgba(45,212,191,0.18)',
-        handleStyle: { color: '#2dd4bf' },
+        borderColor: colors.split,
+        backgroundColor: colors.zoomBg,
+        fillerColor: colors.zoomFill,
+        handleStyle: { color: colors.rate },
         textStyle: { color: colors.axis, fontSize: 10 },
       },
     ],
@@ -185,8 +199,8 @@ function renderRate() {
         lineStyle: { color: colors.rate, width: 1.6 },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(45, 212, 191, 0.22)' },
-            { offset: 1, color: 'rgba(45, 212, 191, 0.02)' },
+            { offset: 0, color: colors.areaHigh },
+            { offset: 1, color: colors.areaLow },
           ]),
         },
         markLine: {
@@ -225,8 +239,7 @@ function renderRate() {
         symbolSize: 10,
         itemStyle: {
           color: colors.pre,
-          shadowBlur: 8,
-          shadowColor: 'rgba(251, 191, 36, 0.45)',
+          shadowBlur: 0,
         },
         z: 5,
       },
@@ -412,9 +425,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .chip.on {
-  border-color: rgba(45,212,191,0.45);
+  border-color: var(--teal-line);
   color: var(--teal-2);
-  background: rgba(45,212,191,0.1);
+  background: var(--teal-dim);
 }
 .head-ref { margin-left: auto; font-size: 11px; color: var(--fg-4); font-weight: 500; }
 
@@ -442,10 +455,11 @@ onBeforeUnmount(() => {
 .f-label {
   font-size: 10px; font-weight: 700; color: var(--teal-2);
   padding: 1px 6px; border-radius: 4px;
-  border: 1px solid rgba(45,212,191,0.3);
+  border: 1px solid var(--teal-line);
 }
 .f-mono {
   font-family: 'JetBrains Mono', 'Times New Roman', serif;
+  font-style: italic;
   color: var(--fg);
   font-weight: 600;
 }

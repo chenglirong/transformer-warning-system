@@ -149,7 +149,7 @@ onMounted(async () => {
               <td class="mono col-date">{{ r.date }}</td>
               <td v-for="g in GAS_COLS" :key="g.key" class="num mono">{{ r[g.key] ?? '—' }}</td>
               <td class="col-actions">
-                <button type="button" class="act-btn teal" @click="goDetect(r.date)">分级检测</button>
+                <button type="button" class="act-btn teal primary-act" @click="goDetect(r.date)">分级检测</button>
               </td>
             </tr>
             <tr v-if="!pageRows.length">

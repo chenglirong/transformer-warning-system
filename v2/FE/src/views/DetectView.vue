@@ -893,6 +893,7 @@ onMounted(async () => {
 }
 .formula {
   font-family: "JetBrains Mono", "Times New Roman", serif;
+  font-style: italic;
   font-size: 13px;
   font-weight: 600;
   color: var(--fg);
@@ -963,7 +964,7 @@ onMounted(async () => {
   border-left-color: var(--lv-alarm);
 }
 .ind.driver {
-  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.28);
+  box-shadow: inset 0 0 0 1px var(--teal-line);
 }
 
 .ind-head {
@@ -1070,7 +1071,7 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .bound-tag.normal {
-  border-color: rgba(45, 212, 191, 0.35);
+  border-color: var(--teal-line);
   color: var(--lv-normal);
   background: var(--lv-normal-bg);
 }

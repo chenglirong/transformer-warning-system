@@ -465,9 +465,9 @@ onMounted(loadOverview)
   border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;
 }
 .tab.on {
-  border-color: rgba(45,212,191,0.45);
+  border-color: var(--teal-line);
   color: var(--teal-2);
-  background: rgba(45,212,191,0.1);
+  background: var(--teal-dim);
   font-weight: 600;
 }
 .summary-meta { font-size: 11px; margin-left: auto; }
@@ -516,16 +516,16 @@ onMounted(loadOverview)
   font-size: 11px; cursor: pointer;
 }
 .bar-filter select.on {
-  border-color: rgba(45,212,191,0.45);
+  border-color: var(--teal-line);
   color: var(--teal-2);
-  background: rgba(45,212,191,0.08);
+  background: var(--teal-dim);
 }
 .head-ref { font-size: 10.5px; color: var(--fg-4); display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
 .table-wrap { overflow-x: auto; }
 .dec-table td { vertical-align: top; }
 .dec-table td.col-grade { border-left: 2px solid rgba(147, 197, 253, 0.12); }
-.dec-table td.col-period { border-left: 2px solid rgba(45, 212, 191, 0.15); }
+.dec-table td.col-period { border-left: 2px solid var(--teal-line); }
 
 .col-date { width: 108px; white-space: nowrap; }
 .col-grade { width: 96px; white-space: nowrap; }
@@ -566,11 +566,11 @@ onMounted(loadOverview)
 }
 .conf-tag.block { display: block; width: fit-content; margin-top: 4px; }
 .conf-tag.high { background: var(--lv-normal-bg); color: var(--lv-normal); }
-.conf-tag.mid { background: var(--lv-w1-bg); color: var(--lv-w1); }
-.conf-tag.low { background: var(--lv-alarm-bg); color: var(--lv-alarm); }
-.urg-tag.high { background: rgba(245,85,90,0.15); color: var(--lv-alarm); }
-.urg-tag.mid { background: rgba(251,146,60,0.15); color: var(--lv-w2); }
-.urg-tag.low { background: rgba(45,212,191,0.12); color: var(--teal-2); }
+.conf-tag.mid  { background: var(--lv-w1-bg);     color: var(--lv-w1); }
+.conf-tag.low  { background: var(--lv-w2-bg);     color: var(--lv-w2); }
+.urg-tag.high  { background: var(--lv-alarm-bg);  color: var(--lv-alarm); }
+.urg-tag.mid   { background: var(--lv-w2-bg);     color: var(--lv-w2); }
+.urg-tag.low   { background: var(--teal-dim);     color: var(--teal-2); }
 .col-period, .col-resample, .col-ot { line-height: 1.45; font-size: 11.5px; }
 .col-ot { max-width: 320px; vertical-align: top; }
 .col-ot.hot { color: #93c5fd; }
@@ -648,7 +648,7 @@ onMounted(loadOverview)
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--teal-2);
-  background: rgba(45, 212, 191, 0.1);
+  background: var(--teal-dim);
   border-bottom: 1px solid var(--line);
 }
 .sum-table tr.sum-group:first-child th {

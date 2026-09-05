@@ -393,31 +393,32 @@ function pxToTri(px, py) {
 }
 
 const duvalCanvas = ref(null)
-/** 逐像素按 classifyZone 上色,着色规则 == 后端落区。 */
 function drawDuval() {
   const cv = duvalCanvas.value
   if (!cv) return
   const W = 400, H = 360
   const dpr = window.devicePixelRatio || 1
-  cv.width = W * dpr
-  cv.height = H * dpr
+  const cW = Math.round(W * dpr)
+  const cH = Math.round(H * dpr)
+  cv.width = cW
+  cv.height = cH
   const ctx = cv.getContext('2d')
   ctx.scale(dpr, dpr)
   ctx.clearRect(0, 0, W, H)
-  const img = ctx.createImageData(W * dpr, H * dpr)
+  const img = ctx.createImageData(cW, cH)
   const data = img.data
   const hexToRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]
   const rgbCache = {}
   for (const [id, hex] of Object.entries(ZONE_COLORS)) rgbCache[id] = hexToRgb(hex)
-  for (let py = 0; py < H * dpr; py++) {
-    for (let px = 0; px < W * dpr; px++) {
+  for (let py = 0; py < cH; py++) {
+    for (let px = 0; px < cW; px++) {
       const tri = pxToTri(px / dpr, py / dpr)
-      const off = (py * W * dpr + px) * 4
+      const off = (py * cW + px) * 4
       if (!tri) { data[off + 3] = 0; continue }
       const z = classifyZone(tri.ch4, tri.c2h4, tri.c2h2)
       const [r, g, b] = rgbCache[z]
       data[off] = r; data[off + 1] = g; data[off + 2] = b
-      data[off + 3] = 128 // ~0.5 alpha,和原 fill 透明度相近
+      data[off + 3] = 128
     }
   }
   ctx.putImageData(img, 0, 0)
@@ -474,6 +475,7 @@ async function loadDay(date) {
     if (selectedDate.value !== req) return
     detail.value = data
     await nextTick()
+    await nextTick()  // v-if 挂载 canvas ref 需要额外一帧
     if (duval.value?.ok) drawDuval()
   } finally {
     if (selectedDate.value === req) dayLoading.value = false
@@ -492,7 +494,12 @@ watch(
 onMounted(async () => {
   try { await loadSeries() } finally { loading.value = false }
   window.addEventListener('resize', onResize)
+  // 主题切换时重绘 Canvas（否则切换浅色/深色后色块消失）
+  const mo = new MutationObserver(() => { if (duval.value?.ok) drawDuval() })
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 })
+// canvas ref 就绪时立即绘制（防止 v-if 挂载比 nextTick 慢）
+watch(duvalCanvas, (cv) => { if (cv && duval.value?.ok) drawDuval() })
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
 })
@@ -1003,11 +1010,11 @@ function onResize() {
   letter-spacing: 0.04em;
 }
 .verdict.hot {
-  background: rgba(245,85,90,0.12);
-  border-color: rgba(245,85,90,0.35);
-  color: #fca5a5;
+  background: var(--lv-alarm-bg);
+  border-color: var(--lv-alarm);
+  color: var(--lv-alarm);
 }
-.verdict.hot .verdict-k { color: rgba(252,165,165,0.75); }
+.verdict.hot .verdict-k { color: var(--lv-alarm); opacity: 0.7; }
 
 /* 大卫三角 */
 .zone-legend {
@@ -1108,16 +1115,16 @@ function onResize() {
   flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px;
   font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
 }
-.kg-bar-tag.primary { background: rgba(45,212,191,0.2); color: #2dd4bf; }
-.kg-bar-tag.secondary { background: rgba(94,234,212,0.12); color: #5eead4; }
+.kg-bar-tag.primary { background: var(--teal-dim); color: var(--teal); }
+.kg-bar-tag.secondary { background: var(--teal-dim); color: var(--teal-2); }
 .kg-bar-lab { flex-shrink: 0; width: 3.2em; font-size: 12px; color: var(--fg-2); }
 .kg-bar-track {
   flex: 1; height: 10px; border-radius: 5px;
   background: rgba(160,174,192,0.12); overflow: hidden;
 }
 .kg-bar-fill { height: 100%; border-radius: 5px; transition: width .3s ease; }
-.kg-bar-fill.primary { background: #2dd4bf; }
-.kg-bar-fill.secondary { background: rgba(94,234,212,0.6); }
+.kg-bar-fill.primary { background: var(--teal); }
+.kg-bar-fill.secondary { background: var(--teal-dim); }
 .kg-bar-val {
   flex-shrink: 0; min-width: 5.5em; text-align: right;
   font-size: 11.5px; font-weight: 700; color: var(--fg);

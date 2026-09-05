@@ -87,3 +87,184 @@ button { font-family: inherit; cursor: pointer; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--line-3); border-radius: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ========== 浅色截图模式 ========== */
+[data-theme="light"] {
+  --bg-0: #f0f2f5;   /* 页面底（Ant Design 经典浅灰） */
+  --bg-1: #ffffff;   /* 卡片/面板：纯白 */
+  --bg-2: #ffffff;
+  --bg-3: #f5f7fa;   /* 表格斑马行、subtle hover */
+  --bg-4: #e8eaed;   /* hover 高亮 */
+
+  --line:   rgba(0, 0, 0, 0.08);
+  --line-2: rgba(0, 0, 0, 0.14);
+  --line-3: rgba(0, 0, 0, 0.22);
+
+  --fg:   #1f1f1f;
+  --fg-2: #3d3d3d;
+  --fg-3: #6b7280;
+  --fg-4: #9ca3af;
+
+  --teal:      #0d9488;
+  --teal-2:    #0d9488;
+  --teal-dim:  rgba(13, 148, 136, 0.08);
+  --teal-line: rgba(13, 148, 136, 0.28);
+
+  --amber:     #b45309;
+  --amber-2:   #d97706;
+  --amber-dim: rgba(180, 83, 9, 0.08);
+
+  --blue:   #2563eb;
+  --violet: #7c3aed;
+  --pink:   #db2777;
+
+  --lv-normal:    var(--teal);
+  --lv-normal-bg: var(--teal-dim);
+  --lv-w1:        #d4b400;
+  --lv-w1-bg:     rgba(212, 180, 0, 0.10);
+  --lv-w2:        #d97706;
+  --lv-w2-bg:     rgba(217, 119, 6, 0.10);
+  --lv-alarm:     #dc2626;
+  --lv-alarm-bg:  rgba(220, 38, 38, 0.10);
+  --lv-pre:       #6d28d9;
+  --lv-pre-2:     #5b21b6;
+  --lv-pre-bg:    rgba(109, 40, 217, 0.09);
+  --lv-pre-line:  rgba(109, 40, 217, 0.30);
+
+  --shadow:    0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 4px  rgba(0, 0, 0, 0.06);
+  --glow-teal: 0 0 0 1px var(--teal-line), 0 0 8px rgba(13, 148, 136, 0.10);
+}
+
+[data-theme="light"] body {
+  background: var(--bg-0) !important;
+  color: var(--fg) !important;
+}
+
+/* 顶栏白色 */
+[data-theme="light"] .topbar {
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* 清除硬编码荧光 teal 文字 */
+[data-theme="light"] .cat-card:hover .cat-code,
+[data-theme="light"] .chip.on,
+[data-theme="light"] .cat-sec.on,
+[data-theme="light"] .mode-pill.llm,
+[data-theme="light"] [class*="kg-bar-tag"] {
+  color: #0d9488 !important;
+  border-color: rgba(13, 148, 136, 0.35) !important;
+  background: rgba(13, 148, 136, 0.06) !important;
+  box-shadow: none !important;
+}
+
+/* alarm 点不发光 */
+[data-theme="light"] .pill.alarm .d {
+  box-shadow: none !important;
+}
+
+/* 表格 hover/选中：teal 荧光换成中性灰 */
+[data-theme="light"] .dga-table tbody tr.clickable:hover td,
+[data-theme="light"] .dga-table tbody tr:hover td {
+  background: #f5f7fa !important;
+}
+[data-theme="light"] .dga-table tbody tr.on td {
+  background: #edf2f7 !important;
+}
+
+/* 分页当前页：不荧光 */
+[data-theme="light"] .page-btn.on {
+  border-color: #0d9488 !important;
+  color: #0d9488 !important;
+  background: #f0faf9 !important;
+}
+
+/* act-btn teal：换成灰边 */
+[data-theme="light"] .act-btn.teal {
+  border-color: rgba(0, 0, 0, 0.14) !important;
+  background: #f5f7fa !important;
+  color: #0d9488 !important;
+}
+[data-theme="light"] .act-btn.teal:hover {
+  background: #e8f5f4 !important;
+  border-color: #0d9488 !important;
+}
+
+/* 表格分组 header：蓝色/teal 荧光换成正常色 */
+[data-theme="light"] .dga-table thead .group-basis {
+  color: #2563eb !important;
+  background: rgba(37, 99, 235, 0.05) !important;
+  border-left-color: rgba(37, 99, 235, 0.3) !important;
+}
+[data-theme="light"] .dga-table thead .group-decision {
+  color: #0d9488 !important;
+  background: rgba(13, 148, 136, 0.05) !important;
+  border-left-color: rgba(13, 148, 136, 0.3) !important;
+}
+[data-theme="light"] .dga-table thead .col-row th.group-edge-basis {
+  border-left-color: rgba(37, 99, 235, 0.18) !important;
+}
+[data-theme="light"] .dga-table thead .col-row th.group-edge-decision {
+  border-left-color: rgba(13, 148, 136, 0.18) !important;
+}
+
+/* 数据集「分级检测」按钮 → 实心绿 */
+[data-theme="light"] .act-btn.teal.primary-act {
+  background: #0d9488 !important;
+  color: #ffffff !important;
+  border-color: #0d9488 !important;
+}
+[data-theme="light"] .act-btn.teal.primary-act:hover {
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+}
+
+/* 四档语义色背景在白底加深，让颜色可见 */
+[data-theme="light"] {
+  --lv-normal-bg: var(--teal-dim);
+  --lv-w1-bg:     rgba(161, 98, 7, 0.12);
+  --lv-w2-bg:     rgba(194, 65, 12, 0.12);
+  --lv-alarm-bg:  rgba(185, 28, 28, 0.12);
+  --lv-pre-bg:    rgba(109, 40, 217, 0.11);
+}
+
+/* 三比值 code-pill：改用语义变量 */
+[data-theme="light"] .code-pill.c0,
+[data-theme="light"] .combo-box.c0 {
+  background: var(--lv-normal-bg) !important;
+  color: var(--lv-normal) !important;
+}
+[data-theme="light"] .code-pill.c1,
+[data-theme="light"] .combo-box.c1 {
+  background: var(--lv-w1-bg) !important;
+  color: var(--lv-w1) !important;
+}
+[data-theme="light"] .code-pill.c2,
+[data-theme="light"] .combo-box.c2 {
+  background: var(--lv-alarm-bg) !important;
+  color: var(--lv-alarm) !important;
+}
+
+/* 特征气体进度条轨道/次要气体在白底可见 */
+[data-theme="light"] .kg-bar-track {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .kg-bar-fill.secondary {
+  background: rgba(13, 148, 136, 0.35) !important;
+}
+[data-theme="light"] .kg-bar-tag.secondary {
+  color: var(--teal) !important;
+}
+
+/* DecisionOverview 硬编码蓝色替换为中性深色 */
+[data-theme="light"] .col-ot.hot,
+[data-theme="light"] .col-period.hot,
+[data-theme="light"] .col-resample.hot,
+[data-theme="light"] .sum-table .hot {
+  color: var(--fg-2) !important;
+}
+[data-theme="light"] .sum-table tr.sum-group:first-child th {
+  color: var(--fg-3) !important;
+  background: var(--bg-3) !important;
+}

@@ -57,7 +57,7 @@ const text = computed(() => citeId.value)
 }
 .std-cite.bare { border-bottom: none; cursor: default; opacity: 0.7; }
 .std-cite-wrap:hover .std-cite {
-  color: #5eead4;
+  color: var(--teal-2);
   border-bottom-style: solid;
 }
 </style>

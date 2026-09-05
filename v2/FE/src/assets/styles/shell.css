@@ -6,7 +6,7 @@
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: linear-gradient(180deg, #1b2431 0%, var(--bg-1) 100%);
+  background: var(--bg-0);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -23,9 +23,9 @@
 .brand-logo {
   width: 38px; height: 38px; flex-shrink: 0;
   border-radius: 9px;
-  background: linear-gradient(135deg, var(--teal) 0%, #0d9488 100%);
+  background: var(--teal);
   display: grid; place-items: center;
-  box-shadow: 0 3px 14px rgba(45, 212, 191, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 .brand-logo svg { width: 20px; height: 20px; }
 .brand-name { font-size: 13.5px; font-weight: 700; letter-spacing: 0.2px; }
@@ -66,7 +66,7 @@
 
 .topbar {
   height: var(--topbar-h); flex-shrink: 0;
-  background: rgba(24, 32, 44, 0.9);
+  background: rgba(var(--topbar-bg-rgb, 24, 32, 44), 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
   display: flex; align-items: center; gap: 16px;
@@ -87,8 +87,19 @@
   transition: var(--ease); white-space: nowrap;
 }
 .btn svg { width: 15px; height: 15px; }
-.btn-primary { background: var(--teal); color: #062521; }
-.btn-primary:hover { background: var(--teal-2); box-shadow: 0 0 16px rgba(45,212,191,0.35); }
+.btn-primary { background: var(--teal); color: #ffffff; }
+.btn-primary:hover { background: var(--teal-2); color: #ffffff; }
 .btn-ghost { background: var(--bg-3); color: var(--fg-2); border-color: var(--line-2); }
 .btn-ghost:hover { background: var(--bg-4); color: var(--fg); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* 主题切换按钮 */
+.theme-toggle-btn {
+  font-size: 12px;
+  padding: 5px 11px;
+  gap: 5px;
+  opacity: 0.8;
+  transition: var(--ease);
+}
+.theme-toggle-btn:hover { opacity: 1; }
+.theme-toggle-btn svg { width: 14px; height: 14px; }

@@ -104,18 +104,21 @@ const footNote = computed(() => {
 <template>
   <div class="rcg" :class="mode">
     <div class="g1-sheet">
-      <div class="g1-title">油中溶解气体分析档案卡片</div>
-      <div class="g1-meta">
-        <div class="g1-meta-left">
-          <span class="g1-meta-line">{{ g1.bureau || '' }}</span>局（厂、所）
-        </div>
-        <div class="g1-meta-right">
-          报告编号：<span class="g1-meta-no">{{ cell(g1.report_no) }}</span>
-        </div>
-      </div>
-
       <table class="g1-table">
         <tbody>
+        <!-- 标题行 -->
+        <tr>
+          <td colspan="10" class="g1-title-cell">油中溶解气体分析档案卡片</td>
+        </tr>
+        <!-- meta 行：单位 + 报告编号 -->
+        <tr>
+          <td colspan="5" class="g1-meta-cell">
+            <span class="g1-meta-line">{{ g1.bureau || '' }}</span>局（厂、所）
+          </td>
+          <td colspan="5" class="g1-meta-cell g1-meta-right">
+            报告编号：<span class="g1-meta-no">{{ cell(g1.report_no) }}</span>
+          </td>
+        </tr>
         <!-- 铭牌行 1 -->
         <tr>
           <td class="g1-lbl">型号</td>
@@ -212,7 +215,7 @@ const footNote = computed(() => {
         </tr>
         <tr v-for="row in GAS_ROWS" :key="row.key">
           <td class="g1-sub">
-            <span v-for="(p, k) in formulaParts(row.formula)" :key="k">
+            <span class="formula" v-for="(p, k) in formulaParts(row.formula)" :key="k">
               <sub v-if="p.sub">{{ p.text }}</sub>
               <template v-else>{{ p.text }}</template>
             </span>
@@ -320,10 +323,25 @@ const footNote = computed(() => {
 }
 
 .g1-sheet {
-  border: 2px solid #111;
   background: #fff;
 }
 
+.g1-title-cell {
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 2px;
+  padding: 8px 10px 6px;
+  border-bottom: none !important;
+}
+.g1-meta-cell {
+  font-size: 12px;
+  padding: 3px 12px 6px;
+  border-top: none !important;
+}
+.g1-meta-right {
+  text-align: right;
+}
 .g1-title {
   text-align: center;
   font-weight: 700;
@@ -358,6 +376,7 @@ const footNote = computed(() => {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  border: 1px solid #111;
 }
 .g1-table td {
   border: 1px solid #111;
@@ -409,6 +428,8 @@ const footNote = computed(() => {
 }
 
 /* 预览缩略 */
+.rcg.compact .g1-title-cell { font-size: 12px; letter-spacing: 1px; padding: 4px 5px 4px; }
+.rcg.compact .g1-meta-cell { font-size: 10px; padding: 2px 6px 3px; }
 .rcg.compact .g1-title { font-size: 12px; letter-spacing: 1px; padding: 5px; }
 .rcg.compact .g1-meta { font-size: 10px; padding: 2px 6px 4px; }
 .rcg.compact .g1-table td { font-size: 9px; padding: 1px 3px; }

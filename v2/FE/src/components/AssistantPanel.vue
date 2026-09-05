@@ -433,7 +433,7 @@ watch(
   padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--teal-line, rgba(45, 212, 191, 0.35));
-  background: rgba(45, 212, 191, 0.08);
+  background: var(--teal-dim);
   color: var(--teal-2, #5eead4);
   cursor: pointer;
 }

@@ -1,6 +1,6 @@
 <script setup>
 // SCADA 壳:侧栏 240 + sticky 顶栏 + 内容区(对齐 dga-ui-v2)
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -37,6 +37,28 @@ const navGroups = [
 
 function isActive(path) {
   return route.path === path || route.path.startsWith(path + '/')
+}
+
+// ---- 主题切换 ----
+const isLight = ref(false)
+
+onMounted(() => {
+  const saved = localStorage.getItem('dga-theme')
+  if (saved === 'light') {
+    isLight.value = true
+    document.documentElement.setAttribute('data-theme', 'light')
+  }
+})
+
+function toggleTheme() {
+  isLight.value = !isLight.value
+  if (isLight.value) {
+    document.documentElement.setAttribute('data-theme', 'light')
+    localStorage.setItem('dga-theme', 'light')
+  } else {
+    document.documentElement.removeAttribute('data-theme')
+    localStorage.setItem('dga-theme', 'dark')
+  }
 }
 </script>
 
@@ -129,6 +151,15 @@ function isActive(path) {
           <h1>{{ pageMeta.title }}</h1>
         </div>
         <div class="topbar-spacer" />
+        <button class="btn btn-ghost theme-toggle-btn" @click="toggleTheme" :title="isLight ? '切换回暗色模式' : '切换为浅色模式'">
+          <svg v-if="isLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <span>{{ isLight ? '暗色模式' : '浅色模式' }}</span>
+        </button>
       </header>
       <main class="content">
         <router-view />
