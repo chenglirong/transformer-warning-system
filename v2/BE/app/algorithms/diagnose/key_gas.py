@@ -30,7 +30,9 @@ _TABLE5 = [
      "need_co": True, "nature": "discharge", "note_key": "note5c"},
 ]
 
-# ── DL/T 722-2014 表3 注意值 —— 仅注3/注4 排除与信息字段 ──
+# ── DL/T 722-2014 表3 注意值(220kV 及以下,硬编码——本项目定位即此电压等级) ──
+# H₂=150、总烃=150 两电压等级同值;C₂H₂ 分档(330kV=1、220kV=5),此处取 220kV=5。
+# 兼作:① 主气「检出」下限(见 _is_present),② 注3/注4 定性排除。
 _FLOOR = {
     "h2": 150.0,
     "c2h2": 5.0,
@@ -58,8 +60,8 @@ _NOTE_TEXT = {
     "note2": lambda hc: "注2:CO₂/CO<3,固体绝缘过热先生大量 CO/CO₂,初期烃类增加不明显",
     "note3": lambda hc: "注3:主产 H₂/CH₄,涉固体绝缘时产 CO,以极少 C₂H₄ 为主要特征",
     "note4": lambda hc: "注4:C₂H₂ 突出、总烃不高(火花放电特征)",
-    "note5": lambda hc: "注5:高能放电,大量 H₂/C₂H₂ 及相当量 CH₄/C₂H₄",
-    "note5c": lambda hc: "注5:高能放电大量 H₂/C₂H₂;CO₂/CO<3 示固体绝缘涉入,纸油或炭化",
+    "note5": lambda hc: "注5:高能量放电,大量 H₂/C₂H₂ 及相当量 CH₄/C₂H₄",
+    "note5c": lambda hc: "注5:高能量放电大量 H₂/C₂H₂;CO₂/CO<3 示固体绝缘涉入,纸油或炭化",
 }
 
 
@@ -81,9 +83,19 @@ class KeyGasResult:
     )
 
 
-def _is_present(value: Optional[float]) -> bool:
-    """定性「检出」:有数值且 >0。"""
-    return value is not None and value > 0
+def _is_present(gas: str, value: Optional[float]) -> bool:
+    """定性「检出」:有数值且 >0。
+
+    对表3 给了单项注意值的主气(H₂=150、C₂H₂=5@220kV),用注意值当检出线——
+    极少量(如微量 C₂H₂)不算「产生该特征气体」,以免高温过热样本误命中放电行。
+    表3 未给注意值的气体(CH₄/C₂H₄/C₂H₆)仍按检出>0,不自造门槛。
+    """
+    if value is None:
+        return False
+    floor = _FLOOR.get(gas)
+    if floor is not None:
+        return value >= floor
+    return value > 0
 
 
 def _is_elevated(gas: str, value: Optional[float]) -> bool:
@@ -142,7 +154,7 @@ def diagnose_key_gas(
     for row in _TABLE5:
         fault = row["fault"]
         pri_hc = [g for g in row["primary"] if g not in ("co", "co2")]
-        missing = [g for g in pri_hc if not _is_present(gases.get(g))]
+        missing = [g for g in pri_hc if not _is_present(g, gases.get(g))]
         matched, reject = True, None
 
         # ① 主要特征气体(除 CO)须全部检出

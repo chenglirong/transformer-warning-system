@@ -66,7 +66,7 @@ class RatioResult:
     fault: str
     code: Optional[tuple]
     ratios: dict
-    duval_code: Optional[str]   # 映射到六代码,供一致性对比
+    duval_code: Optional[str]   # 映射到大卫三角分区代码,供一致性对比
     ok: bool                    # 是否给出有效判型
     reason: Optional[str] = None
 

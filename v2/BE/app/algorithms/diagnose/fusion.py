@@ -1,8 +1,8 @@
 """多方法交叉研判 + 可信度 + 试验建议(附录D / 1685 附录B)。
 
 一致性规则(蓝图已定):
-  - 三比值 ↔ 大卫三角:比六代码是否同格/相邻
-  - 特征气体法:保留原话,不硬翻成六代码;主结论六代码仍 Duval/三比值
+  - 三比值 ↔ 大卫三角:比分区代码是否同格/相邻
+  - 特征气体法:保留原话,不硬翻成分区代码;主结论分区代码仍 Duval/三比值
   - 表5 油/纸维度以 paper_note 附注补进结论层(D-019),不抢主名
   - 三方一致性拉到「放电 vs 过热」性质大类
   - 只荐试验、不下成因
@@ -18,7 +18,7 @@ from app.algorithms.diagnose.key_gas import KeyGasResult
 from app.algorithms.diagnose.measures import build_measures
 from app.algorithms.diagnose.ratios import RatioResult
 
-# 六代码相邻关系(同格或相邻 → 一致)
+# 大卫三角分区代码相邻关系(七区:PD/D1/D2/T1/T2/T3/DT;同格或相邻 → 一致)
 _ADJACENT = {
     "PD": {"PD", "D1"},
     "D1": {"PD", "D1", "D2", "DT"},
@@ -65,7 +65,7 @@ def _paper_annot(
     nature: str,
     nature_agree: Optional[bool],
 ) -> tuple[Optional[str], Optional[str]]:
-    """表5 油/纸维度附注(不改六代码主结论)。大类打架时不挂。
+    """表5 油/纸维度附注(不改分区代码主结论)。大类打架时不挂。
 
     Returns:
         (scope, note): scope ∈ {oil_paper, oil, None}
@@ -103,6 +103,8 @@ def fuse(
     duval_zone = duval.zone if duval.ok else None
     pair_ok = _codes_consistent(ratio_code, duval_zone)
 
+    # 三方性质投票。极少量 C₂H₂ 误命中已在 key_gas 入口(表3 注意值当检出线)消掉,
+    # 此处三方回归同权:干净的大类一致/分歧/兼过热判定。
     natures = []
     if ratios.ok:
         natures.append(_RATIO_NATURE.get(ratios.fault, "unknown"))
@@ -112,13 +114,20 @@ def fuse(
         natures.append(key_gas.nature)
 
     pure = [n for n in natures if n in ("thermal", "discharge")]
-    if len(pure) >= 2 and len(set(pure)) == 1:
-        nature_agree = True
-        nature = pure[0]
-    elif len(pure) >= 2 and len(set(pure)) > 1:
+    has_mixed = "mixed" in natures
+    if len(pure) >= 2 and len(set(pure)) > 1:
+        # 纯放电 vs 纯过热,性质大类打架
         nature_agree = False
         nature = "unknown"
-    elif "mixed" in natures:
+    elif has_mixed and pure:
+        # 有方法判「兼过热」+ 有方法判纯性质:含放电成分,不算干净一致,取 mixed,不上高
+        nature_agree = None
+        nature = "mixed"
+    elif len(pure) >= 2 and len(set(pure)) == 1:
+        nature_agree = True
+        nature = pure[0]
+    elif has_mixed:
+        # 仅 mixed(其余方法无有效纯性质结论)
         nature_agree = True
         nature = "mixed"
     elif pure:
@@ -141,7 +150,7 @@ def fuse(
         primary = "无法判定"
         primary_code = None
 
-    # 油/纸附注:六代码主结论不动;表5 涉纸且大类不打架时挂一句(D-019)
+    # 油/纸附注:分区代码主结论不动;表5 涉纸且大类不打架时挂一句(D-019)
     paper_scope, paper_note = _paper_annot(
         key_gas, nature=nature, nature_agree=nature_agree,
     )
@@ -161,29 +170,36 @@ def fuse(
         if paper_scope is None and aux.co2_co is not None and aux.co2_co < 3:
             paper_scope = "oil_paper"
 
-    # 可信度(基础判据)
+    # 可信度(基础判据)。分档主轴 = 性质大类(放电/过热)——它决定试验建议方向,
+    # 是最稳的信号;分区代码落格只是同一大类内的细分(温区/能级),权重更低。
     if low_concentration:
         confidence = "低"
         confidence_reason = "低浓度<10μL/L(§10.2.4 c)"
     elif nature_agree is False:
+        # 纯放电 vs 纯过热打架:大类都不能互证,一票否决到低
         confidence = "低"
         confidence_reason = "放电 vs 过热分歧"
-    elif pair_ok is False and nature_agree is not True:
-        confidence = "低"
-        confidence_reason = "比值与三角落格不一"
     elif nature_agree is True and pair_ok is True:
+        # 大类一致 + 编码同格/相邻:三方法强吻合
         confidence = "高"
-        confidence_reason = "三方法性质一致"
-    elif nature_agree is True or pair_ok is True:
+        confidence_reason = "三方法性质一致、编码吻合"
+    elif nature_agree is True and pair_ok is False:
+        # 大类一致但编码落格不一——注意此时代码互不相邻却仍同大类,
+        # 只是同类内细分分歧(如 T1 vs T3),不降到低,取中(细分不确定)
         confidence = "中"
-        confidence_reason = "大类一致、细分部分一致"
+        confidence_reason = "大类一致、细分落格不一"
+    elif nature == "mixed":
+        # 兼过热 + 纯性质:含放电成分,不上高;编码相邻则中,否则低
+        confidence = "中" if pair_ok is True else "低"
+        confidence_reason = "放电兼过热、细分待核实"
     else:
-        confidence = "中"
-        confidence_reason = "有效方法不足"
+        # nature_agree=None(仅单一有效纯性质结论):编码相邻则中,否则低
+        confidence = "中" if pair_ok is True else "低"
+        confidence_reason = "大类线索单薄、细分部分一致" if pair_ok is True else "比值与三角落格不一"
 
     measure_nature = nature
     if measure_nature == "unknown" and primary_code:
-        # 大类打架时仍按主结论六代码给附录D(试验按过热/放电分,不下成因)
+        # 大类打架时仍按主结论分区代码给附录D(试验按过热/放电分,不下成因)
         measure_nature = _ZONE_NATURE.get(primary_code, "unknown")
 
     provisional = confidence == "低"
@@ -236,11 +252,7 @@ def fuse(
 
     # 一句话摘要(Agent/日志用)，页面右侧只用 confidence_reason
     head = f"{'暂定' if provisional else ''}{primary}".strip() or primary
-    if nature_agree is False:
-        tip = "放电与过热分歧"
-    elif pair_ok is False:
-        tip = "比值与三角落格不一"
-    elif nature_agree is True and pair_ok is True:
+    if nature_agree is True and pair_ok is True:
         tip = f"三方同指{NATURE_LABEL[nature]}"
     else:
         tip = confidence_reason

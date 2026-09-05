@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图3.x 三比值法流程
+  风格基准：监测决策流程.svg（竖版，主流程居中，L形正交分支）
+    步骤框  fill=#EBF3FB  stroke=#2471A3  text=#1A3A5C
+    判断菱形 fill=#FEF9F0  stroke=#CA6F1E  text=#7D3C0A
+    异常终止 fill=#F4F6F7  stroke=#7F8C8D  text=#5D6D7E
+    终端胶囊 fill=#EAFAF1  stroke=#1E8449  text=#155230
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="880" height="650"
+     viewBox="0 0 880 650"
+     font-family="'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#5D6D7E"/>
+    </marker>
+  </defs>
+
+  <rect width="880" height="570" fill="#ffffff"/>
+
+  <!-- ===== 输入 ===== -->
+  <rect x="280" y="18" width="320" height="44" rx="22"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="440" y="45" text-anchor="middle"
+        fill="#155230" font-size="13" font-weight="600">五种烃类气体浓度输入</text>
+
+  <line x1="440" y1="62" x2="440" y2="88" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ===== 数据检查 ===== -->
+  <polygon points="440,92 522,132 440,172 358,132"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="440" y="127" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">数据齐全</text>
+  <text x="440" y="144" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">且达下限？</text>
+
+  <!-- 否 → 数据不足（L形折线向左） -->
+  <polyline points="358,132 170,132 170,186" fill="none"
+            stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="262" y="124" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+  <rect x="100" y="190" width="140" height="40" rx="6"
+        fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1.4"/>
+  <text x="170" y="214" text-anchor="middle" fill="#5D6D7E" font-size="11.5" font-weight="600">数据不足</text>
+
+  <!-- 是 → 计算三对比值 -->
+  <line x1="440" y1="172" x2="440" y2="198" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="452" y="190" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- ===== 计算三对比值 ===== -->
+  <rect x="290" y="202" width="300" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="440" y="224" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">计算三对比值</text>
+  <text x="440" y="244" text-anchor="middle" fill="#1A3A5C" font-size="10.5">C₂H₂/C₂H₄、CH₄/H₂、C₂H₄/C₂H₆</text>
+
+  <line x1="440" y1="258" x2="440" y2="284" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ===== 三对比值均可计算？ ===== -->
+  <polygon points="440,288 522,328 440,368 358,328"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="440" y="323" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">三对比值</text>
+  <text x="440" y="340" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">均可计算？</text>
+
+  <!-- 否 → 无对应编码（分母过小，绕右侧下行） -->
+  <polyline points="522,328 730,328 730,496" fill="none"
+            stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="595" y="318" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否（分母过小）</text>
+
+  <!-- 是 → 按表3.2编码 -->
+  <line x1="440" y1="368" x2="440" y2="394" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="452" y="386" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- ===== 按表3.2编码 ===== -->
+  <rect x="290" y="398" width="300" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="440" y="420" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">按表 3.2 编码</text>
+  <text x="440" y="440" text-anchor="middle" fill="#1A3A5C" font-size="10.5">每对比值映射 0 / 1 / 2，组成三位编码</text>
+
+  <line x1="440" y1="454" x2="440" y2="476" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ===== 编码在表3.3中？ ===== -->
+  <polygon points="440,480 522,520 440,560 358,520"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="440" y="515" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">编码在</text>
+  <text x="440" y="532" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">表 3.3 中？</text>
+
+  <!-- 否 → 无对应编码（水平直入左侧） -->
+  <line x1="522" y1="520" x2="656" y2="520" stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="585" y="512" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+  <rect x="660" y="500" width="140" height="40" rx="6"
+        fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1.4"/>
+  <text x="730" y="524" text-anchor="middle" fill="#5D6D7E" font-size="11.5" font-weight="600">无对应编码</text>
+
+  <!-- 是 → 输出 -->
+  <line x1="440" y1="560" x2="440" y2="586" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="452" y="578" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- ===== 输出 ===== -->
+  <rect x="240" y="590" width="400" height="50" rx="25"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="440" y="611" text-anchor="middle"
+        fill="#155230" font-size="12.5" font-weight="600">输出：故障类型与三位编码</text>
+  <text x="440" y="630" text-anchor="middle"
+        fill="#196F3D" font-size="10.5">附三项比值数值</text>
+
+</svg>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图3.x 大卫三角形法流程
+  风格基准：监测决策流程.svg（竖版，主流程居中，L形正交分支）
+    步骤框  fill=#EBF3FB  stroke=#2471A3  text=#1A3A5C
+    判断菱形 fill=#FEF9F0  stroke=#CA6F1E  text=#7D3C0A
+    异常终止 fill=#F4F6F7  stroke=#7F8C8D  text=#5D6D7E
+    终端胶囊 fill=#EAFAF1  stroke=#1E8449  text=#155230
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="880" height="440"
+     viewBox="0 0 880 440"
+     font-family="'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#5D6D7E"/>
+    </marker>
+  </defs>
+
+  <rect width="880" height="480" fill="#ffffff"/>
+
+  <!-- ===== 输入 ===== -->
+  <rect x="280" y="18" width="320" height="44" rx="22"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="440" y="45" text-anchor="middle"
+        fill="#155230" font-size="13" font-weight="600">CH₄、C₂H₄、C₂H₂ 浓度输入</text>
+
+  <line x1="440" y1="62" x2="440" y2="88" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ===== 数据有效性 ===== -->
+  <polygon points="440,92 522,132 440,172 358,132"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="1.8"/>
+  <text x="440" y="127" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">三值齐全</text>
+  <text x="440" y="144" text-anchor="middle" fill="#7D3C0A" font-size="12" font-weight="600">且和 &gt; 0？</text>
+
+  <!-- 否 → 数据不足（L形折线向左） -->
+  <polyline points="358,132 170,132 170,186" fill="none"
+            stroke="#5D6D7E" stroke-width="1.4" marker-end="url(#arr)"/>
+  <text x="262" y="124" text-anchor="middle" fill="#5D6D7E" font-size="11" font-weight="600">否</text>
+  <rect x="100" y="190" width="140" height="40" rx="6"
+        fill="#F4F6F7" stroke="#7F8C8D" stroke-width="1.4"/>
+  <text x="170" y="214" text-anchor="middle" fill="#5D6D7E" font-size="11.5" font-weight="600">数据不足</text>
+
+  <!-- 是 → 归一化 -->
+  <line x1="440" y1="172" x2="440" y2="198" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="452" y="190" fill="#5D6D7E" font-size="11" font-weight="600">是</text>
+
+  <!-- ===== 归一化百分比坐标 ===== -->
+  <rect x="290" y="202" width="300" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="440" y="224" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">归一化百分比坐标</text>
+  <text x="440" y="244" text-anchor="middle" fill="#1A3A5C" font-size="10.5">X=%C₂H₂、Y=%C₂H₄、Z=%CH₄（式 3.1～3.3）</text>
+
+  <line x1="440" y1="258" x2="440" y2="284" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ===== 按附录C图C.2落区 ===== -->
+  <rect x="290" y="288" width="300" height="56" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="1.6"/>
+  <text x="440" y="310" text-anchor="middle" fill="#1A3A5C" font-size="12" font-weight="600">按三角分区落区</text>
+  <text x="440" y="330" text-anchor="middle" fill="#1A3A5C" font-size="10.5">分区边界见附录 C 图 C.2</text>
+
+  <line x1="440" y1="344" x2="440" y2="370" stroke="#5D6D7E" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ===== 输出 ===== -->
+  <rect x="240" y="374" width="400" height="50" rx="25"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="1.8"/>
+  <text x="440" y="395" text-anchor="middle"
+        fill="#155230" font-size="12.5" font-weight="600">输出：分区代码与故障类型</text>
+  <text x="440" y="414" text-anchor="middle"
+        fill="#196F3D" font-size="10.5">附三种气体百分比</text>
+
+</svg>

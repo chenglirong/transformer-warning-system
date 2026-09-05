@@ -124,7 +124,7 @@ def match_1685_tests(nature: str, gases: Optional[dict]) -> list[dict]:
             f"H₂={_uv(g['h2'])}，C₂H₂={_uv(g['c2h2'])}）",
         )
 
-    # B.2⑦:色谱高能放电特征、乙炔增长快
+    # B.2⑦:色谱高能量放电特征、乙炔增长快
     if g["c2h2"] >= 5 and g["c2h2"] >= 0.2 * max(thc, 1.0):
         add(
             "B.2⑦",
