@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" width="880" height="998" viewBox="0 0 880 998" font-family="Hiragino Sans GB W6">
+
+  <ns0:defs>
+    <ns0:marker id="arr" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <ns0:polygon points="0,0 5,2.5 0,5" fill="#5D6D7E"/>
+    </ns0:marker>
+  </ns0:defs>
+
+  <ns0:rect width="880" height="998" fill="#ffffff" />
+
+  
+  <ns0:rect x="290" y="18" width="300" height="44" rx="22" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="440" y="45" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">七种溶解气体浓度输入</ns0:text>
+
+  <ns0:line x1="440" y1="62" x2="440" y2="92" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:polygon points="440,96 522,136 440,176 358,136" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="440" y="125" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">烃类数据</ns0:text>
+  <ns0:text x="440" y="151" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">≥ 3 种？</ns0:text>
+
+  
+  <ns0:polyline points="358,136 170,136 170,190" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="262" y="128" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">否</ns0:text>
+  <ns0:rect x="100" y="198" width="140" height="40" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="2" />
+  <ns0:text x="170" y="224" text-anchor="middle" fill="#5D6D7E" font-size="18" font-weight="600">数据不足</ns0:text>
+
+  
+  <ns0:line x1="440" y1="176" x2="440" y2="206" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="452" y="198" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  
+  <ns0:rect x="290" y="210" width="300" height="68" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="234" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">① 逐行候选匹配（表 3.1 六行）</ns0:text>
+  <ns0:text x="440" y="252" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">主气体烃类须全部出现</ns0:text>
+  <ns0:text x="440" y="270" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">（检出线 H₂≥150、C₂H₂≥5）</ns0:text>
+
+  <ns0:line x1="440" y1="278" x2="440" y2="306" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="290" y="312" width="300" height="76" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="336" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">② 固体绝缘佐证排除</ns0:text>
+  <ns0:text x="440" y="358" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">CO₂/CO &lt; 3 → 排除涉纸三行</ns0:text>
+  <ns0:text x="440" y="376" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">（油和纸过热、油纸局放、油和纸电弧）</ns0:text>
+
+  <ns0:line x1="440" y1="388" x2="440" y2="416" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="290" y="422" width="300" height="64" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="446" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">③ 注 1 温区细分（过热行）</ns0:text>
+  <ns0:text x="440" y="468" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">C₂H₄ &lt; C₂H₆ → 中低温，否则高温</ns0:text>
+
+  <ns0:line x1="440" y1="486" x2="440" y2="514" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="290" y="520" width="300" height="64" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="544" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">④ 注 3 特征排除（局放行）</ns0:text>
+  <ns0:text x="440" y="566" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">局放行须 H₂/CH₄ 为主且 C₂H₄ 最少</ns0:text>
+
+  <ns0:line x1="440" y1="584" x2="440" y2="610" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="290" y="618" width="300" height="64" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="642" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">⑤ 注 4 特征排除（火花行）</ns0:text>
+  <ns0:text x="440" y="664" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">总烃达注意值时淘汰火花放电行</ns0:text>
+
+  <ns0:line x1="440" y1="682" x2="440" y2="708" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:polygon points="440,716 522,756 440,796 358,756" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="440" y="760" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">有命中行？</ns0:text>
+
+  
+  <ns0:polyline points="522,756 700,756 700,810" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="612" y="748" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">否</ns0:text>
+  <ns0:rect x="630" y="818" width="140" height="40" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="2" />
+  <ns0:text x="700" y="844" text-anchor="middle" fill="#5D6D7E" font-size="18" font-weight="600">无法匹配表 3.1</ns0:text>
+
+  
+  <ns0:line x1="440" y1="796" x2="440" y2="826" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="452" y="818" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  
+  <ns0:rect x="300" y="830" width="280" height="64" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="856" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">多行命中择优</ns0:text>
+  <ns0:text x="440" y="878" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">取主要气体名单最全的一行</ns0:text>
+
+  <ns0:line x1="440" y1="894" x2="440" y2="924" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="290" y="928" width="300" height="50" rx="25" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="440" y="949" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">输出：故障类型与性质</ns0:text>
+  <ns0:text x="440" y="968" text-anchor="middle" fill="#196F3D" font-size="14" font-weight="600">过热 / 放电 / 涉固体绝缘，附注 1～5 说明</ns0:text>
+
+</ns0:svg>

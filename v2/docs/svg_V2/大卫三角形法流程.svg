@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" width="880" height="456" viewBox="0 0 880 456" font-family="Hiragino Sans GB W6">
+
+  <ns0:defs>
+    <ns0:marker id="arr" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <ns0:polygon points="0,0 5,2.5 0,5" fill="#5D6D7E"/>
+    </ns0:marker>
+  </ns0:defs>
+
+  <ns0:rect width="880" height="456" fill="#ffffff" />
+
+  
+  <ns0:rect x="280" y="18" width="320" height="44" rx="22" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="440" y="45" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">CH₄、C₂H₄、C₂H₂ 浓度输入</ns0:text>
+
+  <ns0:line x1="440" y1="62" x2="440" y2="92" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:polygon points="440,96 522,136 440,176 358,136" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="440" y="141" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">三值齐全且和&gt;0？</ns0:text>
+
+  
+  <ns0:polyline points="358,136 170,136 170,190" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="262" y="128" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">否</ns0:text>
+  <ns0:rect x="100" y="198" width="140" height="40" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="2" />
+  <ns0:text x="170" y="224" text-anchor="middle" fill="#5D6D7E" font-size="18" font-weight="600">数据不足</ns0:text>
+
+  
+  <ns0:line x1="440" y1="176" x2="440" y2="206" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="452" y="198" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  
+  <ns0:rect x="290" y="210" width="300" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="232" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">归一化百分比坐标</ns0:text>
+  <ns0:text x="440" y="252" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">X=%C₂H₂、Y=%C₂H₄、Z=%CH₄</ns0:text>
+
+  <ns0:line x1="440" y1="266" x2="440" y2="296" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="290" y="300" width="300" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="440" y="322" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">按三角分区落区</ns0:text>
+  <ns0:text x="440" y="342" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">分区边界见附录 C 图 C.2</ns0:text>
+
+  <ns0:line x1="440" y1="356" x2="440" y2="386" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="290" y="390" width="300" height="50" rx="25" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="440" y="411" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">输出：分区代码与故障类型</ns0:text>
+  <ns0:text x="440" y="430" text-anchor="middle" fill="#196F3D" font-size="14" font-weight="600">附三种气体百分比</ns0:text>
+
+</ns0:svg>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图4.2 Plan-and-Execute（计划与执行）模式 — 与论文图题统一命名
+  修正：① 步骤1/步骤N 双箭头均从框外拐入观察与反思（步骤N 从右侧指入，箭头朝左）
+        ② 任务理解/任务规划 副标题统一不带括号
+        ③ 所有面板内容（图标+文字组）按面板几何中心居中
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1240" height="252"
+     viewBox="0 40 1240 252"
+     font-family="Hiragino Sans GB W6">
+
+  <defs>
+    <marker id="arr" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <polygon points="0,0 5,2.5 0,5" fill="#5D6D7E"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="292" fill="#ffffff"/>
+
+  <!-- 标题（左上，同原图） -->
+  <text x="30" y="62" fill="#7F8C8D" font-size="18" font-weight="600">Plan-and-Execute（计划与执行）</text>
+
+  <!-- ══ 左列：User 头像 ══ -->
+  <circle cx="60" cy="152" r="13" fill="none" stroke="#5D6D7E" stroke-width="2"/>
+  <path d="M 37,195 A 23,23 0 0 1 83,195" fill="none" stroke="#5D6D7E" stroke-width="2"/>
+  <text x="60" y="216" text-anchor="middle" fill="#5D6D7E" font-size="18" font-weight="600">User</text>
+
+  <!-- Query 箭头：User → 任务理解 -->
+  <line x1="92" y1="168" x2="134" y2="168" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="113" y="188" text-anchor="middle" fill="#7F8C8D" font-size="14" font-weight="600">Query</text>
+
+  <!-- ══ 任务理解（橙）面板 140..268，中心204 ══ -->
+  <rect x="140" y="130" width="128" height="100" rx="10" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2"/>
+  <!-- 灯泡图标（组居中：163..243） -->
+  <circle cx="162" cy="166" r="9" fill="none" stroke="#CA6F1E" stroke-width="2"/>
+  <line x1="159" y1="177" x2="165" y2="177" stroke="#CA6F1E" stroke-width="2"/>
+  <line x1="160" y1="181" x2="164" y2="181" stroke="#CA6F1E" stroke-width="2"/>
+  <text x="217" y="180" text-anchor="middle" fill="#7D3C0A" font-size="18" font-weight="600">任务理解</text>
+  <text x="204" y="206" text-anchor="middle" fill="#A04000" font-size="14" font-weight="600">解析用户意图</text>
+
+  <!-- 任务理解 → 任务规划 -->
+  <line x1="268" y1="180" x2="302" y2="180" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ══ 任务规划（橙）面板 308..456，中心382 ══ -->
+  <rect x="308" y="130" width="148" height="100" rx="10" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2"/>
+  <!-- 清单图标（组居中：340..424） -->
+  <rect x="332" y="158" width="22" height="26" rx="2" fill="none" stroke="#CA6F1E" stroke-width="2"/>
+  <line x1="336" y1="166" x2="344" y2="166" stroke="#CA6F1E" stroke-width="1"/>
+  <line x1="336" y1="172" x2="350" y2="172" stroke="#CA6F1E" stroke-width="1"/>
+  <line x1="336" y1="178" x2="347" y2="178" stroke="#CA6F1E" stroke-width="1"/>
+  <text x="399" y="180" text-anchor="middle" fill="#7D3C0A" font-size="18" font-weight="600">任务规划</text>
+  <text x="382" y="206" text-anchor="middle" fill="#A04000" font-size="14" font-weight="600">分解步骤</text>
+
+  <!-- 任务规划 → 执行循环 -->
+  <line x1="456" y1="180" x2="490" y2="180" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ══ 执行循环（蓝）面板 496..880，中心688 ══ -->
+  <rect x="496" y="96" width="384" height="158" rx="10" fill="#EBF3FB" stroke="#2471A3" stroke-width="2"/>
+  <text x="688" y="122" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">执行循环</text>
+
+  <!-- 步骤链（整链居中于688：560..816） -->
+  <rect x="532" y="146" width="60" height="32" rx="6" fill="#ffffff" stroke="#2471A3" stroke-width="2"/>
+  <text x="562" y="167" text-anchor="middle" fill="#1A3A5C" font-size="14" font-weight="600">步骤1</text>
+  <line x1="596" y1="162" x2="622" y2="162" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="628" y="146" width="60" height="32" rx="6" fill="#ffffff" stroke="#2471A3" stroke-width="2"/>
+  <text x="658" y="167" text-anchor="middle" fill="#1A3A5C" font-size="14" font-weight="600">步骤2</text>
+  <line x1="692" y1="162" x2="722" y2="162" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="736" y="160" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">……</text>
+  <line x1="750" y1="162" x2="778" y2="162" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="784" y="146" width="64" height="32" rx="6" fill="#ffffff" stroke="#2471A3" stroke-width="2"/>
+  <text x="816" y="167" text-anchor="middle" fill="#1A3A5C" font-size="14" font-weight="600">步骤N</text>
+
+  <!-- 观察与反思（眼睛图标，框居中于688：610..766） -->
+  <rect x="610" y="206" width="156" height="38" rx="19" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2"/>
+  <path d="M 630,225 Q 640,214 650,225 Q 640,236 630,225 Z" fill="none" stroke="#CA6F1E" stroke-width="2"/>
+  <circle cx="640" cy="225" r="3" fill="#CA6F1E"/>
+  <text x="703" y="230" text-anchor="middle" fill="#7D3C0A" font-size="18" font-weight="600">观察与反思</text>
+
+  <!-- 步骤1 ↓ 拐入框左侧（箭头朝右指入） -->
+  <polyline points="562,182 562,225 604,225" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- 步骤N ↓ 拐入框右侧（箭头朝左指入） -->
+  <polyline points="816,182 816,225 774,225" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 执行循环 → 整合结果 -->
+  <line x1="884" y1="180" x2="914" y2="180" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ══ 整合结果（绿）面板 920..1030，中心975 ══ -->
+  <rect x="920" y="140" width="110" height="80" rx="10" fill="#EAFAF1" stroke="#1E8449" stroke-width="2"/>
+  <g stroke="#1E8449" stroke-width="1" fill="#ffffff">
+    <rect x="960" y="152" width="24" height="7" rx="1"/>
+    <rect x="963" y="157" width="24" height="7" rx="1"/>
+    <rect x="966" y="162" width="24" height="7" rx="1"/>
+  </g>
+  <text x="975" y="196" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">整合结果</text>
+
+  <!-- 整合结果 → 生成回答（同一主带，向右） -->
+  <line x1="1036" y1="180" x2="1067" y2="180" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ══ 生成回答（绿胶囊）1058..1178，主带中心线，与 ReAct 图一致 ══ -->
+  <rect x="1074" y="160" width="140" height="42" rx="21" fill="#EAFAF1" stroke="#1E8449" stroke-width="2"/>
+  <!-- 对话气泡图标（组居中：1078..1158） -->
+  <path d="M 1095,170 h 18 a 4,4 0 0 1 4,4 v 8 a 4,4 0 0 1 -4,4 h -10 l -4,5 v -5 h -4 a 4,4 0 0 1 -4,-4 v -8 a 4,4 0 0 1 4,-4 Z"
+        fill="none" stroke="#1E8449" stroke-width="2"/>
+  <text x="1169" y="186" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">生成回答</text>
+
+  <!-- ══ Output 返回箭头：生成回答 → User ══ -->
+  <polyline points="1179,206 1179,264 78,264" fill="none" stroke="#5D6D7E" stroke-width="2"
+            stroke-dasharray="6,4" marker-end="url(#arr)"/>
+  <text x="113" y="256" text-anchor="middle" fill="#7F8C8D" font-size="14" font-weight="600">Output</text>
+
+</svg>

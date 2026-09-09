@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  图4.4 报告生成流程 — 统一风格版
+  风格基准：七步工作流_cvpr.svg
+    步骤框  fill=#EBF3FB  stroke=#2471A3  text=#1A3A5C
+    终端框  fill=#EAFAF1  stroke=#1E8449  text=#155230
+    判断菱形 fill=#FEF9F0  stroke=#CA6F1E  text=#7D3C0A
+    回退虚线 stroke=#CA6F1E stroke-dasharray=6,4
+    箭头    stroke=#5D6D7E
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="900" height="430"
+     viewBox="0 0 900 430"
+     font-family="Hiragino Sans GB W6"><defs><marker id="amCA6F1E" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><polygon points="0,0 5,2.5 0,5" fill="#CA6F1E"/></marker><marker id="am5D6D7E" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto"><polygon points="0,0 5,2.5 0,5" fill="#5D6D7E"/></marker></defs>
+
+  <rect width="900" height="430" fill="#ffffff"/>
+
+  <!-- ===== 上排（左→右）===== -->
+
+  <!-- 起始节点 -->
+  <rect x="30" y="30" width="115" height="50" rx="25"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="2"/>
+  <text x="87" y="60" text-anchor="middle"
+        fill="#155230" font-size="18" font-weight="600">前六步结果</text>
+
+  <!-- 构建事实包 -->
+  <rect x="170" y="30" width="110" height="50" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="2"/>
+  <text x="225" y="60" text-anchor="middle"
+        fill="#1A3A5C" font-size="18" font-weight="600">构建事实包</text>
+
+  <!-- 组装提示词 -->
+  <rect x="305" y="30" width="110" height="50" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="2"/>
+  <text x="360" y="60" text-anchor="middle"
+        fill="#1A3A5C" font-size="18" font-weight="600">组装提示词</text>
+
+  <!-- 判断：大模型可用？ -->
+  <polygon points="525,17 603,55 525,93 447,55"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2"/>
+  <text x="525" y="48" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">大模型</text>
+  <text x="525" y="70" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">可用？</text>
+
+  <!-- 上排箭头 -->
+  <line x1="145" y1="55" x2="166" y2="55" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+  <line x1="280" y1="55" x2="301" y2="55" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+  <line x1="415" y1="55" x2="443" y2="55" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+
+  <!-- ===== 右侧拐弯（下）===== -->
+
+  <!-- 大模型生成 -->
+  <rect x="460" y="128" width="130" height="50" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="2"/>
+  <text x="525" y="158" text-anchor="middle"
+        fill="#1A3A5C" font-size="18" font-weight="600">大模型生成</text>
+
+  <!-- 判断：校验通过？ -->
+  <polygon points="525,213 608,258 525,303 442,258"
+           fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2"/>
+  <text x="525" y="264" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">校验通过？</text>
+
+  <!-- 是 → 大模型生成 -->
+  <line x1="525" y1="93" x2="525" y2="121" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+  <text x="540" y="112" fill="#5D6D7E" font-size="14" font-weight="600">是</text>
+
+  <!-- 大模型生成 → 校验 -->
+  <line x1="525" y1="178" x2="525" y2="207" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+
+  <!-- 规则模板（回退盒）-->
+  <rect x="690" y="138" width="110" height="50" rx="6"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="2"/>
+  <text x="745" y="168" text-anchor="middle"
+        fill="#155230" font-size="18" font-weight="600">规则模板</text>
+
+  <!-- 回退虚线1：大模型不可用 → 规则模板 -->
+  <polyline points="603,55 745,55 745,132"
+        fill="none" stroke="#CA6F1E" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#amCA6F1E)"/>
+  
+  <text x="700" y="88" fill="#CA6F1E" font-size="14" font-weight="600">否</text>
+
+  <!-- 回退虚线2：校验未通过 → 规则模板 -->
+  <polyline points="608,258 745,258 745,194"
+        fill="none" stroke="#CA6F1E" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#amCA6F1E)"/>
+  
+  <text x="700" y="237" fill="#CA6F1E" font-size="14" font-weight="600">否</text>
+
+  <!-- 规则模板 → 生成档案卡片 -->
+  <polyline points="770,188 770,375 597,375"
+        fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+
+  <!-- ===== 下排（右→左）===== -->
+
+  <!-- 是 → 生成档案卡片 -->
+  <line x1="525" y1="303" x2="525" y2="344" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+  <text x="540" y="330" fill="#5D6D7E" font-size="14" font-weight="600">是</text>
+
+  <!-- 生成档案卡片 -->
+  <rect x="455" y="350" width="140" height="50" rx="6"
+        fill="#EBF3FB" stroke="#2471A3" stroke-width="2"/>
+  <text x="525" y="380" text-anchor="middle"
+        fill="#1A3A5C" font-size="18" font-weight="600">生成档案卡片</text>
+
+  <!-- 导出PDF（终端）-->
+  <rect x="230" y="350" width="160" height="50" rx="25"
+        fill="#EAFAF1" stroke="#1E8449" stroke-width="2"/>
+  <text x="310" y="380" text-anchor="middle"
+        fill="#155230" font-size="18" font-weight="600">导出 PDF</text>
+
+  <!-- 生成档案卡片 → 导出PDF -->
+  <line x1="455" y1="375" x2="397" y2="375" stroke="#5D6D7E" stroke-width="2" marker-end="url(#am5D6D7E)"/>
+  
+
+</svg>

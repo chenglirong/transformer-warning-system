@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" width="800" height="1020" viewBox="0 0 800 1020" font-family="Hiragino Sans GB W6">
+
+  <ns0:defs>
+    <ns0:marker id="arr" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <ns0:polygon points="0,0 5,2.5 0,5" fill="#5D6D7E"/>
+    </ns0:marker>
+  </ns0:defs>
+
+  <ns0:rect width="800" height="1020" fill="#ffffff" />
+
+  
+  <ns0:rect x="270" y="16" width="260" height="48" rx="24" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="400" y="46" text-anchor="middle" fill="#155230" font-size="17" font-weight="600">溶解气体浓度时序</ns0:text>
+
+  <ns0:line x1="400" y1="64" x2="400" y2="94" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="280" y="98" width="240" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="400" y="124" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">数据准备</ns0:text>
+  <ns0:text x="400" y="144" text-anchor="middle" fill="#5D6D7E" font-size="14">计算总烃 · 参比值取前14~7天均值</ns0:text>
+
+  
+  <ns0:line x1="400" y1="154" x2="400" y2="170" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="150" y1="172" x2="650" y2="172" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="150" y1="175" x2="150" y2="202" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:line x1="400" y1="175" x2="400" y2="202" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:line x1="650" y1="175" x2="650" y2="202" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="55" y="206" width="190" height="58" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="150" y="231" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">① 绝对浓度</ns0:text>
+  <ns0:text x="150" y="251" text-anchor="middle" fill="#5D6D7E" font-size="14">乙炔 · H₂ · 总烃</ns0:text>
+
+  <ns0:rect x="305" y="206" width="190" height="58" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="400" y="231" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">② 绝对增量</ns0:text>
+  <ns0:text x="400" y="251" text-anchor="middle" fill="#5D6D7E" font-size="14">当前 − 参比值</ns0:text>
+
+  <ns0:rect x="555" y="206" width="190" height="58" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="650" y="231" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">③ 相对增长速率</ns0:text>
+  <ns0:text x="650" y="251" text-anchor="middle" fill="#5D6D7E" font-size="14">总烃 %/周</ns0:text>
+
+  
+  <ns0:line x1="150" y1="264" x2="150" y2="282" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="400" y1="264" x2="400" y2="282" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="650" y1="264" x2="650" y2="282" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="150" y1="284" x2="650" y2="284" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="400" y1="287" x2="400" y2="314" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="250" y="318" width="300" height="52" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="400" y="350" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">综合检测分级（全指标最高档）</ns0:text>
+
+  <ns0:line x1="400" y1="370" x2="400" y2="400" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:rect x="250" y="404" width="300" height="52" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="400" y="426" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">总烃月环比</ns0:text>
+  <ns0:text x="400" y="445" text-anchor="middle" fill="#5D6D7E" font-size="14">%/月</ns0:text>
+
+  <ns0:line x1="400" y1="456" x2="400" y2="486" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+  
+  <ns0:polygon points="400,490 510,542 400,594 290,542" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="400" y="537" text-anchor="middle" fill="#7D3C0A" font-size="17" font-weight="600">档位 ≥</ns0:text>
+  <ns0:text x="400" y="557" text-anchor="middle" fill="#7D3C0A" font-size="17" font-weight="600">注意值2？</ns0:text>
+
+  
+  <ns0:polyline points="290,542 160,542 160,610" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="222" y="533" text-anchor="middle" fill="#5D6D7E" font-size="15" font-weight="600">是</ns0:text>
+
+  
+  <ns0:polyline points="510,542 640,542 640,610" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="578" y="533" text-anchor="middle" fill="#5D6D7E" font-size="15" font-weight="600">否</ns0:text>
+
+  
+  <ns0:polygon points="160,612 255,658 160,704 65,658" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="160" y="654" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">速率超</ns0:text>
+  <ns0:text x="160" y="673" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">注意？</ns0:text>
+
+  
+  <ns0:polyline points="255,658 500,658 500,858" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="370" y="649" text-anchor="middle" fill="#5D6D7E" font-size="15" font-weight="600">是</ns0:text>
+
+  
+  <ns0:line x1="160" y1="704" x2="160" y2="742" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="170" y="730" fill="#5D6D7E" font-size="15" font-weight="600">否</ns0:text>
+
+  
+  <ns0:polygon points="160,746 245,786 160,826 75,786" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="160" y="791" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">仅 H₂ 超标？</ns0:text>
+
+  
+  <ns0:line x1="160" y1="826" x2="160" y2="856" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="170" y="851" fill="#5D6D7E" font-size="15" font-weight="600">是</ns0:text>
+
+  
+  <ns0:polyline points="245,786 330,786 330,858" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="285" y="777" text-anchor="middle" fill="#5D6D7E" font-size="15" font-weight="600">否</ns0:text>
+
+  
+  <ns0:rect x="85" y="860" width="150" height="46" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="160" y="880" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">紧急度 低</ns0:text>
+  <ns0:text x="160" y="897" text-anchor="middle" fill="#5D6D7E" font-size="14">档位如实·加强监视</ns0:text>
+
+  <ns0:rect x="255" y="860" width="150" height="46" rx="6" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="330" y="880" text-anchor="middle" fill="#7D3C0A" font-size="17" font-weight="600">紧急度 中</ns0:text>
+  <ns0:text x="330" y="897" text-anchor="middle" fill="#7D3C0A" font-size="14">暂稳 · 加强监视</ns0:text>
+
+  <ns0:rect x="425" y="860" width="150" height="46" rx="6" fill="#FADBD8" stroke="#E74C3C" stroke-width="2" />
+  <ns0:text x="500" y="880" text-anchor="middle" fill="#922B21" font-size="17" font-weight="600">紧急度 高</ns0:text>
+  <ns0:text x="500" y="897" text-anchor="middle" fill="#922B21" font-size="14">缩短检测周期</ns0:text>
+
+  
+  <ns0:polygon points="640,612 735,658 640,704 545,658" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="640" y="654" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">速率超</ns0:text>
+  <ns0:text x="640" y="673" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">注意？</ns0:text>
+
+  
+  <ns0:line x1="640" y1="704" x2="640" y2="748" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="650" y="742" fill="#5D6D7E" font-size="15" font-weight="600">是</ns0:text>
+
+  <ns0:rect x="550" y="752" width="180" height="48" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="640" y="782" text-anchor="middle" fill="#1A3A5C" font-size="17" font-weight="600">涨势预警</ns0:text>
+
+  
+  <ns0:polyline points="735,658 765,658 765,988 663,988" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:text x="750" y="649" fill="#5D6D7E" font-size="15" font-weight="600">否</ns0:text>
+
+  
+  <ns0:rect x="140" y="960" width="520" height="56" rx="28" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="400" y="983" text-anchor="middle" fill="#155230" font-size="17" font-weight="600">每日分级告警记录</ns0:text>
+  <ns0:text x="400" y="1004" text-anchor="middle" fill="#155230" font-size="14">分级 · 指标明细 · 紧急度 · 涨势预警</ns0:text>
+
+  
+  <ns0:line x1="160" y1="906" x2="160" y2="956" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:line x1="330" y1="906" x2="330" y2="956" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:line x1="500" y1="906" x2="500" y2="956" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+  <ns0:line x1="640" y1="800" x2="640" y2="956" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr)" />
+
+</ns0:svg>

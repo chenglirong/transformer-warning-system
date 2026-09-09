@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" width="960" height="971" viewBox="0 0 960 971" font-family="Hiragino Sans GB W6">
+
+  <ns0:defs>
+    <ns0:marker id="arr" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <ns0:polygon points="0,0 5,2.5 0,5" fill="#5D6D7E"/>
+    </ns0:marker>
+    <ns0:marker id="arrOr" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <ns0:polygon points="0,0 5,2.5 0,5" fill="#CA6F1E"/>
+    </ns0:marker>
+      <ns0:marker id="arr2" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <ns0:polygon points="0,0 5,2.5 0,5" fill="#5D6D7E"/>
+    </ns0:marker>
+    <ns0:marker id="arrOr2" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto">
+      <ns0:polygon points="0,0 5,2.5 0,5" fill="#CA6F1E"/>
+    </ns0:marker>
+  </ns0:defs>
+
+  <ns0:rect width="960" height="971" fill="#ffffff" />
+
+  
+  <ns0:rect x="370" y="20" width="200" height="44" rx="22" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="470" y="47" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">用户输入消息</ns0:text>
+
+  <ns0:line x1="470" y1="67" x2="470" y2="92" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  <ns0:rect x="350" y="94" width="240" height="50" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="470" y="115" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">意图识别</ns0:text>
+  <ns0:text x="470" y="133" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">正则规则匹配</ns0:text>
+  <ns0:line x1="470" y1="147" x2="470" y2="172" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  <ns0:polygon points="470,174 560,222 470,270 380,222" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="470" y="211" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">意图</ns0:text>
+  <ns0:text x="470" y="237" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">类型？</ns0:text>
+
+  
+  <ns0:polyline points="380,222 150,222 150,279" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="265" y="212" text-anchor="middle" fill="#7D3C0A" font-size="14" font-weight="600">运行分析 / 切换日期 / 当日概览</ns0:text>
+
+  
+  <ns0:line x1="470" y1="273" x2="470" y2="298" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="483" y="293" fill="#7D3C0A" font-size="14" font-weight="600">结果解释</ns0:text>
+
+  
+  <ns0:polyline points="560,222 790,222 790,279" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="672" y="197" text-anchor="middle" fill="#7D3C0A" font-size="14" font-weight="600">标准问答 / 未知</ns0:text>
+
+  
+  <ns0:rect x="42" y="283" width="216" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="150" y="306" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">日期解析</ns0:text>
+  <ns0:text x="150" y="324" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">识别日期，或切换至前 / 后一日</ns0:text>
+
+  <ns0:line x1="150" y1="342" x2="150" y2="367" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  <ns0:polygon points="150,369 235,410 150,451 65,410" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="150" y="399" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">当日已有</ns0:text>
+  <ns0:text x="150" y="425" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">分析结果？</ns0:text>
+
+  
+  <ns0:line x1="150" y1="454" x2="150" y2="479" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="162" y="473" fill="#5D6D7E" font-size="14" font-weight="600">否</ns0:text>
+
+  <ns0:rect x="52" y="481" width="196" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="150" y="504" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">调用七步工作流</ns0:text>
+  <ns0:text x="150" y="522" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">执行完整分析并记录结果</ns0:text>
+
+  <ns0:line x1="150" y1="540" x2="150" y2="565" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  <ns0:rect x="52" y="567" width="196" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="150" y="590" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">生成结论草稿</ns0:text>
+  <ns0:text x="150" y="608" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">汇总各步分析结论</ns0:text>
+
+  
+  <ns0:polyline points="235,410 290,410 290,594 252,594" fill="none" stroke="#5D6D7E" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arr2)" />
+  <ns0:text x="245" y="401" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  
+  <ns0:polyline points="150,623 150,671 361,671" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  
+  <ns0:polygon points="470,300 555,342 470,384 385,342" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="470" y="331" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">已有</ns0:text>
+  <ns0:text x="470" y="357" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">分析结果？</ns0:text>
+
+  
+  <ns0:line x1="470" y1="387" x2="470" y2="412" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="482" y="406" fill="#5D6D7E" font-size="14" font-weight="600">否</ns0:text>
+
+  <ns0:rect x="365" y="414" width="210" height="50" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="470" y="434" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">自动重新执行工作流</ns0:text>
+  <ns0:text x="470" y="452" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">不中断当前对话</ns0:text>
+
+  <ns0:line x1="470" y1="467" x2="470" y2="512" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  <ns0:rect x="360" y="514" width="220" height="56" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="470" y="537" text-anchor="middle" fill="#1A3A5C" font-size="14" font-weight="600">结果解释（分级、趋势、判型等）</ns0:text>
+  <ns0:text x="470" y="555" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">按意图提取对应结论，附判据编号</ns0:text>
+
+  
+  <ns0:polyline points="555,342 620,342 620,542 584,542" fill="none" stroke="#5D6D7E" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arr2)" />
+  <ns0:text x="565" y="333" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  <ns0:line x1="470" y1="573" x2="470" y2="644" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  
+  <ns0:rect x="365" y="646" width="210" height="50" rx="6" fill="#EBF3FB" stroke="#2471A3" stroke-width="2" />
+  <ns0:text x="470" y="666" text-anchor="middle" fill="#1A3A5C" font-size="18" font-weight="600">大模型生成</ns0:text>
+  <ns0:text x="470" y="684" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">草稿生成连贯叙述</ns0:text>
+
+  
+  <ns0:line x1="470" y1="699" x2="470" y2="724" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  
+  <ns0:polygon points="470,726 555,768 470,810 385,768" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="470" y="765" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">结论与原判定</ns0:text>
+  <ns0:text x="470" y="790" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">一致？</ns0:text>
+
+  
+  <ns0:line x1="470" y1="813" x2="470" y2="849" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="482" y="833" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  
+  <ns0:line x1="385" y1="768" x2="318" y2="768" stroke="#CA6F1E" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrOr2)" />
+  <ns0:text x="380" y="756" text-anchor="end" fill="#CA6F1E" font-size="14" font-weight="600">否（回退规则模板）</ns0:text>
+  <ns0:text x="380" y="786" text-anchor="end" fill="#CA6F1E" font-size="14" font-weight="600">规则模板原文作为回复</ns0:text>
+
+  
+  <ns0:polygon points="790,283 875,325 790,367 705,325" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="790" y="314" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">超出服务</ns0:text>
+  <ns0:text x="790" y="340" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">范围？</ns0:text>
+
+  
+  <ns0:line x1="790" y1="370" x2="790" y2="395" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="802" y="389" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  <ns0:rect x="685" y="397" width="210" height="50" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="2" />
+  <ns0:text x="790" y="419" text-anchor="middle" fill="#5D6D7E" font-size="18" font-weight="600">返回范围说明</ns0:text>
+  <ns0:text x="790" y="439" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">请查看告警 / 决策页面</ns0:text>
+
+  
+  <ns0:polyline points="705,325 645,325 645,462 790,462 790,482" fill="none" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="692" y="316" fill="#5D6D7E" font-size="14" font-weight="600">否</ns0:text>
+
+  
+  <ns0:polygon points="790,488 875,530 790,572 705,530" fill="#FEF9F0" stroke="#CA6F1E" stroke-width="2" />
+  <ns0:text x="790" y="519" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">命中预设</ns0:text>
+  <ns0:text x="790" y="545" text-anchor="middle" fill="#7D3C0A" font-size="16" font-weight="600">答案？</ns0:text>
+
+  
+  <ns0:line x1="790" y1="575" x2="790" y2="601" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+  <ns0:text x="802" y="591" fill="#5D6D7E" font-size="14" font-weight="600">是</ns0:text>
+
+  <ns0:rect x="685" y="603" width="210" height="50" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="2" />
+  <ns0:text x="790" y="625" text-anchor="middle" fill="#5D6D7E" font-size="18" font-weight="600">返回预设答案</ns0:text>
+  <ns0:text x="790" y="645" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">附标准条文编号</ns0:text>
+
+  
+  <ns0:polyline points="705,530 645,530 645,698 681,698" fill="none" stroke="#5D6D7E" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arr2)" />
+  <ns0:text x="695" y="519" text-anchor="end" fill="#5D6D7E" font-size="14" font-weight="600">否</ns0:text>
+
+  <ns0:rect x="685" y="673" width="210" height="50" rx="6" fill="#F4F6F7" stroke="#7F8C8D" stroke-width="2" />
+  <ns0:text x="790" y="695" text-anchor="middle" fill="#5D6D7E" font-size="18" font-weight="600">引导提示</ns0:text>
+  <ns0:text x="790" y="715" text-anchor="middle" fill="#5D6D7E" font-size="14" font-weight="600">提示可提问的内容</ns0:text>
+
+  
+
+  <ns0:line x1="895" y1="628" x2="920" y2="628" stroke="#5D6D7E" stroke-width="2" />
+
+  <ns0:line x1="895" y1="698" x2="920" y2="698" stroke="#5D6D7E" stroke-width="2" />
+
+  <ns0:line x1="895" y1="430" x2="920" y2="430" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="920" y1="430" x2="920" y2="881" stroke="#5D6D7E" stroke-width="2" />
+  <ns0:line x1="920" y1="881" x2="634" y2="881" stroke="#5D6D7E" stroke-width="2" marker-end="url(#arr2)" />
+
+  
+  <ns0:rect x="330" y="851" width="300" height="60" rx="30" fill="#EAFAF1" stroke="#1E8449" stroke-width="2" />
+  <ns0:text x="480" y="876" text-anchor="middle" fill="#155230" font-size="18" font-weight="600">输出回复</ns0:text>
+  <ns0:text x="480" y="896" text-anchor="middle" fill="#196F3D" font-size="14" font-weight="600">回复文本 · 判据编号 · 推荐追问</ns0:text>
+
+
+</ns0:svg>
