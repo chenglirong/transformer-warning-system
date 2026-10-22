@@ -51,28 +51,3 @@ htmlcov/
 # 运行日志
 v2/BE/backend.log
 v2/FE/frontend.log
-
-# 论文/总结产出(不入库)
-v2/docs/论文初稿.docx
-v2/docs/项目总结/
-v2/docs/下次开工.md
-v2/docs/重构方案.html
-v2/docs/论文
-v2/docs/论文_副本
-
-# 散落的无引用截图(md 编辑器粘贴产物)
-v2/docs/1787886631387.png
-v2/docs/ca68eff6-6ec3-4191-b513-220911174323.png
-.cursor/rules/thesis-writing.mdc
-
-# 个人指令/汇报产出(不入库)
-CLAUDE.md
-V1/CLAUDE.md
-skill.md
-重构设计-DGA分析智能体后台.md
-V1/中期报告PPT大纲.md
-V1/开题报告PPT大纲.md
-
-# V1 归档文档(不入库)
-V1/docs/
-V1/论文梳理.md
